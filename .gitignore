@@ -1,0 +1,79 @@
+# General
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Editors/IDE
+.vscode/
+.idea/
+*.iml
+
+#######################
+# Python
+#######################
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+build/
+dist/
+.eggs/
+*.egg-info/
+pip-wheel-metadata/
+htmlcov/
+.coverage*
+.pytest_cache/
+.mypy_cache/
+.pytype/
+.tox/
+.nox/
+.ruff_cache
+.dmypy.json
+
+#######################
+# TypeScript / React
+#######################
+node_modules/
+dist/
+build/
+coverage/
+.eslintcache
+*.tsbuildinfo
+.next/
+out/
+.parcel-cache/
+.vite/
+.turbo/
+
+# Package manager debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+#######################
+# SQL (local DB files & dumps)
+#######################
+*.sqlite
+*.sqlite3
+*.db
+*.mdb
+*.accdb
+*.bak
+*.backup
+*.dmp
+*.dump
+*dump.sql
+*.sql.gz
+*.sql.zip
+*.pgdump
