@@ -1,57 +1,28 @@
 // src/App.tsx
 import { useState } from 'react';
 import './App.css';
+import { SUB_CATEGORY_DATA } from './categories';
 
 const DATA_SOURCE = {
   Sports: [
     {id: "NFL"}, 
     {id: "NBA"}, 
-    {id: "MLB"}
+    {id: "Big 12 CBB"}
   ],
   Finance: [
     {id: "Stocks"},
     {id: "Crypto"}
   ],
   Weather: [
+    {id: "Temperature"},
     {id: "Rain"},
     {id: "Snow"}, 
-    {id: "Heat"}
+    {id: "Heat"},
+    {id: "Humidity"},
+    {id: "Air Quality"},
+    {id: "UV Index"},
+    {id: "Wind"}
   ]
-}
-
-const DATA_SOURCE_SPORTS: Record<string, {id: string}[]> = {
-  NBA: [
-    {id: "Atlanta Hawks"},
-    {id: "Boston Celtics"},
-    {id: "Brooklyn Nets"},
-    {id: "Charlotte Hornets"},
-    {id: "Chicago Bulls"},
-    {id: "Cleveland Cavaliers"},
-    {id: "Dallas Mavericks"},
-    {id: "Denver Nuggets"},
-    {id: "Detroit Pistons"},
-    {id: "Golden State Warriors"},
-    {id: "Houston Rockets"},
-    {id: "Indiana Pacers"},
-    {id: "LA Clippers"},
-    {id: "Los Angeles Lakers"},
-    {id: "Memphis Grizzlies"},
-    {id: "Miami Heat"},
-    {id: "Milwaukee Bucks"},
-    {id: "Minnesota Timberwolves"},
-    {id: "New Orleans Pelicans"},
-    {id: "New York Knicks"},
-    {id: "Oklahoma City Thunder"},
-    {id: "Orlando Magic"},
-    {id: "Philadelphia 76ers"},
-    {id: "Phoenix Suns"},
-    {id: "Portland Trail Blazers"},
-    {id: "Sacramento Kings"},
-    {id: "San Antonio Spurs"},
-    {id: "Toronto Raptors"},
-    {id: "Utah Jazz"},
-    {id: "Washington Wizards"}
-    ]
 }
 
 type CategoryName = keyof typeof DATA_SOURCE;
@@ -61,6 +32,8 @@ function App() {
   const [activeCategory, setActiveCategory] = useState<CategoryName | null>(null);
   const [activeSubCategory, setActiveSubCategory] = useState<string | null>(null);
   
+  // search state
+  const [searchQuery, setSearchQuery] = useState("");
   // keep track of things that are checkmnarked
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -121,7 +94,7 @@ function App() {
 
             <div className='interest-list'>
               {activeCategory && DATA_SOURCE[activeCategory].map((item) => {
-                const hasChildren = item.id in DATA_SOURCE_SPORTS;
+                const hasChildren = item.id in SUB_CATEGORY_DATA;
                 
                 return hasChildren ? (
                   // option 1: is a folder with subcategories -> Show Arrow Button
@@ -131,7 +104,7 @@ function App() {
                     onClick={() => setActiveSubCategory(item.id)}
                     style={{justifyContent: 'space-between', fontWeight: 'bold'}}
                   >
-                    <span>{item.id} Teams</span>
+                    <span>{item.id}</span>
                     <span>→</span>
                   </button>
                 ) : (
@@ -150,23 +123,43 @@ function App() {
           </div>
           {/* level 3 */}
           <div className='slide-page'>
-             <button className='back-btn' onClick={() => setActiveSubCategory(null)}>
+             <button className='back-btn' onClick={() => {setActiveSubCategory(null); setSearchQuery("")}}>
               {/* Go back to Level 2 */}
               ← Back to {activeCategory}
             </button>
-            <h2>Select {activeSubCategory} Teams</h2>
+            
+            <h2>{activeSubCategory}</h2>
+
+            <input 
+            type="text" 
+            placeholder={`Search ${activeSubCategory}...`}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-bar"
+            />
 
             <div className='interest-list'>
-              {activeSubCategory && DATA_SOURCE_SPORTS[activeSubCategory]?.map((team) => (
-                <label key={team.id} className={`interest-item ${selectedIds.includes(team.id) ? 'active' : ''}`}>
+              {activeSubCategory && SUB_CATEGORY_DATA[activeSubCategory]?.filter(item =>
+              item.id.toLowerCase().includes(searchQuery.toLowerCase())
+              ).map((item) => (
+                <label key={item.id} className={`interest-item ${selectedIds.includes(item.id) ? 'active' : ''}`}>
                   <input 
                     type="checkbox" 
-                    checked={selectedIds.includes(team.id)}
-                    onChange={() => toggleSelection(team.id)}
+                    checked={selectedIds.includes(item.id)}
+                    onChange={() => toggleSelection(item.id)}
                   />
-                  <span>{team.id}</span>
+                  <span>{item.id}</span>
                 </label>
               ))}
+
+              {/* No results in search message */}
+              {activeSubCategory && 
+               SUB_CATEGORY_DATA[activeSubCategory]?.filter(item => 
+                 item.id.toLowerCase().includes(searchQuery.toLowerCase())
+               ).length === 0 && (
+                 <p className="no-results">No results found for "{searchQuery}"</p>
+               )
+              }
             </div>
           </div>
 
