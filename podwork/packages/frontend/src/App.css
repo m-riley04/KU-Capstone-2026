@@ -1,9 +1,9 @@
 /* src/App.css */
 :root {
-  --primary: #4f46e5;
-  --bg: #f3f4f6;
+  --primary: #3a3129;
+  --bg: #5a4134;
   --card-bg: #ffffff;
-  --text-main: #1f2937;
+  --text-main: #b2a3b8;
 }
 
 body {
@@ -26,6 +26,12 @@ body {
 .hero {
   text-align: center;
   margin-bottom: 1rem;
+  color: #f9e4bc;
+  font-size: 30px;
+}
+
+h2 {
+  color: #f9e4bc;
 }
 
 /* slider */
@@ -72,7 +78,7 @@ body {
   display: flex;
   justify-content: space-between;
   padding: 1.5rem;
-  background: white;
+  background: #3a3129;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   font-size: 1.2rem;
@@ -80,6 +86,7 @@ body {
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   transition: transform 0.1s;
+  color: #f9e4bc
 }
 
 .category-card:active { transform: scale(0.98); }
@@ -88,7 +95,7 @@ body {
   background: none;
   border: none;
   font-size: 1rem;
-  color: var(--primary);
+  color: white;
   cursor: pointer;
   margin-bottom: 1rem;
   font-weight: bold;
@@ -121,13 +128,14 @@ body {
   border: 2px solid #e5e7eb;
   border-radius: 8px;
   cursor: pointer;
-  background: white;
+  background: #3a3129;
   font-size: 1rem;
+  color: #f9e4bc
 }
 
 .interest-item.active {
   border-color: var(--primary);
-  background-color: #eef2ff;
+  background-color: #2c522f;
 }
 
 .interest-item input {
@@ -157,8 +165,29 @@ body {
 .summary-box {
   margin-top: 2rem;
   padding: 1rem;
-  background: #e0e7ff;
+  background: #2c522f;
   border-radius: 8px;
   text-align: center;
-  color: var(--primary);
+  color: #f9e4bc;
+}
+
+.search-bar {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  box-sizing: border-box; /* Prevents padding from breaking width */
+}
+
+.search-bar:focus {
+  border-color: #4f46e5;
+  outline: none;
+}
+
+.no-results {
+  text-align: center;
+  color: #6b7280;
+  margin-top: 2rem;
 }
