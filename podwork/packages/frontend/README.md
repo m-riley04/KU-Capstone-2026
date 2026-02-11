@@ -1,3 +1,16 @@
-# web_app
+# Web App
 
-This is all the code for the web app. It should also contain the code for the mobile version as well (which will be the same thing if using React Native TS).
+To run the front end you must be in either "KU-Capstone-2026\podwork\packages" or "KU-Capstone-2026\podwork\packages\frontend"
+
+If you are in "KU-Capstone-2026\podwork\packages" run the following 
+
+```
+npm install
+npm run dev:frontend
+```
+
+If you are in "KU-Capstone-2026\podwork\packages\frontend" run the following 
+```
+npm install 
+npm run dev
+```
