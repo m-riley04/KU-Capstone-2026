@@ -1,29 +1,8 @@
 // src/App.tsx
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import './App.css';
-import { SUB_CATEGORY_DATA } from './categories';
-
-const DATA_SOURCE = {
-  Sports: [
-    {id: "NFL"}, 
-    {id: "NBA"}, 
-    {id: "Big 12 CBB"}
-  ],
-  Finance: [
-    {id: "Stocks"},
-    {id: "Crypto"}
-  ],
-  Weather: [
-    {id: "Temperature"},
-    {id: "Rain"},
-    {id: "Snow"}, 
-    {id: "Heat"},
-    {id: "Humidity"},
-    {id: "Air Quality"},
-    {id: "UV Index"},
-    {id: "Wind"}
-  ]
-}
+import { SUB_CATEGORY_DATA } from './utilities/sub_categories';
+import { DATA_SOURCE } from './utilities/main_categories'
 
 type CategoryName = keyof typeof DATA_SOURCE;
 
@@ -38,13 +17,14 @@ function App() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   // toggle item on/off
-  const toggleSelection = (id: string) => {
-    if (selectedIds.includes(id)) {
-      setSelectedIds(selectedIds.filter(itemId => itemId !== id));
-    } else {
-      setSelectedIds([...selectedIds, id]); 
-    }
-  };
+  const toggleSelection = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(itemId => itemId !== id);
+      } 
+      return [...prev, id];
+    });
+  }, []);
 
   // calculate which "level" we are on for CSS
   const getSlideClass = () => {
@@ -56,7 +36,7 @@ function App() {
   return (
     <div className='app-container'>
       <header className='hero'>
-        <h1>Polypod</h1>
+        <h1>Polywork</h1>
       </header>
 
       {/* sliding window */}
