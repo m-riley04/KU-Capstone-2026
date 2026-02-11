@@ -19,5 +19,5 @@ app.get('/', (req : Request, res: Response) => {
 // Server setup
 app.listen(PORT,() => {
     console.log('The application is listening '
-    + 'on port http://localhost/'+PORT);
+    + 'on port http://localhost:'+ PORT +'/');
 })
