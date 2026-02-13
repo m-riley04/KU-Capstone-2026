@@ -30,3 +30,9 @@ The Raspberry Pi's miniSD card must be formatted using the [Raspberry Pi Imager]
     - After you do this, a few warnings may appear. You can ignore these and close/accept them.
 13. Wait for formatting to complete.
 14. Click "Finish".
+
+
+
+## Supplamental Reading
+
+- [Official Waveshare 3.5in display docs](https://www.waveshare.com/wiki/3.5inch_RPi_LCD_(G))
