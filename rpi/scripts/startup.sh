@@ -2,4 +2,6 @@
 
 # This script will be run on the Raspberry Pi at startup to launch the Polypod application with flutter-pi.
 
-call flutter-pi --release --target lib/main.dart
+POLYPOD_ROOT=$HOME/polypod/aarch64-generic
+
+flutter-pi $POLYPOD_ROOT
