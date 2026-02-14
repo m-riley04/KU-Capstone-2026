@@ -1,13 +1,13 @@
 import bcrypt from 'bcrypt';
-import { addUserToDatabase, deleteUserFromDatabase, findUserByUsername, updateUserInDatabase } from '../repositories/user_queries';
+
 import { user } from '../models/user';
-import { dbPromise } from '../db';
+import { addUserToDatabase, deleteUserFromDatabase, getUserFromDatabase, updateUserInDatabase } from '../repositories/user_queries';
 
 
 const SALT_ROUNDS = 10;
 
 export const getUserService = async (username: string, password: string) => {
-    const database_user = await findUserByUsername(username);
+    const database_user = await getUserFromDatabase(1, username);
     if (!database_user) {
         return null;
     }
@@ -22,7 +22,7 @@ export const getUserService = async (username: string, password: string) => {
 
 export const addUserService = async (username: string, email: string, password: string) => {
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-    const newUser = await addUserToDatabase(username, email, hashedPassword);
+    const newUser = await addUserToDatabase(1, username, email, hashedPassword);
     if (!newUser) {
         throw new Error('Failed to create user');
     }
@@ -33,7 +33,7 @@ export const updateUserService = async (userId: number, updatedUserData: Partial
     if (updatedUserData?.password) {
         updatedUserData.password = await bcrypt.hash(updatedUserData.password, SALT_ROUNDS);
     }
-    const updatedUser = await updateUserInDatabase(userId, updatedUserData);
+    const updatedUser = await updateUserInDatabase(1, userId, updatedUserData);
     if (!updatedUser) {
         return null;
     }
@@ -41,6 +41,6 @@ export const updateUserService = async (userId: number, updatedUserData: Partial
 }
 
 export const deleteUserService = async (userId: number) => {
-    const user = await deleteUserFromDatabase(userId);
+    const user = await deleteUserFromDatabase(1, userId);
     return user;
 }

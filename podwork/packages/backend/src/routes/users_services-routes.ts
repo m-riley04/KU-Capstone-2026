@@ -5,10 +5,10 @@ import { addUserRequest, deleteUserRequest, getUserRequest, updateUserRequest } 
 const user_services = express.Router()
 
 // authenticate user service routes
-user_services.get('/user/:username', getUserRequest);
-user_services.post('/users', addUserRequest);
-user_services.put('/user/:userId', updateUserRequest);
-user_services.delete('/user/:userId', deleteUserRequest);
+user_services.get('/:username', getUserRequest);
+user_services.post('/update', addUserRequest);
+user_services.put('/:userId', updateUserRequest);
+user_services.delete('/:userId', deleteUserRequest);
 
 //export the user services router
 export default user_services;
