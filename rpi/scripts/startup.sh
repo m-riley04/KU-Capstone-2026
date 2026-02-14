@@ -4,4 +4,4 @@
 
 POLYPOD_ROOT=$HOME/polypod/aarch64-generic
 
-flutter-pi $POLYPOD_ROOT
+flutter-pi --videomode 480x320 -d "74,50" -r 270 $POLYPOD_ROOT
