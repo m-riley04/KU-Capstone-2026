@@ -7,6 +7,7 @@ interface LoginProps {
 }
 
 export default function LoginPage({ onLogin }: LoginProps) {
+  // the username and password entered by the user will be stored here 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -77,6 +78,7 @@ export default function LoginPage({ onLogin }: LoginProps) {
             {isSignUp ? 'Create Account': 'Welcome to Polywork'}
         </h1>
         
+        {/* form to enter username and password*/}
         <form onSubmit={handleSubmit}>
           <input 
             type="text" 
@@ -102,6 +104,8 @@ export default function LoginPage({ onLogin }: LoginProps) {
           </button>
 
         </form>
+
+        {/* sign up button */}
         <button className='sign-up'
         onClick={() => {setIsSignUp(!isSignUp);
         setError('');
