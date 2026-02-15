@@ -6,6 +6,9 @@
 # We use DietPi, which uses 13.3 (Trixie).
 # The wiki doesn't give explicit instructions for Trixie, but it should be similar to Bookworm.
 
+# Enable SPI
+sudo raspi-config nonint do_spi 0
+
 # Copy driver firmware to /lib/firmware
 # NOTE: I'm not sure if this is necessary, but the wiki instructions say to do it.
 cd /tmp
