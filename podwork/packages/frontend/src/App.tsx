@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import './App.css';
 import { SUB_CATEGORY_DATA } from './utilities/sub_categories';
 import { DATA_SOURCE } from './utilities/main_categories'
+import LoginPage from './LoginPage';
 
 type CategoryName = keyof typeof DATA_SOURCE;
 
@@ -15,6 +16,8 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   // keep track of things that are checkmnarked
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // toggle item on/off
   const toggleSelection = useCallback((id: string) => {
@@ -32,6 +35,11 @@ function App() {
     if (activeCategory) return 'level-2';
     return '';    
   };
+
+  // show login page if not logged in
+  if (!isLoggedIn) {
+    return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
+  }
 
   return (
     <div className='app-container'>
