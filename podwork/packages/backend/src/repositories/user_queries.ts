@@ -1,8 +1,8 @@
 import { connectionType, createDbConnect, } from '../db';
-import { user } from '../models/user';
+import { User } from '../models/user';
 
 
-export const getUserFromDatabase = async (connection: connectionType, username: string): Promise<user | null> => {
+export const getUserFromDatabase = async (connection: connectionType, username: string): Promise<User | null> => {
     const db = await createDbConnect(connection);
     if (!db) {
         throw new Error('Failed to connect to database');
@@ -14,7 +14,7 @@ export const getUserFromDatabase = async (connection: connectionType, username: 
     return user ?? null;
 };
 
-export const addUserToDatabase = async (connection: connectionType, username: string, email: string, password: string): Promise<user | null> => {
+export const addUserToDatabase = async (connection: connectionType, username: string, email: string, password: string): Promise<User| null> => {
     const db = await createDbConnect(connection);
     if (!db) {
         throw new Error('Failed to connect to database');
@@ -46,7 +46,7 @@ export const addUserToDatabase = async (connection: connectionType, username: st
     }
 };
 
-export const updateUserInDatabase = async (connection: connectionType, userId: number, updatedUserData: Partial<user>): Promise<user | null> => {
+export const updateUserInDatabase = async (connection: connectionType, userId: number, updatedUserData: Partial<User>): Promise<User | null> => {
     const db = await createDbConnect(connection);
     if (!db) {
         throw new Error('Failed to connect to database');
@@ -77,7 +77,7 @@ export const updateUserInDatabase = async (connection: connectionType, userId: n
     return updatedUser ?? null;
 };
 
-export const deleteUserFromDatabase = async (connection: connectionType, userId: number): Promise<user | null> => {
+export const deleteUserFromDatabase = async (connection: connectionType, userId: number): Promise<User | null> => {
     const db = await createDbConnect(connection);
     if (!db) {
         throw new Error('Failed to connect to database');

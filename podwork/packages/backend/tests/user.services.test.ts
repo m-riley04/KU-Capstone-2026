@@ -1,13 +1,13 @@
 import bcrypt from 'bcrypt';
 import { addUserToDatabase, deleteUserFromDatabase, getUserFromDatabase, updateUserInDatabase } from '../src/repositories/user_queries';
-import { user } from '../src/models/user';
+import { User } from '../src/models/user';
 import { addUserService, deleteUserService, getUserService, updateUserService } from '../src/services/user_services-services';
 
 jest.mock('bcrypt');
 jest.mock('../src/repositories/user_queries');
 
 describe('UserService', () => {
-    const mockUser: Partial<user> = {
+    const mockUser: Partial<User> = {
         id: 1,
         username: 'testuser',
         email: 'testuser@example.com',

@@ -1,5 +1,5 @@
 
-export interface user {
+export interface User {
     id: number;
     username: string;
     email: string;
@@ -8,13 +8,13 @@ export interface user {
     updated_at: Date;
 }
 
-export interface user_interests {
+export interface UserInterests {
     interest_id: number;
     name: string;
-    category: interest_category;
+    category: InterestCategory;
 }
 
-enum interest_category {
+enum InterestCategory {
     SPORTS = 'sports',
     FINANCE = 'finance',
     WEATHER = 'weather',

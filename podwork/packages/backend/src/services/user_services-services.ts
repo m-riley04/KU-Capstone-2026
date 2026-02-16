@@ -1,10 +1,10 @@
 import bcrypt from 'bcrypt';
-
-import { user } from '../models/user';
+import { User } from '../models/user';
 import { addUserToDatabase, deleteUserFromDatabase, getUserFromDatabase, updateUserInDatabase } from '../repositories/user_queries';
+import dotenv from 'dotenv';
 
-
-const SALT_ROUNDS = 10;
+dotenv.config();
+const SALT_ROUNDS = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) : 10;
 
 export const getUserService = async (username: string, password: string) => {
     const database_user = await getUserFromDatabase(1, username);
@@ -29,7 +29,7 @@ export const addUserService = async (username: string, email: string, password: 
     return newUser;
 }
 
-export const updateUserService = async (userId: number, updatedUserData: Partial<user>) => {
+export const updateUserService = async (userId: number, updatedUserData: Partial<User>) => {
     if (updatedUserData?.password) {
         updatedUserData.password = await bcrypt.hash(updatedUserData.password, SALT_ROUNDS);
     }
