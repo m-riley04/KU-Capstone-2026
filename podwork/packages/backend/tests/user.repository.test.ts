@@ -1,80 +1,171 @@
-import { Database } from "sqlite";
-import { createDbConnect } from "../src/db";
-import { addUserToDatabase, deleteUserFromDatabase, getUserFromDatabase, updateUserInDatabase } from "../src/repositories/user_queries";
-import { get } from "node:http";
+import bcrypt from 'bcrypt';
+import { addUserToDatabase, deleteUserFromDatabase, getUserFromDatabase, updateUserInDatabase } from '../src/repositories/user_queries';
+import { addUserInterestToDatabase, getInterests } from '../src/repositories/interests_queries';
+import { addUserService, deleteUserService, getUserService, updateUserService } from '../src/services/user_services-services';
 
+jest.mock('bcrypt');
+jest.mock('../src/repositories/user_queries');
+jest.mock('../src/repositories/interests_queries');
 
-describe ('UserRepository', () => {
-    let db: Database | null | undefined = null;
+const mockedBcrypt = bcrypt as jest.Mocked<typeof bcrypt>;
+const mockedGetUserFromDatabase = getUserFromDatabase as jest.Mock;
+const mockedAddUserToDatabase = addUserToDatabase as jest.Mock;
+const mockedUpdateUserInDatabase = updateUserInDatabase as jest.Mock;
+const mockedDeleteUserFromDatabase = deleteUserFromDatabase as jest.Mock;
+const mockedAddUserInterestToDatabase = addUserInterestToDatabase as jest.Mock;
+const mockedGetInterests = getInterests as jest.Mock;
 
-    
-    test('addUser should add a user and return the new user', async () => {
-        const newUser = await addUserToDatabase(0, 'testuser', 'testuser@example.com', 'password123');
-        expect(newUser).not.toBeNull();
-        if (newUser) {
-        expect(newUser).toHaveProperty('id');
-        expect(newUser.username).toBe('testuser');
-        expect(newUser.email).toBe('testuser@example.com');
-        expect(newUser.password).toBe('password123');
-        expect(newUser).toHaveProperty('created_at');
-        expect(newUser).toHaveProperty('updated_at');
-        }
-    })
-    test('addUser should not add a user with duplicate username', async () => {
-        await expect(
-            addUserToDatabase(0, 'testuser', 'two@example.com', 'password')
-        ).rejects.toThrow('Username already exists');
+describe('User Services', () => {
+
+    beforeEach(() => {
+    jest.clearAllMocks();
     });
-    test('addUser should not add a user with duplicate email', async () => {
-        await expect(
-            addUserToDatabase(0, 'testuser3', 'testuser@example.com', 'password123')
-        ).rejects.toThrow('Email already exists');
+
+  // ===============================
+  // getUserService
+  // ===============================
+
+    describe('getUserService', () => {
+
+    it('returns user if password matches', async () => {
+        const fakeUser = { id: 1, username: 'hannah', password: 'hashed' };
+
+        mockedGetUserFromDatabase.mockResolvedValue(fakeUser);
+        mockedBcrypt.compare.mockResolvedValue(true as never);
+
+        const result = await getUserService('hannah', 'password');
+
+        expect(result).toEqual(fakeUser);
+        expect(mockedBcrypt.compare).toHaveBeenCalledWith('password', 'hashed');
     });
-    test('getUser should return user data for existing user', async () => {
-        const foundUser = await getUserFromDatabase(0, 'testuser');
-        expect(foundUser).not.toBeNull();
-        if (foundUser) {
-            expect(foundUser.username).toBe('testuser');
-            expect(foundUser.email).toBe('testuser@example.com');
-            expect(foundUser.password).toBe('password123');
-        }
-    });
-    test('updateUser should update user data and return the updated user', async () => {
-        const oldUser = await getUserFromDatabase(0, 'testuser');
-        if (!oldUser) {
-            throw new Error('Failed to get user for update test');
-        }
-        const updatedUser = await updateUserInDatabase(0, oldUser.id, { username: 'updatedUser' });
-        expect(updatedUser).not.toBeNull();
-        if (updatedUser) {
-            expect(updatedUser.username).toBe('updatedUser');
-        }
-    });
-    test('updateUser should return null if user does not exist', async () => {
-        const result = await updateUserInDatabase(0, 9999, { username: 'nonExistentUser' });
+
+    it('returns null if user not found', async () => {
+        mockedGetUserFromDatabase.mockResolvedValue(null);
+
+        const result = await getUserService('hannah', 'password');
+
         expect(result).toBeNull();
     });
-    test('deleteUser should return null for non-existing user', async () => {
-        const result = await deleteUserFromDatabase(0, 9999);
+
+    it('returns null if password does not match', async () => {
+        const fakeUser = { id: 1, username: 'hannah', password: 'hashed' };
+
+        mockedGetUserFromDatabase.mockResolvedValue(fakeUser);
+        mockedBcrypt.compare.mockResolvedValue(false as never);
+
+        const result = await getUserService('hannah', 'wrong');
+
         expect(result).toBeNull();
     });
-    test('deleteUser should delete the user and return the deleted user', async () => {
-        const user = await getUserFromDatabase(0, 'updatedUser');
-        if (!user) {
-            throw new Error('Failed to get user for delete test');
-        }
-        const deletedUser = await deleteUserFromDatabase(0, user.id);
-        expect(deletedUser).not.toBeNull();
-        if (deletedUser) {
-            expect(deletedUser.id).toBe(user.id);
-            expect(deletedUser.username).toBe(user.username);
-            expect(deletedUser.email).toBe(user.email);
-            expect(deletedUser.password).toBe(user.password);
-        }
-        const foundUser = await getUserFromDatabase(0, 'updatedUser');
-        expect(foundUser).toBeNull();
+    });
+
+  // ===============================
+  // addUserService
+  // ===============================
+
+    describe('addUserService', () => {
+
+    it('creates user without interests', async () => {
+        const fakeUser = { id: 1, username: 'hannah', email: 'test@test.com' };
+
+        mockedBcrypt.hash.mockResolvedValue('hashedPassword' as never);
+        mockedAddUserToDatabase.mockResolvedValue(fakeUser);
+
+        const result = await addUserService(
+        'hannah',
+        'test@test.com',
+        'password'
+        );
+
+        expect(mockedBcrypt.hash).toHaveBeenCalled();
+        expect(result).toEqual({ ...fakeUser, interests: [] });
+    });
+
+    it('creates user with interests', async () => {
+        const fakeUser = { id: 1, username: 'hannah', email: 'test@test.com' };
+        const interests = [{ id: 1 }, { id: 2 }];
+
+        mockedBcrypt.hash.mockResolvedValue('hashedPassword' as never);
+        mockedAddUserToDatabase.mockResolvedValue(fakeUser);
+        mockedGetInterests.mockResolvedValue({});
+        mockedAddUserInterestToDatabase.mockResolvedValue({});
+
+        const result = await addUserService(
+        'hannah',
+        'test@test.com',
+        'password',
+        interests as any
+        );
+
+        expect(mockedAddUserInterestToDatabase).toHaveBeenCalledTimes(2);
+        expect(result).toEqual({ ...fakeUser, interests });
+    });
+
+    it('throws if user creation fails', async () => {
+        mockedBcrypt.hash.mockResolvedValue('hashedPassword' as never);
+        mockedAddUserToDatabase.mockResolvedValue(null);
+
+        await expect(
+        addUserService('hannah', 'test@test.com', 'password')
+        ).rejects.toThrow('Failed to create user');
+    });
+    });
+
+  // ===============================
+  // updateUserService
+  // ===============================
+
+    describe('updateUserService', () => {
+
+    it('updates user and hashes password if provided', async () => {
+        mockedBcrypt.hash.mockResolvedValue('newHashed' as never);
+        mockedUpdateUserInDatabase.mockResolvedValue({ id: 1 });
+
+        const result = await updateUserService(1, {
+        username: 'newName',
+        password: 'newPassword'
+        });
+
+        expect(mockedBcrypt.hash).toHaveBeenCalled();
+        expect(result).toEqual({ id: 1 });
+    });
+
+    it('adds interests if provided', async () => {
+        mockedUpdateUserInDatabase.mockResolvedValue({ id: 1 });
+        mockedGetInterests.mockResolvedValue({});
+        mockedAddUserInterestToDatabase.mockResolvedValue({});
+
+        const interests = [{ id: 1 }, { id: 2 }];
+
+        await updateUserService(1, { interests } as any);
+
+        expect(mockedAddUserInterestToDatabase).toHaveBeenCalledTimes(2);
+    });
+
+    it('returns null if update fails', async () => {
+        mockedUpdateUserInDatabase.mockResolvedValue(null);
+
+        const result = await updateUserService(1, { username: 'test' });
+
+        expect(result).toBeNull();
+    });
+    });
+
+  // ===============================
+  // deleteUserService
+  // ===============================
+
+    describe('deleteUserService', () => {
+
+    it('deletes user successfully', async () => {
+        const fakeUser = { id: 1 };
+
+        mockedDeleteUserFromDatabase.mockResolvedValue(fakeUser);
+
+        const result = await deleteUserService(1);
+
+        expect(result).toEqual(fakeUser);
+        expect(mockedDeleteUserFromDatabase).toHaveBeenCalledWith(1, 1);
+    });
     });
 });
-
-
-

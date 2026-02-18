@@ -11,6 +11,7 @@ export const getUserFromDatabase = async (connection: connectionType, username: 
         `SELECT * FROM users WHERE username = ?`,
         username
     );
+    await db.close();
     return user ?? null;
 };
 
@@ -26,10 +27,8 @@ export const addUserToDatabase = async (connection: connectionType, username: st
             email,
             password
         );
-        console.log('Insert result:', result);
         const newUserId = result.lastID;
         const newUser = await db.get(`SELECT * FROM users WHERE id = ?`, newUserId);
-        console.log('New user:', newUser);
         await db.close();
         return newUser ?? null;
     } catch (error: any) {

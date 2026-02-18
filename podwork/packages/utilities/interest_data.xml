@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interestData>
+
+  <category name="NBA">
+    <item><id>Atlanta Hawks</id></item>
+    <item><id>Boston Celtics</id></item>
+    <item><id>Brooklyn Nets</id></item>
+    <item><id>Charlotte Hornets</id></item>
+    <item><id>Chicago Bulls</id></item>
+    <item><id>Cleveland Cavaliers</id></item>
+    <item><id>Dallas Mavericks</id></item>
+    <item><id>Denver Nuggets</id></item>
+    <item><id>Detroit Pistons</id></item>
+    <item><id>Golden State Warriors</id></item>
+    <item><id>Houston Rockets</id></item>
+    <item><id>Indiana Pacers</id></item>
+    <item><id>LA Clippers</id></item>
+    <item><id>Los Angeles Lakers</id></item>
+    <item><id>Memphis Grizzlies</id></item>
+    <item><id>Miami Heat</id></item>
+    <item><id>Milwaukee Bucks</id></item>
+    <item><id>Minnesota Timberwolves</id></item>
+    <item><id>New Orleans Pelicans</id></item>
+    <item><id>New York Knicks</id></item>
+    <item><id>Oklahoma City Thunder</id></item>
+    <item><id>Orlando Magic</id></item>
+    <item><id>Philadelphia 76ers</id></item>
+    <item><id>Phoenix Suns</id></item>
+    <item><id>Portland Trail Blazers</id></item>
+    <item><id>Sacramento Kings</id></item>
+    <item><id>San Antonio Spurs</id></item>
+    <item><id>Toronto Raptors</id></item>
+    <item><id>Utah Jazz</id></item>
+    <item><id>Washington Wizards</id></item>
+  </category>
+
+  <category name="NFL">
+    <item><id>Arizona Cardinals</id></item>
+    <item><id>Atlanta Falcons</id></item>
+    <item><id>Baltimore Ravens</id></item>
+    <item><id>Buffalo Bills</id></item>
+    <item><id>Carolina Panthers</id></item>
+    <item><id>Chicago Bears</id></item>
+    <item><id>Cincinnati Bengals</id></item>
+    <item><id>Cleveland Browns</id></item>
+    <item><id>Dallas Cowboys</id></item>
+    <item><id>Denver Broncos</id></item>
+    <item><id>Detroit Lions</id></item>
+    <item><id>Green Bay Packers</id></item>
+    <item><id>Houston Texans</id></item>
+    <item><id>Indianapolis Colts</id></item>
+    <item><id>Jacksonville Jaguars</id></item>
+    <item><id>Kansas City Chiefs</id></item>
+    <item><id>Las Vegas Raiders</id></item>
+    <item><id>Los Angeles Chargers</id></item>
+    <item><id>Los Angeles Rams</id></item>
+    <item><id>Miami Dolphins</id></item>
+    <item><id>Minnesota Vikings</id></item>
+    <item><id>New England Patriots</id></item>
+    <item><id>New Orleans Saints</id></item>
+    <item><id>New York Giants</id></item>
+    <item><id>New York Jets</id></item>
+    <item><id>Philadelphia Eagles</id></item>
+    <item><id>Pittsburgh Steelers</id></item>
+    <item><id>San Francisco 49ers</id></item>
+    <item><id>Seattle Seahawks</id></item>
+    <item><id>Tampa Bay Buccaneers</id></item>
+    <item><id>Tennessee Titans</id></item>
+    <item><id>Washington Commanders</id></item>
+  </category>
+
+  <category name="Big 12 CBB">
+    <item><id>Arizona Wildcats</id></item>
+    <item><id>Arizona State Sun Devils</id></item>
+    <item><id>Baylor Bears</id></item>
+    <item><id>BYU Cougars</id></item>
+    <item><id>Cincinnati Bearcats</id></item>
+    <item><id>Colorado Buffaloes</id></item>
+    <item><id>Houston Cougars</id></item>
+    <item><id>Iowa State Cyclones</id></item>
+    <item><id>Kansas Jayhawks</id></item>
+    <item><id>Kansas State Wildcats</id></item>
+    <item><id>Oklahoma State Cowboys</id></item>
+    <item><id>TCU Horned Frogs</id></item>
+    <item><id>Texas Tech Red Raiders</id></item>
+    <item><id>UCF Knights</id></item>
+    <item><id>Utah Utes</id></item>
+    <item><id>West Virginia Mountaineers</id></item>
+  </category>
+
+  <category name="Crypto">
+    <item><id>Aave (AAVE)</id></item>
+    <item><id>Aster (ASTER)</id></item>
+    <item><id>Avalanche (AVAX)</id></item>
+    <item><id>Bitget Token (BGB)</id></item>
+    <item><id>Bitcoin (BTC)</id></item>
+    <item><id>Bitcoin Cash (BCH)</id></item>
+    <item><id>Bittensor (TAO)</id></item>
+    <item><id>BNB (BNB)</id></item>
+    <item><id>Canton (CC)</id></item>
+    <item><id>Cardano (ADA)</id></item>
+    <item><id>Chainlink (LINK)</id></item>
+    <item><id>Cronos (CRO)</id></item>
+    <item><id>Dai (DAI)</id></item>
+    <item><id>Dogecoin (DOGE)</id></item>
+    <item><id>Ethena (USDe)</id></item>
+    <item><id>Ethereum (ETH)</id></item>
+    <item><id>Ethereum Classic (ETC)</id></item>
+    <item><id>Global Dollar (USDG)</id></item>
+    <item><id>Hedera (HBAR)</id></item>
+    <item><id>Hyperliquid (HYPE)</id></item>
+    <item><id>Internet Computer (ICP)</id></item>
+    <item><id>Litecoin (LTC)</id></item>
+    <item><id>Mantle (MNT)</id></item>
+    <item><id>MemeCore (M)</id></item>
+    <item><id>Monero (XMR)</id></item>
+    <item><id>MYX Finance (MYX)</id></item>
+    <item><id>NEAR Protocol (NEAR)</id></item>
+    <item><id>OKB (OKB)</id></item>
+    <item><id>PAX Gold (PAXG)</id></item>
+    <item><id>PayPal USD (PYUSD)</id></item>
+    <item><id>Pepe (PEPE)</id></item>
+    <item><id>Pi (PI)</id></item>
+    <item><id>Polkadot (DOT)</id></item>
+    <item><id>Ripple USD (RLUSD)</id></item>
+    <item><id>Shiba Inu (SHIB)</id></item>
+    <item><id>Sky (SKY)</id></item>
+    <item><id>Solana (SOL)</id></item>
+    <item><id>Stellar (XLM)</id></item>
+    <item><id>Sui (SUI)</id></item>
+    <item><id>Tether (USDT)</id></item>
+    <item><id>Tether Gold (XAUt)</id></item>
+    <item><id>Toncoin (TON)</id></item>
+    <item><id>TRON (TRX)</id></item>
+    <item><id>UNUS SED LEO (LEO)</id></item>
+    <item><id>Uniswap (UNI)</id></item>
+    <item><id>USD Coin (USDC)</id></item>
+    <item><id>World Liberty Financial USD (USD1)</id></item>
+    <item><id>World Liberty Financial WLFI (WLFI)</id></item>
+    <item><id>XRP (XRP)</id></item>
+    <item><id>Zcash (ZEC)</id></item>
+  </category>
+
+  <category name="Stocks">
+    <item><id>Alibaba (BABA)</id></item>
+    <item><id>Alphabet (GOOGL)</id></item>
+    <item><id>Amazon (AMZN)</id></item>
+    <item><id>America Movil (AMX)</id></item>
+    <item><id>Apple (AAPL)</id></item>
+    <item><id>ASML (ASML)</id></item>
+    <item><id>Banco de Chile (BCH)</id></item>
+    <item><id>Banco Santander-Chile (BSAC)</id></item>
+    <item><id>Baidu (BIDU)</id></item>
+    <item><id>Bank of America (BAC)</id></item>
+    <item><id>Barclays (BCS)</id></item>
+    <item><id>Berkshire Hathaway (BRK-A)</id></item>
+    <item><id>BHP (BHP)</id></item>
+    <item><id>BP (BP)</id></item>
+    <item><id>Broadcom (AVGO)</id></item>
+    <item><id>Caterpillar (CAT)</id></item>
+    <item><id>Cemex SAB de CV (CX)</id></item>
+    <item><id>Chevron (CVX)</id></item>
+    <item><id>Cisco (CSCO)</id></item>
+    <item><id>CMS Energy (CMS)</id></item>
+    <item><id>Coca-Cola FEMSA (KOF)</id></item>
+    <item><id>Costco (COST)</id></item>
+    <item><id>Ecopetrol (EC)</id></item>
+    <item><id>Eli Lilly (LLY)</id></item>
+    <item><id>ExxonMobil (XOM)</id></item>
+    <item><id>FEMSA (FMX)</id></item>
+    <item><id>HDFC Bank (HDB)</id></item>
+    <item><id>Home Depot (HD)</id></item>
+    <item><id>HSBC (HSBC)</id></item>
+    <item><id>Johnson &amp; Johnson (JNJ)</id></item>
+    <item><id>JPMorgan Chase (JPM)</id></item>
+    <item><id>Lloyds (LYG)</id></item>
+    <item><id>Mastercard (MA)</id></item>
+    <item><id>Micron Technology (MU)</id></item>
+    <item><id>Microsoft (MSFT)</id></item>
+    <item><id>National Grid (NGG)</id></item>
+    <item><id>NetEase (NTES)</id></item>
+    <item><id>Netflix (NFLX)</id></item>
+    <item><id>Nvidia (NVDA)</id></item>
+    <item><id>Oracle (ORCL)</id></item>
+    <item><id>Pinduoduo (PDD)</id></item>
+    <item><id>Procter &amp; Gamble (PG)</id></item>
+    <item><id>Taiwan Semiconductor (TSM)</id></item>
+    <item><id>Telkom Indonesia (TLK)</id></item>
+    <item><id>Tesla (TSLA)</id></item>
+    <item><id>Televisa (TV)</id></item>
+    <item><id>Toyota (TM)</id></item>
+    <item><id>Visa (V)</id></item>
+    <item><id>Vodafone (VOD)</id></item>
+    <item><id>Walmart (WMT)</id></item>
+  </category>
+
+</interestData>
