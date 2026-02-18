@@ -1,7 +1,8 @@
 import bcrypt from 'bcrypt';
-import { User } from '../models/user';
+import { User, UserInterests } from '../models/user';
 import { addUserToDatabase, deleteUserFromDatabase, getUserFromDatabase, updateUserInDatabase } from '../repositories/user_queries';
 import dotenv from 'dotenv';
+import { addUserInterestToDatabase, getInterests } from '../repositories/interests_queries';
 
 dotenv.config();
 const SALT_ROUNDS = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) : 10;
@@ -20,22 +21,36 @@ export const getUserService = async (username: string, password: string) => {
     }
 }
 
-export const addUserService = async (username: string, email: string, password: string) => {
+export const addUserService = async (username: string, email: string, password: string, interests? : UserInterests[]) => {
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
     const newUser = await addUserToDatabase(1, username, email, hashedPassword);
+    if (interests && interests.length > 0) {
+        for (const interest of interests) {
+            await getInterests(interest);
+            await addUserInterestToDatabase(newUser!.id, interest.id);
+        }
+    }
     if (!newUser) {
         throw new Error('Failed to create user');
     }
-    return newUser;
+    const userWithInterests = { ...newUser, interests: interests ?? [] };
+    return userWithInterests;
 }
 
 export const updateUserService = async (userId: number, updatedUserData: Partial<User>) => {
     if (updatedUserData?.password) {
         updatedUserData.password = await bcrypt.hash(updatedUserData.password, SALT_ROUNDS);
     }
-    const updatedUser = await updateUserInDatabase(1, userId, updatedUserData);
+    const user_data = { name : updatedUserData.username, email: updatedUserData.email, password: updatedUserData.password };
+    const updatedUser = await updateUserInDatabase(1, userId, user_data);
     if (!updatedUser) {
         return null;
+    }
+    if (updatedUserData?.interests) {
+        for (const interest of updatedUserData.interests) {
+            await getInterests(interest);
+            await addUserInterestToDatabase(userId, interest.id);
+        }
     }
     return updatedUser;
 }

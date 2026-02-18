@@ -4,12 +4,13 @@ export interface User {
     username: string;
     email: string;
     password: string;
+    interests ?: UserInterests[];
     created_at: Date;
     updated_at: Date;
 }
 
 export interface UserInterests {
-    interest_id: number;
+    id: number;
     name: string;
     category: InterestCategory;
 }
