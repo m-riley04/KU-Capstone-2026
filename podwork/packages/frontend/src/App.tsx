@@ -1,8 +1,8 @@
 // src/App.tsx
 import { useCallback, useState } from 'react';
 import './App.css';
-import { SUB_CATEGORY_DATA } from './utilities/sub_categories';
-import { DATA_SOURCE } from './utilities/main_categories'
+import { SUB_CATEGORY_DATA } from '../../utilities/sub_categories';
+import { DATA_SOURCE } from '../../utilities/main_categories'
 import LoginPage from './LoginPage';
 
 type CategoryName = keyof typeof DATA_SOURCE;
