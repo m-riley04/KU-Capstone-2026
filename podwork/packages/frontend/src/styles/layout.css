@@ -1,0 +1,37 @@
+.app-container {
+  width: 100%;               
+  max-width: 600px;          
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.slider-viewport {
+  width: 100%;
+  overflow: hidden;
+}
+
+.slider-track {
+  display: flex;
+  width: 300%;
+  transition: transform .4s cubic-bezier(.25, 1, .5, 1);
+}
+
+/* move whole track to the left */
+.slider-track.slide-left {
+  transform: translateX(-50%);
+}
+
+.slide-page {
+  width: 33.333%; 
+  padding: 0 0.5rem;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.slider-track.level-2 {
+  transform: translateX(-33.333%);
+}
+
+.slider-track.level-3 {
+  transform: translateX(-66.666%);
+}
