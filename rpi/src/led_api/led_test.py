@@ -62,10 +62,11 @@ def run_led_test():
     """
     print("Starting LED test. Press Ctrl+C to exit.")
     try:
-        for name, color in RGB_COLORS.items():
-            print(f"Setting LED to {name}...")
-            set_led_color(color)
-            input("Press Enter to continue...")
+        while True:
+            for name, color in RGB_COLORS.items():
+                print(f"Setting LED to {name}...")
+                set_led_color(color)
+                input("Press Enter to continue...")
     except KeyboardInterrupt:
         pass
     finally:
