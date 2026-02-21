@@ -7,7 +7,7 @@ PIN_LED_RED = 40 # aka GPIO 21
 PIN_LED_GREEN = 38 # aka GPIO 20
 PIN_LED_BLUE = 36 # aka GPIO 16
 
-RGBColor = tuple[bool, bool, bool]  # (red, green, blue)
+RGBColor = tuple[bool, bool, bool] # (red, green, blue)
 
 class LEDColor(Enum):
     """
@@ -34,7 +34,7 @@ RGB_COLORS = {
     , "yellow": LEDColor.YELLOW
     , "cyan": LEDColor.CYAN
     , "magenta": LEDColor.MAGENTA
-    }
+}
 
 def setup():
     """
@@ -55,7 +55,6 @@ def set_led_color(color: LEDColor):
     GPIO.output(PIN_LED_GREEN, GPIO.HIGH if green else GPIO.LOW)
     GPIO.output(PIN_LED_BLUE, GPIO.HIGH if blue else GPIO.LOW)
 
-
 def run_led_test():
     """
     Runs a simple test to cycle through the colors of the RGB LED. This function will block until the user interrupts it.
@@ -67,6 +66,7 @@ def run_led_test():
                 print(f"Setting LED to {name}...")
                 set_led_color(color)
                 input("Press Enter to continue...")
+            print("Cycle complete. Starting over...")
     except KeyboardInterrupt:
         pass
     finally:
