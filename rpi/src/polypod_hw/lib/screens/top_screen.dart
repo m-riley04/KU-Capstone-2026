@@ -91,7 +91,6 @@ class TimerOverlayItem extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, child) {
-        final status = controller.isRunning ? 'Running' : 'Ready';
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(

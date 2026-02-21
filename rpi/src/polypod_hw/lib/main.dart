@@ -1,5 +1,7 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'config/screen_config.dart';
 import 'config/theme_config.dart';
 import 'screens/top_screen.dart';
 import 'screens/bottom_screen.dart';
@@ -14,12 +16,99 @@ import 'apps/notes_app.dart';
 import 'controllers/clock_timer_controller.dart';
 import 'controllers/idle_state_controller.dart';
 
-void main() {
-  runApp(const PolypodHWApp());
+import 'multi_window/multi_window.dart';
+
+Future<void> main(List<String> args) async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  if (!_isDesktopPlatform) {
+    runApp(const PolypodHWApp(windowKind: PolypodWindowKind.single));
+    return;
+  }
+
+  final multiWindow = createMultiWindow();
+  if (!multiWindow.isSupported) {
+    runApp(const PolypodHWApp(windowKind: PolypodWindowKind.single));
+    return;
+  }
+
+  final current = await multiWindow.fromCurrentEngine();
+  final parsed = PolypodWindowArgs.parse(current?.arguments);
+  runApp(
+    PolypodHWApp(
+      windowKind: parsed.kind,
+      mainWindowId: parsed.mainWindowId,
+    ),
+  );
+}
+
+bool get _isDesktopPlatform {
+  if (kIsWeb) return false;
+  return switch (defaultTargetPlatform) {
+    TargetPlatform.windows || TargetPlatform.linux || TargetPlatform.macOS => true,
+    _ => false,
+  };
+}
+
+enum PolypodWindowKind { single, top, bottom }
+
+class PolypodWindowArgs {
+  const PolypodWindowArgs({
+    required this.kind,
+    this.mainWindowId,
+  });
+
+  final PolypodWindowKind kind;
+  final String? mainWindowId;
+
+  static PolypodWindowArgs parse(String? raw) {
+    if (raw == null || raw.trim().isEmpty) {
+      return const PolypodWindowArgs(kind: PolypodWindowKind.top);
+    }
+
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) {
+        return const PolypodWindowArgs(kind: PolypodWindowKind.top);
+      }
+
+      final type = decoded['type']?.toString();
+      final mainId = decoded['mainWindowId']?.toString();
+
+      if (type == 'bottom') {
+        return PolypodWindowArgs(
+          kind: PolypodWindowKind.bottom,
+          mainWindowId: mainId,
+        );
+      }
+
+      if (type == 'single') {
+        return const PolypodWindowArgs(kind: PolypodWindowKind.single);
+      }
+
+      return const PolypodWindowArgs(kind: PolypodWindowKind.top);
+    } catch (_) {
+      return const PolypodWindowArgs(kind: PolypodWindowKind.top);
+    }
+  }
+
+  static String encodeBottomArgs({required String mainWindowId}) {
+    return jsonEncode({
+      'type': 'bottom',
+      'mainWindowId': mainWindowId,
+    });
+  }
 }
 
 class PolypodHWApp extends StatelessWidget {
-  const PolypodHWApp({super.key});
+  const PolypodHWApp({
+    super.key,
+    required this.windowKind,
+    this.mainWindowId,
+  });
+
+  final PolypodWindowKind windowKind;
+  final String? mainWindowId;
 
   @override
   Widget build(BuildContext context) {
@@ -30,9 +119,309 @@ class PolypodHWApp extends StatelessWidget {
       ).copyWith(
         scaffoldBackgroundColor: EarthyTheme.background,
       ),
-      home: const DualScreenHome(),
+      home: switch (windowKind) {
+        PolypodWindowKind.bottom => BottomControlWindow(mainWindowId: mainWindowId),
+        PolypodWindowKind.top => const TopOnlyWindow(),
+        PolypodWindowKind.single => const DualScreenHome(),
+      },
       debugShowCheckedModeBanner: false,
     );
+  }
+}
+
+class TopOnlyWindow extends StatefulWidget {
+  const TopOnlyWindow({super.key});
+
+  @override
+  State<TopOnlyWindow> createState() => _TopOnlyWindowState();
+}
+
+class _TopOnlyWindowState extends State<TopOnlyWindow> {
+  late IdleStateController _idleController;
+  late ClockTimerController _timerController;
+  BaseApp _currentApp = const IdleApp();
+  String _currentAppKey = 'Home';
+
+  late final Map<String, BaseApp> _apps;
+
+  final PolypodMultiWindow _multiWindow = createMultiWindow();
+  PolypodWindowController? _topWindowController;
+  PolypodWindowController? _bottomWindowController;
+
+  @override
+  void initState() {
+    super.initState();
+    _idleController = IdleStateController();
+    _idleController.setIdleCallback(_returnToIdle);
+    _timerController = ClockTimerController();
+    _apps = {
+      'Home': const HomeApp(),
+      'Timer': ClockApp(controller: _timerController),
+      'Weather': const WeatherApp(),
+      'Media': const MediaApp(),
+      'Notes': const NotesApp(),
+      'Settings': const SettingsApp(),
+    };
+
+    _initWindowing();
+  }
+
+  Future<void> _initWindowing() async {
+    if (!_multiWindow.isSupported) return;
+    _topWindowController = await _multiWindow.fromCurrentEngine();
+
+    await _topWindowController?.setMethodHandler((method, arguments) async {
+      switch (method) {
+        case 'polypod/selectApp':
+          if (arguments is String) _openApp(arguments);
+          return null;
+        case 'polypod/home':
+          _returnToHome();
+          return null;
+        case 'polypod/timerSelection':
+          if (arguments is Map) {
+            final hours = _intFromDynamic(arguments['hours']);
+            final minutes = _intFromDynamic(arguments['minutes']);
+            final seconds = _intFromDynamic(arguments['seconds']);
+            _timerController.updateSelection(
+              Duration(hours: hours, minutes: minutes, seconds: seconds),
+            );
+          }
+          return null;
+        case 'polypod/timerStart':
+          _timerController.start();
+          return null;
+        case 'polypod/timerPause':
+          _timerController.pause();
+          return null;
+        case 'polypod/timerReset':
+          _timerController.reset();
+          return null;
+      }
+      return null;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureBottomWindow();
+    });
+  }
+
+  int _intFromDynamic(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  Future<void> _ensureBottomWindow() async {
+    if (!_multiWindow.isSupported) return;
+    final topId = _topWindowController?.windowId;
+    if (topId == null) return;
+
+    final existing = await _multiWindow.getAll();
+    for (final controller in existing) {
+      final args = PolypodWindowArgs.parse(controller.arguments);
+      if (args.kind == PolypodWindowKind.bottom && args.mainWindowId == topId) {
+        _bottomWindowController = controller;
+        await _bottomWindowController?.show();
+        await _notifyBottomAppChanged();
+        return;
+      }
+    }
+
+    _bottomWindowController = await _multiWindow.create(
+      arguments: PolypodWindowArgs.encodeBottomArgs(mainWindowId: topId),
+      hiddenAtLaunch: true,
+    );
+    await _bottomWindowController?.show();
+    await _notifyBottomAppChanged();
+  }
+
+  Future<void> _notifyBottomAppChanged() async {
+    await _bottomWindowController?.invokeMethod(
+      'polypod/appChanged',
+      {'currentAppKey': _currentAppKey},
+    );
+  }
+
+  @override
+  void dispose() {
+    _idleController.dispose();
+    _timerController.dispose();
+    super.dispose();
+  }
+
+  void _returnToIdle() {
+    setState(() {
+      _currentApp = const IdleApp();
+      _currentAppKey = 'Home';
+    });
+    _notifyBottomAppChanged();
+  }
+
+  void _returnToHome() {
+    _idleController.resetIdleTimer();
+    setState(() {
+      _currentApp = const IdleApp();
+      _currentAppKey = 'Home';
+    });
+    _notifyBottomAppChanged();
+  }
+
+  void _openApp(String appName) {
+    _idleController.resetIdleTimer();
+    setState(() {
+      _currentAppKey = appName;
+      _currentApp = _apps[appName] ?? const HomeApp();
+    });
+    _notifyBottomAppChanged();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: EarthyTheme.background,
+      body: Center(
+        child: TopScreen(
+          currentApp: _currentApp,
+          timerController: _timerController,
+        ),
+      ),
+    );
+  }
+}
+
+class BottomControlWindow extends StatefulWidget {
+  const BottomControlWindow({
+    super.key,
+    required this.mainWindowId,
+  });
+
+  final String? mainWindowId;
+
+  @override
+  State<BottomControlWindow> createState() => _BottomControlWindowState();
+}
+
+class _BottomControlWindowState extends State<BottomControlWindow> {
+  final PolypodMultiWindow _multiWindow = createMultiWindow();
+  PolypodWindowController? _bottomWindowController;
+  PolypodWindowController? _mainWindowController;
+
+  String _currentAppKey = 'Home';
+
+  static const List<String> _availableApps = [
+    'Timer',
+    'Weather',
+    'Media',
+    'Notes',
+    'Settings',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _initWindowing();
+  }
+
+  Future<void> _initWindowing() async {
+    if (!_multiWindow.isSupported) return;
+    _bottomWindowController = await _multiWindow.fromCurrentEngine();
+    if (widget.mainWindowId != null) {
+      _mainWindowController = await _multiWindow.fromWindowId(widget.mainWindowId!);
+    }
+
+    await _bottomWindowController?.setMethodHandler((method, arguments) async {
+      switch (method) {
+        case 'polypod/appChanged':
+          if (arguments is Map) {
+            final next = arguments['currentAppKey']?.toString();
+            if (next != null && mounted) {
+              setState(() {
+                _currentAppKey = next;
+              });
+            }
+          }
+          return null;
+      }
+      return null;
+    });
+  }
+
+  Future<void> _sendToMain(String method, [dynamic arguments]) async {
+    await _mainWindowController?.invokeMethod(method, arguments);
+  }
+
+  BaseApp _bottomProxyApp() {
+    return _BottomProxyApp(
+      currentAppKey: _currentAppKey,
+      onTimerSelectionChanged: (duration) {
+        _sendToMain('polypod/timerSelection', {
+          'hours': duration.inHours,
+          'minutes': duration.inMinutes.remainder(60),
+          'seconds': duration.inSeconds.remainder(60),
+        });
+      },
+      onTimerStart: () => _sendToMain('polypod/timerStart'),
+      onTimerPause: () => _sendToMain('polypod/timerPause'),
+      onTimerReset: () => _sendToMain('polypod/timerReset'),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: EarthyTheme.background,
+      body: Center(
+        child: BottomScreen(
+          onAppSelected: (name) => _sendToMain('polypod/selectApp', name),
+          onHomePressed: () => _sendToMain('polypod/home'),
+          availableApps: _availableApps,
+          currentApp: _bottomProxyApp(),
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomProxyApp extends BaseApp {
+  const _BottomProxyApp({
+    required this.currentAppKey,
+    required this.onTimerSelectionChanged,
+    required this.onTimerStart,
+    required this.onTimerPause,
+    required this.onTimerReset,
+  });
+
+  final String currentAppKey;
+  final void Function(Duration duration) onTimerSelectionChanged;
+  final VoidCallback onTimerStart;
+  final VoidCallback onTimerPause;
+  final VoidCallback onTimerReset;
+
+  @override
+  String get appName => currentAppKey;
+
+  @override
+  Widget? buildBottomScreenContent(BuildContext context) {
+    if (currentAppKey == 'Timer') {
+      return HorizontalWheelList(
+        onSelectionChanged: onTimerSelectionChanged,
+        onStart: onTimerStart,
+        onPause: onTimerPause,
+        onReset: onTimerReset,
+      );
+    }
+    return null;
+  }
+
+  @override
+  State<_BottomProxyApp> createState() => _BottomProxyAppState();
+}
+
+class _BottomProxyAppState extends State<_BottomProxyApp> {
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox.shrink();
   }
 }
 
