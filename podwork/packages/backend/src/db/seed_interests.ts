@@ -4,15 +4,15 @@ import path from "path";
 import xml2js from 'xml2js';
 
 export const seedInterests = async (connection: connectionType) => {
+    const xml_Path = path.join(__dirname, '..', '..', '..', 'utilities', 'interest_data.xml');
+    const encoder = 'utf8';
     const db = await createDbConnect(connection);
     if (!db) {
         throw new Error('Failed to connect to database');
     }
     
-
     const parser = new xml2js.Parser();
-    const xmlPath = path.join(__dirname, '..', '..', '..', 'utilities', 'interest_data.xml');
-    fs.readFile(xmlPath, 'utf8', (err, xmlData) => {
+    fs.readFile(xml_Path, encoder, (err, xmlData) => {
         if (err) return console.error(err);
         parser.parseString(xmlData, (err: Error | null, result: any) => {
         result.interestData.category.forEach(async (category: any) => {
