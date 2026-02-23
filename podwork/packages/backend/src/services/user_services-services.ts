@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import { User, UserInterests } from '../models/user';
 import { addUserToDatabase, deleteUserFromDatabase, getUserFromDatabase, updateUserInDatabase } from '../repositories/user_queries';
 import dotenv from 'dotenv';
-import { addUserInterestToDatabase, getInterests } from '../repositories/interests_queries';
+import { addUserInterestToDatabase, getInterests, getUserInterestsFromDatabase } from '../repositories/interests_queries';
 
 dotenv.config();
 const SALT_ROUNDS = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) : 10;
@@ -17,24 +17,23 @@ export const getUserService = async (username: string, password: string) => {
         return null;
     }
     else {
-        return database_user;
+        const userWithInterests = { ...database_user, interests: [] as UserInterests[] };
+        if (database_user) {
+            const dbInterests = await getUserInterestsFromDatabase(1, database_user.id);
+            userWithInterests.interests = dbInterests;
+        }
+        return userWithInterests;
     }
 }
 
-export const addUserService = async (username: string, email: string, password: string, interests? : UserInterests[]) => {
+//should never add user with interests
+export const addUserService = async (username: string, email: string, password: string,) => {
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
     const newUser = await addUserToDatabase(1, username, email, hashedPassword);
-    if (interests && interests.length > 0) {
-        for (const interest of interests) {
-            await getInterests(interest);
-            await addUserInterestToDatabase(newUser!.id, interest.id);
-        }
-    }
     if (!newUser) {
         throw new Error('Failed to create user');
     }
-    const userWithInterests = { ...newUser, interests: interests ?? [] };
-    return userWithInterests;
+    return newUser;
 }
 
 export const updateUserService = async (userId: number, updatedUserData: Partial<User>) => {
@@ -48,8 +47,8 @@ export const updateUserService = async (userId: number, updatedUserData: Partial
     }
     if (updatedUserData?.interests) {
         for (const interest of updatedUserData.interests) {
-            await getInterests(interest);
-            await addUserInterestToDatabase(userId, interest.id);
+            await getInterests(1, interest);
+            await addUserInterestToDatabase(1, updatedUser.id, interest.id);
         }
     }
     return updatedUser;

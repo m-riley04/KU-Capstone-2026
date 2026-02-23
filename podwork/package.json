@@ -12,7 +12,7 @@
     "dev:frontend": "npm run dev -w frontend",
     "dev:backend": "npm run dev -w backend",
     "build:frontend": "npm run build -w frontend",
-    "build:backend": "tsc -p ./packages/backend/tsconfig.json",
+    "build:backend": "tsc -p ./packages/backend/tsconfig.json && cp -r ./packages/backend/src/db/migrations ./packages/backend/dist/db/",
     "start:backend": "node ./packages/backend/dist/server.js",
     "test": "jest --testPathPatterns=packages/backend/tests",
     "test:watch": "jest --watch --testPathPatterns=packages/backend/tests"

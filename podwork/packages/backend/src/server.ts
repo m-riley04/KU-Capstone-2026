@@ -26,8 +26,8 @@ app.use(express.json());
 app.use(Routes.USER_SERVICES, user_services)
 
 app.listen(PORT, async () => {
-    await runMigrations();
-    await seedInterests();
+    await runMigrations(1);
+    await seedInterests(1);
     console.log('The application is listening '
     + 'on port http://localhost:'+ PORT +'/');
 })

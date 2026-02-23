@@ -1,12 +1,11 @@
-import fs from "fs";
 import path from "path";
+import fs from "fs";
 import { connectionType, createDbConnect } from ".";
 
-export const runMigrations = async () => {
-    const db = await createDbConnect(1);
-    if (!db) {
-        throw new Error('Failed to connect to database');
-    }
+export const runMigrations = async (connection: connectionType) => {
+    const db = await createDbConnect(connection);
+    if (!db) throw new Error("Failed to connect");
+
     await db.exec(`
         CREATE TABLE IF NOT EXISTS migrations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -14,23 +13,36 @@ export const runMigrations = async () => {
             applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
     `);
-    await db.close();
 
-    const migration_file = path.join(__dirname, "migrations");
-    const migrationFiles = fs.readdirSync(migration_file).filter(file => file.endsWith('.sql'));
+    const migrationPath = path.join(__dirname, "migrations");
+    const migrationFiles = fs
+        .readdirSync(migrationPath)
+        .filter(file => file.endsWith(".sql"))
+        .sort();
 
     for (const file of migrationFiles) {
-        const migrationName = path.basename(file, '.sql');
-        const db = await createDbConnect(connectionType.DEV);
-        if (!db) {
-            throw new Error('Failed to connect to database');
+        const migrationName = path.basename(file, ".sql");
+
+        const existing = await db.get(
+            `SELECT * FROM migrations WHERE name = ?`,
+            migrationName
+        );
+
+        if (!existing) {
+            const sql = fs.readFileSync(
+                path.join(migrationPath, file),
+                "utf-8"
+            );
+
+            await db.exec(sql);
+            await db.run(
+                `INSERT INTO migrations (name) VALUES (?)`,
+                migrationName
+            );
+
+            console.log(`Applied migration: ${migrationName}`);
         }
-        const existingMigration = await db.get(`SELECT * FROM migrations WHERE name = ?`, migrationName);
-        if (!existingMigration) {
-            const migrationSQL = fs.readFileSync(path.join(migration_file, file), 'utf-8');
-            await db.exec(migrationSQL);
-            await db.run(`INSERT INTO migrations (name) VALUES (?)`, migrationName);
-        }
-        await db.close();
     }
+
+    await db.close();
 };
