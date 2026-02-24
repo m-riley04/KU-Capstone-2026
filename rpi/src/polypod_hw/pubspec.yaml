@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   desktop_multi_window: ^0.3.0
+  lottie: ^3.3.1
 
 dev_dependencies:
   flutter_test:
