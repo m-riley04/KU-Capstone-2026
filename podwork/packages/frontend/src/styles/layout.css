@@ -22,6 +22,7 @@
 }
 
 .slide-page {
+  position: relative;
   width: 33.333%; 
   padding: 0 0.5rem;
   box-sizing: border-box;

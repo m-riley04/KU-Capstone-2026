@@ -23,6 +23,9 @@ function App() {
     return localStorage.getItem('polypod_token') !== null;
   });
 
+  //state to hold if the user selected preference summary 
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+
   // toggle item on/off
   const toggleSelection = useCallback((id: string) => {
     setSelectedIds(prev => {

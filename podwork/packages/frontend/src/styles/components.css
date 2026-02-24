@@ -1,20 +1,26 @@
 .save-btn {
-  width: 20%;
-  padding: .5rem;
+  position: absolute;
+  top: 18px;
+  right: 10px;
+  z-index: 10;
+
+  padding: .5rem 1rem;
+  white-space: nowrap;
+
   background-color: var(--primary);
-  color: white;
-  border: none;
+  color: #f9e4bc;
   border-radius: 8px;
+  border: 1px solid #e5e7eb;
   font-weight: bold;
   cursor: pointer;
   font-size: 1rem;
   text-align: center;
   display: block;
-  margin: 1rem auto 0 auto;
 }
 
 .save-btn:hover {
-  background-color: #4338ca;
+  transform: scale(1.04);
+  color: gray;
 }
 
 .summary-box {
@@ -162,4 +168,21 @@
 .back-btn:hover {
   transform: scale(1.02);
   color: gray
+}
+
+.logout {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+
+  padding: 8px 16px;
+  background-color: transparent;
+  color: #f9e4bc;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+}
+
+.logout:hover {
+  color: gray;
+  transform: scale(1.04);
 }
