@@ -1,0 +1,18 @@
+{
+  "notification": {
+    "timestamp": "2026-02-17T10:30:00Z",
+    "media": "",
+    "headline": "Severe Weather Warning",
+    "info": "Heavy snowfall expected tonight. Road conditions may be hazardous.",
+    "seemore": ""
+  },
+  "config": {
+    "media_size": [
+      128.0,
+      96.0
+    ],
+    "headline_size": 36.0,
+    "info_size": 24.0
+  },
+  "from_source": "WeatherAPI"
+}

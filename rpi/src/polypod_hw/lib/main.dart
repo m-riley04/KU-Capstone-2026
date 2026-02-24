@@ -15,6 +15,7 @@ import 'apps/settings_app.dart';
 import 'apps/notes_app.dart';
 import 'controllers/clock_timer_controller.dart';
 import 'controllers/idle_state_controller.dart';
+import 'controllers/notification_controller.dart';
 
 import 'multi_window/multi_window.dart';
 
@@ -139,6 +140,7 @@ class TopOnlyWindow extends StatefulWidget {
 class _TopOnlyWindowState extends State<TopOnlyWindow> {
   late IdleStateController _idleController;
   late ClockTimerController _timerController;
+  late NotificationController _notificationController;
   BaseApp _currentApp = const IdleApp();
   String _currentAppKey = 'Home';
 
@@ -154,6 +156,7 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     _idleController = IdleStateController();
     _idleController.setIdleCallback(_returnToIdle);
     _timerController = ClockTimerController();
+    _notificationController = NotificationController();
     _apps = {
       'Home': const HomeApp(),
       'Timer': ClockApp(controller: _timerController),
@@ -247,6 +250,7 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
   void dispose() {
     _idleController.dispose();
     _timerController.dispose();
+    _notificationController.dispose();
     super.dispose();
   }
 
@@ -284,6 +288,7 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
         child: TopScreen(
           currentApp: _currentApp,
           timerController: _timerController,
+          notificationController: _notificationController,
         ),
       ),
     );
@@ -437,6 +442,7 @@ class DualScreenHome extends StatefulWidget {
 class _DualScreenHomeState extends State<DualScreenHome> {
   late IdleStateController _idleController;
   late ClockTimerController _timerController;
+  late NotificationController _notificationController;
   BaseApp _currentApp = const IdleApp();
 
   late final Map<String, BaseApp> _apps;
@@ -447,6 +453,7 @@ class _DualScreenHomeState extends State<DualScreenHome> {
     _idleController = IdleStateController();
     _idleController.setIdleCallback(_returnToIdle);
     _timerController = ClockTimerController();
+    _notificationController = NotificationController();
     _apps = {
       'Home': const HomeApp(),
       'Timer': ClockApp(controller: _timerController),
@@ -461,6 +468,7 @@ class _DualScreenHomeState extends State<DualScreenHome> {
   void dispose() {
     _idleController.dispose();
     _timerController.dispose();
+    _notificationController.dispose();
     super.dispose();
   }
 
@@ -497,6 +505,7 @@ class _DualScreenHomeState extends State<DualScreenHome> {
               TopScreen(
                 currentApp: _currentApp,
                 timerController: _timerController,
+                notificationController: _notificationController,
               ),
               // Bottom Screen (480x320)
               BottomScreen(
