@@ -1,6 +1,6 @@
 // src/LoginPage.tsx
 import { useState } from 'react';
-import './App.css';
+import './styles/login.css';
 
 interface LoginProps {
   onLogin: () => void;

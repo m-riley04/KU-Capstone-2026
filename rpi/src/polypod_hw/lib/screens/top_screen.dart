@@ -3,16 +3,20 @@ import 'package:polypod_hw/config/theme_config.dart';
 import '../config/screen_config.dart';
 import '../apps/base_app.dart';
 import '../controllers/clock_timer_controller.dart';
+import '../controllers/notification_controller.dart';
+import '../widgets/notification_overlay.dart';
 
 /// top screen widget that will display the mouth animations, notifications, and addtl info from bottom
 class TopScreen extends StatelessWidget {
   final BaseApp currentApp;
   final ClockTimerController timerController;
+  final NotificationController notificationController;
 
   const TopScreen({
     Key? key,
     required this.currentApp,
     required this.timerController,
+    required this.notificationController,
   }) : super(key: key);
 
   @override
@@ -24,6 +28,13 @@ class TopScreen extends StatelessWidget {
       child: Stack(
         children: [
           currentApp,
+          // Notification overlay fills entire screen, centered
+          Positioned.fill(
+            child: NotificationOverlay(
+              controller: notificationController,
+            ),
+          ),
+          // Bottom overlay bar
           Positioned(
             left: 0,
             right: 0,
