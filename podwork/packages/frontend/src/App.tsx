@@ -1,6 +1,8 @@
 // src/App.tsx
 import { useCallback, useState } from 'react';
-import './App.css';
+import './styles/base.css';
+import './styles/layout.css';
+import './styles/components.css';
 import { SUB_CATEGORY_DATA } from './utilities/sub_categories';
 import { DATA_SOURCE } from './utilities/main_categories'
 import LoginPage from './LoginPage';
@@ -11,13 +13,13 @@ function App() {
 // useStates to keep track of categories being displayed on the screen
   const [activeCategory, setActiveCategory] = useState<CategoryName | null>(null);
   const [activeSubCategory, setActiveSubCategory] = useState<string | null>(null);
-  
   // search state
   const [searchQuery, setSearchQuery] = useState("");
   // keep track of things that are checkmnarked
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // state to hold if the user selected preference summary 
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
   // toggle item on/off
   const toggleSelection = useCallback((id: string) => {
@@ -39,6 +41,26 @@ function App() {
   // show login page if not logged in
   if (!isLoggedIn) {
     return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
+  }
+
+  const getSelectedNames = () => {
+    const subCategoryNames: string[] = [];
+    const weatherNames: string[] = [];
+    
+    Object.values(SUB_CATEGORY_DATA).forEach(element => {
+      element.forEach((item) => {
+        if (selectedIds.includes(item.id)){
+          subCategoryNames.push(item.id);
+        }
+      })
+    });
+    Object.values(DATA_SOURCE['Weather']).forEach(element => {
+        if (selectedIds.includes(element.id)){
+          weatherNames.push(element.id);
+        }
+      });
+
+    return {subCategoryNames, weatherNames};
   }
 
   return (
@@ -66,9 +88,10 @@ function App() {
             </div>
 
             {/* show whats active */}
-            <div className='summary-box'>
+            <div className='summary-box' onClick={() => setIsSummaryOpen(true)}>
               <h3>Currently Active</h3>
               <p>{selectedIds.length} preferences enabled</p>
+              <small>(Click to view selected preferences)</small>
             </div>
           </div>
 
@@ -153,8 +176,35 @@ function App() {
 
         </div>
       </div>
+      {/*summary modal */}
+      {isSummaryOpen && (
+        <div className='summary-modal' onClick={() => setIsSummaryOpen(false)}>
+          <div className='summary-modal-content' onClick={(e) => e.stopPropagation()}>
+            <h2>Selected Preferences</h2>
+
+            {selectedIds.length === 0 ? (
+              <p>No preferenced selected.</p>
+            ) : (
+              <ul className='summary-list'>
+                {getSelectedNames().subCategoryNames.map((name) => (
+                  <li key={name}>{name}</li>
+                ))}
+                {getSelectedNames().weatherNames.map((name) => (
+                  <li key={name}>{name}</li>
+                ))}
+              </ul>
+            )}
+            <button
+              className='save-btn'
+              onClick={() => setIsSummaryOpen(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
-  );
-}
+    )}
+
 
 export default App;
