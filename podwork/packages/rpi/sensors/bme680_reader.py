@@ -15,7 +15,7 @@ def main():
         humidity = sensor.humidity
         pressure_hpa = sensor.pressure
         gas_ohms = sensor.gas
-        # TODO: convert gas resistance to air quality index
+        # TODO: convert gas resistance to air quality index using Bosch library
 
         print(
             f"Temp: {temperature_c:.2f} C ({temperature_f:.2f} F) | "
