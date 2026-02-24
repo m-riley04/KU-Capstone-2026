@@ -1,3 +1,10 @@
+"""
+Name: led_test.py
+Description: A simple test script to verify that the RGB LED is working correctly. Cycles through the supported colors with user input.
+Author: Riley Meyerkorth
+Creation Date: 24 February 2026
+"""
+
 from RPi import GPIO  # type: ignore
 from enum import Enum
 
