@@ -88,21 +88,35 @@ Body must include updated_user
     "email": "new@email.com",
     "password": "newPassword",
     "interests": [
-      { "id": 3 },
-      { "id": 5 }
+      {
+        "name": "Aave (AAVE)"
+      },
+      {
+        "name": "Bitcoin Cash (BCH)"
+      }
     ]
   }
 }
 ## Success Response
 status 200 
 {
-  "id": 1,
-  "username": "newName",
-  "email": "new@email.com",
-  "password": "$2b$10$newHashedPassword..."
-  "interests": [
-      { "id": 3, name: "Chiefs" category: "sports" },
-      { "id": 4, name: "KU" category: "sports" }
+    "id": 1,
+    "email": "Breanna.Spencer@hotmail.com",
+    "password": "$2b$10$32Y5gDfdCcj/iHX1RmTr4eB5WPjbskXSjoSmgxXJFdjnK8diQ7TJu",
+    "username": "hannah_smith",
+    "created_at": "2026-02-24 05:20:46",
+    "updated_at": "2026-02-24 05:25:15",
+    "interests": [
+        {
+            "id": 76,
+            "name": "Aave (AAVE)",
+            "category": "Crypto"
+        },
+        {
+            "id": 81,
+            "name": "Bitcoin Cash (BCH)",
+            "category": "Crypto"
+        }
     ]
 }
 # Delete User   

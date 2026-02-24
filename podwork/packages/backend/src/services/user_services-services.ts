@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import { User, UserInterests } from '../models/user';
-import { addUserToDatabase, deleteUserFromDatabase, getUserFromDatabase, updateUserInDatabase } from '../repositories/user_queries';
+import { addUserToDatabase, deleteUserFromDatabase, getUserForAuth, getUserWithID, updateUserInDatabase } from '../repositories/user_queries';
 import dotenv from 'dotenv';
 import { addUserInterestToDatabase, getInterests, getUserInterestsFromDatabase } from '../repositories/interests_queries';
 
@@ -8,11 +8,13 @@ dotenv.config();
 const SALT_ROUNDS = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) : 10;
 
 export const getUserService = async (username: string, password: string) => {
-    const database_user = await getUserFromDatabase(1, username);
+    const database_user = await getUserForAuth(1, username);
     if (!database_user) {
+        console.log(`User "${username}" not found in database.`);
         return null;
     }
     const passwordMatch = await bcrypt.compare(password, database_user.password);
+    console.log(passwordMatch);
     if (!passwordMatch) {
         return null;
     }
@@ -37,20 +39,27 @@ export const addUserService = async (username: string, email: string, password: 
 }
 
 export const updateUserService = async (userId: number, updatedUserData: Partial<User>) => {
+    const existingUser = await getUserWithID(1, userId);
+    if (!existingUser) {
+        return null;
+    }
     if (updatedUserData?.password) {
         updatedUserData.password = await bcrypt.hash(updatedUserData.password, SALT_ROUNDS);
     }
-    const user_data = { name : updatedUserData.username, email: updatedUserData.email, password: updatedUserData.password };
-    const updatedUser = await updateUserInDatabase(1, userId, user_data);
-    if (!updatedUser) {
-        return null;
-    }
+    if (updatedUserData?.username, updatedUserData?.email, updatedUserData?.password) {
+        await updateUserInDatabase(1, userId, updatedUserData);
+    } 
     if (updatedUserData?.interests) {
+        let interests : UserInterests[] = [];
         for (const interest of updatedUserData.interests) {
-            await getInterests(1, interest);
-            await addUserInterestToDatabase(1, updatedUser.id, interest.id);
+            const interestData = await getInterests(1, interest);
+            await addUserInterestToDatabase(1, userId, interestData.id);
+            interests.push(interestData);
         }
+        
     }
+    const updatedUser: User = await getUserWithID(1, userId) as User;
+    updatedUser.interests = await getUserInterestsFromDatabase(1, userId);
     return updatedUser;
 }
 
