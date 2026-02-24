@@ -6,8 +6,8 @@ Creation Date: 24 February 2026
 """
 
 from RPi import GPIO # type: ignore
-from constants import PIN_LED_BLUE, PIN_LED_GREEN, PIN_LED_RED
-from enums import LEDColor
+from src.constants import PIN_LED_BLUE, PIN_LED_GREEN, PIN_LED_RED
+from src.enums import LEDColor
 
 class LEDController:
     """
