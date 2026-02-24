@@ -17,7 +17,10 @@ function App() {
   // keep track of things that are checkmnarked
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    //check if token exists so a logged in user can stay logged in
+    return localStorage.getItem('polypod_token') !== null;
+  });
 
   // toggle item on/off
   const toggleSelection = useCallback((id: string) => {
@@ -36,6 +39,36 @@ function App() {
     return '';    
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('polypod_token'); //remove toke
+    setIsLoggedIn(false);
+  }
+
+  const handleSavePreferences = async () => {
+    const payload = {
+      preferences: selectedIds //the entire array of things the user has selected
+    }
+
+    try {
+      const response = await fetch('http://localhost:3000/api/preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `${localStorage.getItem('polypod_token')}` // send the active users token to keep track of whos preferences these are
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok){
+        alert('Preferences successfully sent to server');
+      }else{
+        alert('Failed to save preferences.');
+      }
+    }catch (error){
+      alert('Server not responding')
+    }
+  }
+
   // show login page if not logged in
   if (!isLoggedIn) {
     return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
@@ -46,6 +79,8 @@ function App() {
       <header className='hero'>
         <h1>Polywork</h1>
       </header>
+
+      <button className='logout' onClick={handleLogout}>Sign Out</button>
 
       {/* sliding window */}
       <div className='slider-viewport'>
@@ -68,8 +103,13 @@ function App() {
             {/* show whats active */}
             <div className='summary-box'>
               <h3>Currently Active</h3>
-              <p>{selectedIds.length} preferences enabled</p>
+              <p>{selectedIds.length} preferences selected</p>
             </div>
+            <button
+            className='save-btn'
+            onClick={handleSavePreferences}>
+              Save Preferences
+            </button>
           </div>
 
           {/* level 2 */}

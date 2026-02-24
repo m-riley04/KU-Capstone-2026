@@ -13,7 +13,7 @@ export default function LoginPage({ onLogin }: LoginProps) {
   const [error, setError] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(''); //clears previous errors
 
@@ -34,17 +34,19 @@ export default function LoginPage({ onLogin }: LoginProps) {
     }
 
     //Code for when we integrate with the backend
-    /* 
+    /*const SERVER = 'http://localhost:3000'
     const payload = {username, password};
 
     try {
         if (isSignUp){
-            const response = await fetch(SERVER. {
+            const response = await fetch(SERVER, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json');
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(payload),
             });
             if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('polypod_token', data.token)
                 alert('Account created! You are now logged in.');
                 onLogin();
             } else {
@@ -59,6 +61,7 @@ export default function LoginPage({ onLogin }: LoginProps) {
             if (response.ok) {
                 const data = await response.json();
                 console.log('Server token:', data.token); 
+                localStorage.setItem('polypod_token', data.token)
                 onLogin(); 
             } else {
                 setError('Invalid credentials (server rejected you).');
@@ -67,7 +70,7 @@ export default function LoginPage({ onLogin }: LoginProps) {
     }catch (err){
         setError('Server not responding');
     }
-    */
+}*/
     
 
 
@@ -117,4 +120,4 @@ export default function LoginPage({ onLogin }: LoginProps) {
       </div>
     </div>
   );
-}
+};

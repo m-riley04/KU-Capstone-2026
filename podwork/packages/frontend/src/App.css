@@ -52,6 +52,7 @@ h2 {
 }
 
 .slide-page {
+  position: relative;
   width: 33.333%; 
   padding: 0 0.5rem;
   box-sizing: border-box;
@@ -159,10 +160,16 @@ h2 {
 }
 
 .save-btn {
-  width: 20%;
-  padding: .5rem;
+  position: absolute;
+  top: 18px;
+  right: 10px;
+  z-index: 10;
+
+  padding: .5rem 1rem;
+  white-space: nowrap;
+
   background-color: var(--primary);
-  color: white;
+  color: #f9e4bc;
   border: none;
   border-radius: 8px;
   font-weight: bold;
@@ -170,11 +177,12 @@ h2 {
   font-size: 1rem;
   text-align: center;
   display: block;
-  margin: 1rem auto 0 auto;
+
 }
 
 .save-btn:hover {
-  background-color: #4338ca;
+  transform: scale(1.04);
+  color: gray;
 }
 
 .summary-box {
@@ -324,4 +332,21 @@ h2 {
   margin-bottom: 2rem;
   font-size: 1.8rem;
   color: #f9e4bc;
+}
+
+.logout {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+
+  padding: 8px 16px;
+  background-color: transparent;
+  color: #f9e4bc;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+}
+
+.logout:hover {
+  color: gray;
+  transform: scale(1.04);
 }
