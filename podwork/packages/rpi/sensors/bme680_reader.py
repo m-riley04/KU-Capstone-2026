@@ -1,3 +1,9 @@
+'''
+Author: Aiden Burke
+Last Updated: 02/24/2026
+Read data from the BME680 sensor
+'''
+
 import time
 
 import board
@@ -23,6 +29,12 @@ def main():
             f"Pressure: {pressure_hpa:.2f} hPa | "
             f"Gas: {gas_ohms:.0f} ohms"
         )
+
+        if temperature_c > 26: pass # TODO: trigger high temperature alert
+        if temperature_c < 18: pass # TODO: trigger low temperature alert
+
+        # TODO: build in alerts for poor air quality, high/low temperature, etc
+        # and pass that information to the main podwork system via notifications
 
         time.sleep(3)
 
