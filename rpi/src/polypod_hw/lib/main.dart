@@ -8,7 +8,6 @@ import 'screens/top_screen.dart';
 import 'screens/bottom_screen.dart';
 import 'apps/base_app.dart';
 import 'apps/idle_app.dart';
-import 'apps/home_app.dart';
 import 'apps/clock_app.dart';
 import 'apps/weather_app.dart';
 import 'apps/media_app.dart';
@@ -171,7 +170,7 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     _polypodController = PolypodAnimationController();
     _maintenanceController = PolypodMaintenanceController();
     _apps = {
-      'Home': const HomeApp(),
+      'Home': IdleApp(maintenanceController: _maintenanceController),
       'Timer': ClockApp(controller: _timerController),
       'Weather': const WeatherApp(),
       'Media': const MediaApp(),
@@ -315,7 +314,7 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     _idleController.resetIdleTimer();
     setState(() {
       _currentAppKey = appName;
-      _currentApp = _apps[appName] ?? const HomeApp();
+      _currentApp = _apps[appName] ?? IdleApp(maintenanceController: _maintenanceController);
     });
     _notifyBottomAppChanged();
   }
@@ -523,7 +522,7 @@ class _DualScreenHomeState extends State<DualScreenHome> {
     _polypodController = PolypodAnimationController();
     _maintenanceController = PolypodMaintenanceController();
     _apps = {
-      'Home': const HomeApp(),
+      'Home': IdleApp(maintenanceController: _maintenanceController),
       'Timer': ClockApp(controller: _timerController),
       'Weather': const WeatherApp(),
       'Media': const MediaApp(),
@@ -564,7 +563,7 @@ class _DualScreenHomeState extends State<DualScreenHome> {
   void _openApp(String appName) {
     _idleController.resetIdleTimer();
     setState(() {
-      _currentApp = _apps[appName] ?? const HomeApp();
+      _currentApp = _apps[appName] ?? IdleApp(maintenanceController: _maintenanceController);
     });
   }
 
