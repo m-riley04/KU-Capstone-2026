@@ -18,4 +18,3 @@ source ~/.bashrc
 
 # run flutter doctor to complete setup
 flutter doctor
-
