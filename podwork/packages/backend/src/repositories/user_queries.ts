@@ -2,7 +2,7 @@ import { connectionType, createDbConnect, } from '../db';
 import { User } from '../models/user';
 
 
-export const getUserFromDatabase = async (connection: connectionType, username: string): Promise<User | null> => {
+export const getUserForAuth = async (connection: connectionType, username: string): Promise<User | null> => {
     const db = await createDbConnect(connection);
     if (!db) {
         throw new Error('Failed to connect to database');
@@ -11,6 +11,20 @@ export const getUserFromDatabase = async (connection: connectionType, username: 
         `SELECT * FROM users WHERE username = ?`,
         username
     );
+    await db.close();
+    return user ?? null;
+};
+
+export const getUserWithID = async (connection: connectionType, userId: number): Promise<User | null> => {
+    const db = await createDbConnect(connection);
+    if (!db) {
+        throw new Error('Failed to connect to database');
+    }
+    const user = await db.get(
+        `SELECT * FROM users WHERE id = ?`,
+        userId
+    );
+    await db.close();
     return user ?? null;
 };
 
@@ -26,10 +40,8 @@ export const addUserToDatabase = async (connection: connectionType, username: st
             email,
             password
         );
-        console.log('Insert result:', result);
         const newUserId = result.lastID;
         const newUser = await db.get(`SELECT * FROM users WHERE id = ?`, newUserId);
-        console.log('New user:', newUser);
         await db.close();
         return newUser ?? null;
     } catch (error: any) {
