@@ -14,6 +14,12 @@ INIT_SCRIPTS_DIR="$SCRIPTS_DIR/initializations"
 # readable and easier to debug if something goes wrong. We could also add permanent env variables to indicate which scripts have already been run.
 # For now though, this is more concise and scalable.
 for i in "$INIT_SCRIPTS_DIR"/init_*.sh; do
+    if [ "$i" = "$INIT_SCRIPTS_DIR/init_waveshare35e.sh" ]; then
+        echo "Skipping initialization script: $i (not needed for current hardware)"
+        echo "NOTE: This is to be removed when I test with the actual hardware."
+        continue
+    fi
+
     if [ -f "$i" ]; then
         echo "Running initialization script: $i"
         source "$i" # source the script to run it in the current shell

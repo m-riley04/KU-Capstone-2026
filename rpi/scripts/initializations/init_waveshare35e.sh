@@ -1,11 +1,6 @@
 #!/bin/bash
 # Structured from the wiki here: https://www.waveshare.com/wiki/3.5inch_DSI_LCD_(E)
 
-# Skip over all of this for now since I'm not there to test it with the actual display yet.
-# TODO: remove this after testing it with actual display
-echo "NOTE: Skipping Waveshare 3.5\" DSI E display initialization since it's not currently being tested with the actual display. Please remove this skip and test with the actual display to ensure the configuration works correctly."
-exit 0
-
 # Add options section to config.txt
 OPTIONS_TITLE="#---- Waveshare 3.5in DSI E Display ----"
 OPTIONS="$OPTIONS_TITLE
