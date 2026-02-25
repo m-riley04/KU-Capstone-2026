@@ -44,24 +44,30 @@ function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('polypod_token'); //remove toke
+    localStorage.removeItem('polypod_userId'); //remove userID
     setIsLoggedIn(false);
   }
 
   const handleSavePreferences = async () => {
-    const payload = {
-      preferences: selectedIds //the entire array of things the user has selected
+    const userId = localStorage.getItem('polypod_userId');
+
+    if (!userId) {
+      alert("You are not logged in properly");
+      return;
     }
 
+    const payload = {
+      updated_user: {
+        interests: selectedIds.map(name => ({name: name}))
+      } //the entire array of things the user has selected
+    };
+
     try {
-      const response = await fetch('http://localhost:3000/api/preferences', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `${localStorage.getItem('polypod_token')}` // send the active users token to keep track of whos preferences these are
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(`http://localhost:3000/users/${userId}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload), // send the active users token to keep track of whos preferences these are
+        });
 
       if (response.ok){
         alert('Preferences successfully sent to server');
@@ -228,12 +234,15 @@ function App() {
               <p>No preferenced selected.</p>
             ) : (
               <ul className='summary-list'>
-                {getSelectedNames().subCategoryNames.map((name) => (
-                  <li key={name}>{name}</li>
-                ))}
-                {getSelectedNames().weatherNames.map((name) => (
-                  <li key={name}>{name}</li>
-                ))}
+                {(() => {
+                  const {subCategoryNames, weatherNames} = getSelectedNames();
+                  return (
+                    <>
+                      {subCategoryNames.map((name) => <li key={name}>{name}</li>)}
+                      {weatherNames.map((name) => <li key={name}>{name}</li>)}
+                    </>
+                  )
+                })()}
               </ul>
             )}
             <button

@@ -34,19 +34,26 @@ export default function LoginPage({ onLogin }: LoginProps) {
     }
 
     //Code for when we integrate with the backend
-    /*const SERVER = 'http://localhost:3000'
-    const payload = {username, password};
-
+    const SERVER = 'http://localhost:3000'
+    /*
     try {
         if (isSignUp){
-            const response = await fetch(SERVER, {
+
+            const payload = {
+                username: username, 
+                password: password,
+                email: `enter email here`
+            };
+
+            const response = await fetch(`${SERVER}/users`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(payload),
             });
+
             if (response.ok) {
                 const data = await response.json();
-                localStorage.setItem('polypod_token', data.token)
+                localStorage.setItem('poly_pod_userId', data.id)
                 alert('Account created! You are now logged in.');
                 onLogin();
             } else {
@@ -54,14 +61,17 @@ export default function LoginPage({ onLogin }: LoginProps) {
             }
         }else{
             const response = await fetch(SERVER, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload), 
+                method: 'GET',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-password': password
+                },
             });
+            
             if (response.ok) {
-                const data = await response.json();
-                console.log('Server token:', data.token); 
-                localStorage.setItem('polypod_token', data.token)
+                const user = await response.json();
+                console.log('user id:', user.id); 
+                localStorage.setItem('polypod_token', user.id)
                 onLogin(); 
             } else {
                 setError('Invalid credentials (server rejected you).');
