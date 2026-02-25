@@ -14,7 +14,6 @@ export const getUserService = async (username: string, password: string) => {
         return null;
     }
     const passwordMatch = await bcrypt.compare(password, database_user.password);
-    console.log(passwordMatch);
     if (!passwordMatch) {
         return null;
     }
