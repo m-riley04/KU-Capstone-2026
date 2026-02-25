@@ -1,8 +1,8 @@
 # initialization
 
-This folder holds all of the initialization scripts that are ran during device setup. The primary script is `init.sh`, and it should ideally be run only once.
+This folder holds all of the initialization scripts that are ran during device setup.
 
-> NOTE: You should ***not*** need to run each script individually. See details on this below.
+> NOTE: You should ***not*** need to run each script individually, and will be automatically run in the `init_sh` script. See details on this below.
 
 ## Adding New Script
 
