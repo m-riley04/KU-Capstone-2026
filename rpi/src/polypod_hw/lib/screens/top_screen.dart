@@ -99,33 +99,36 @@ class TimerOverlayItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, child) {
-        final status = controller.isRunning ? 'Running' : 'Ready';
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: EarthyTheme.surface,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.timer_rounded, color: EarthyTheme.wheat, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                _formatDuration(controller.remaining),
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: EarthyTheme.textPrimary,
+    final status = controller.isRunning ? 'Running' : 'Ready';
+    if (status == 'Ready') { return const SizedBox.shrink(); }
+    else {
+      return AnimatedBuilder(
+        animation: controller,
+        builder: (context, child) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: EarthyTheme.surface,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.timer_rounded, color: EarthyTheme.wheat, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  _formatDuration(controller.remaining),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: EarthyTheme.textPrimary,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+              ],
+            ),
+          );
+        },
+      );
+    }
   }
 }

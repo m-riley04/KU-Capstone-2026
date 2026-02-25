@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
 import 'base_app.dart';
 import '../config/theme_config.dart';
 import '../controllers/polypod_animation_controller.dart';
+import '../services/audio_service.dart';
 import '../widgets/control_button.dart';
 
 class PolypodApp extends BaseApp {
@@ -12,28 +12,47 @@ class PolypodApp extends BaseApp {
     required this.onFeed,
     required this.onWater,
     required this.onPet,
+    this.onFeedAudio,
+    this.onWaterAudio,
+    this.onPetAudio,
   });
 
   final PolypodAnimationController controller;
   final VoidCallback onFeed;
   final VoidCallback onWater;
   final VoidCallback onPet;
+  final VoidCallback? onFeedAudio;
+  final VoidCallback? onWaterAudio;
+  final VoidCallback? onPetAudio;
 
   @override
   String get appName => 'Polypod';
 
   @override
   Widget? buildBottomScreenContent(BuildContext context) {
+    print('[PolypodApp] buildBottomScreenContent called');
+    final audioService = AudioService();
     return PolypodCareControls(
       onFeedPressed: () {
+        print('[PolypodApp] Feed button pressed');
+        (onFeedAudio ??
+                () => audioService.playSound('assets/sounds/munching.mp3'))
+            .call();
         controller.triggerFeed();
         onFeed();
       },
       onWaterPressed: () {
+        print('[PolypodApp] Water button pressed');
+        (onWaterAudio ??
+                () => audioService.playSound('assets/sounds/slurp.mp3'))
+            .call();
         controller.triggerWater();
         onWater();
       },
       onPetPressed: () {
+        print('[PolypodApp] Pet button pressed');
+        (onPetAudio ?? () => audioService.playSound('assets/sounds/purr.mp3'))
+            .call();
         controller.triggerPet();
         onPet();
       },
@@ -44,31 +63,66 @@ class PolypodApp extends BaseApp {
   State<PolypodApp> createState() => _PolypodAppState();
 }
 
-class _PolypodAppState extends State<PolypodApp>
-    with SingleTickerProviderStateMixin {
-  static const Map<PolypodAnimationState, String> _animationUrls = {
-    PolypodAnimationState.idle:
-        'https://fonts.gstatic.com/s/e/notoemoji/latest/1f610/lottie.json',
-    PolypodAnimationState.eating:
-        'https://fonts.gstatic.com/s/e/notoemoji/latest/1f60b/lottie.json',
-    PolypodAnimationState.petting:
-        'https://fonts.gstatic.com/s/e/notoemoji/latest/1f60d/lottie.json',
-    PolypodAnimationState.drinking:
-        'https://fonts.gstatic.com/s/e/notoemoji/latest/1f924/lottie.json',
+class _PolypodAppState extends State<PolypodApp> {
+  static const Map<PolypodAnimationState, List<String>> _stateSprites = {
+    PolypodAnimationState.idle: [
+      'web/sprites/isopod_emotes/neutral1.png',
+      'web/sprites/isopod_emotes/neutral2.png',
+    ],
+    PolypodAnimationState.eating: [
+      'web/sprites/isopod_emotes/eating1.png',
+      'web/sprites/isopod_emotes/eating2.png',
+    ],
+    PolypodAnimationState.petting: [
+      'web/sprites/isopod_emotes/love1.png',
+      'web/sprites/isopod_emotes/love2.png',
+    ],
+    PolypodAnimationState.drinking: ['web/sprites/isopod_emotes/drinking1.png'],
   };
 
-  late final AnimationController _lottieController;
+  final Map<PolypodAnimationState, int> _nextSpriteIndexByState = {};
+  String? _currentSpritePath;
+  PolypodAnimationState? _lastState;
 
   @override
   void initState() {
     super.initState();
-    _lottieController = AnimationController(vsync: this);
+    widget.controller.addListener(_handleControllerUpdate);
+    _syncStateAndSprite(force: true);
   }
 
   @override
   void dispose() {
-    _lottieController.dispose();
+    widget.controller.removeListener(_handleControllerUpdate);
     super.dispose();
+  }
+
+  void _handleControllerUpdate() {
+    _syncStateAndSprite();
+  }
+
+  void _syncStateAndSprite({bool force = false}) {
+    final currentState = widget.controller.state;
+    if (force || _lastState != currentState) {
+      _lastState = currentState;
+      _currentSpritePath = _pickNextSpriteFor(currentState);
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
+
+  String _pickNextSpriteFor(PolypodAnimationState state) {
+    final sprites =
+        _stateSprites[state] ?? _stateSprites[PolypodAnimationState.idle]!;
+    final nextIndex = _nextSpriteIndexByState[state] ?? 0;
+    final spritePath = sprites[nextIndex % sprites.length];
+    _nextSpriteIndexByState[state] = (nextIndex + 1) % sprites.length;
+    return spritePath;
+  }
+
+  String _currentSpriteFor(PolypodAnimationState state) {
+    return _currentSpritePath ?? _pickNextSpriteFor(state);
   }
 
   @override
@@ -87,23 +141,21 @@ class _PolypodAppState extends State<PolypodApp>
                 animation: widget.controller,
                 builder: (context, _) {
                   final state = widget.controller.state;
-                  final animationUrl =
-                      _animationUrls[state] ?? _animationUrls[PolypodAnimationState.idle]!;
+                  final spritePath = _currentSpriteFor(state);
 
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: Container(
                       color: EarthyTheme.surface,
-                      child: Lottie.network(
-                        animationUrl,
-                        key: ValueKey(state),
-                        controller: _lottieController,
+                      child: Image.asset(
+                        spritePath,
+                        key: ValueKey('${state.name}-$spritePath'),
                         fit: BoxFit.contain,
-                        onLoaded: (composition) {
-                          _lottieController
-                            ..duration = composition.duration
-                            ..repeat();
-                        },
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          Icons.bug_report_rounded,
+                          color: EarthyTheme.textPrimary,
+                          size: 48,
+                        ),
                       ),
                     ),
                   );
@@ -149,6 +201,7 @@ class PolypodCareControls extends StatelessWidget {
   final VoidCallback onWaterPressed;
   final VoidCallback onPetPressed;
 
+  // fallback icons below in case something cannot be loaded
   @override
   Widget build(BuildContext context) {
     return Container(
