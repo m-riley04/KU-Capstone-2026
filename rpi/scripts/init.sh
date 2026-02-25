@@ -3,7 +3,10 @@
 # This script is meant to be run on the Raspberry Pi to set up the environment for the Polypod project. 
 # Ideally, this should only be run once.
 
-SCRIPTS_DIR=$(dirname "$0") # gets the current path to the scripts directory
+# Resolve the absolute path to this script's directory.
+# Using $0 can yield "." or a relative path (especially when run as `./init.sh` or sourced),
+# so prefer BASH_SOURCE.
+SCRIPTS_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 INIT_SCRIPTS_DIR="$SCRIPTS_DIR/initializations"
 
 # Iterate through all initialization scripts in the scripts directory and run them
