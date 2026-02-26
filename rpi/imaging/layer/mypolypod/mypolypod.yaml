@@ -9,26 +9,17 @@
 ---
 mmdebstrap:
   setup-hooks:
-    # Create dirs
-    - mkdir -p "$1/usr/share/keyrings" "$1/tmp/keyrings"
-    - chmod 0755 "$1/usr/share/keyrings" "$1/tmp/keyrings"
-
-    # Install Debian archive keyring by extracting the .deb into the target rootfs
-    # (The package ships /usr/share/keyrings/debian-archive-keyring.gpg and related keyrings.)
-    - curl -fsSL -o "$1/tmp/keyrings/debian-archive-keyring.deb" "https://deb.debian.org/debian/pool/main/d/debian-archive-keyring/debian-archive-keyring_2025.1_all.deb"
+    - mkdir -p "$1/tmp/keyrings"
+    - curl -fsSL -o "$1/tmp/keyrings/debian-archive-keyring.deb" "https://deb.debian.org/debian/pool/main/d/debian-archive-keyring/debian-archive-keyring_2023.3+deb12u2_all.deb"
     - dpkg-deb -x "$1/tmp/keyrings/debian-archive-keyring.deb" "$1"
 
-    # Ensure readable by _apt
-    - chmod 0644 "$1/usr/share/keyrings/debian-archive-keyring.gpg" || true
-
-    # Sources using the packaged keyring
     - rm -f "$1/etc/apt/sources.list"
     - rm -f "$1/etc/apt/sources.list.d/"*
     - |-
       cat > "$1/etc/apt/sources.list" <<'EOF'
-      deb [arch=arm64 signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] http://deb.debian.org/debian trixie main
-      deb [arch=arm64 signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] http://deb.debian.org/debian-security trixie-security main
-      deb [arch=arm64 signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] http://deb.debian.org/debian trixie-updates main
+      deb http://deb.debian.org/debian bookworm main
+      deb http://deb.debian.org/debian bookworm-updates main
+      deb http://deb.debian.org/debian-security bookworm-security main
       EOF
     
   packages:
