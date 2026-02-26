@@ -1,0 +1,24 @@
+# NOTE: structured off of the rpi-image-gen examples.
+
+include:
+  file: trixie-minbase-ab.yaml
+
+device:
+  layer: rpi5
+  hostname: polypod
+  user1: pod
+  user1pass: password # TODO: this should probs be set via an environment variable, but for testing purposes we'll hardcode it here for now.
+
+image:
+  system_part_size: 1500M
+  name: polypod
+
+layer:
+  app: mypolypod
+  extra: rpi-splash-screen
+
+splash:
+  image_path: ${@SRCROOT}/splash.tga
+
+kiosk:
+  url: "https://raspberrypi.com"

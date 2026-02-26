@@ -77,3 +77,9 @@ pnpm-debug.log*
 *.sql.gz
 *.sql.zip
 *.pgdump
+
+#######################
+# Temporary files
+#######################
+*.tmp
+tmp/

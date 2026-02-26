@@ -1,0 +1,66 @@
+# METABEGIN
+# X-Env-Layer-Name: mypolypod
+# X-Env-Layer-Category: app
+# X-Env-Layer-Desc:
+# X-Env-Layer-Requires: rpi-user-credentials,systemd-net-min
+#
+# X-Env-VarPrefix: polypod
+# METAEND
+---
+mmdebstrap:
+  packages:
+    # Used by hooks/scripts
+    - bash
+    - ca-certificates
+    - curl
+    - git
+    - wget
+    - unzip
+    - xz-utils
+    - zip
+    - file
+    - gettext-base   # provides envsubst
+
+    # Flutter (Linux desktop) deps (matching your intent)
+    - libglu1-mesa
+    - cmake
+    - ninja-build
+    - clang
+    - pkg-config
+    - libgtk-3-dev
+    - mesa-utils
+
+  customize-hooks:
+    # 1) Generate kiosk systemd unit from template
+    - |
+      export KIOSK_USER="$IGconf_device_user1"
+      export KIOSK_RUNDIR="/home/$IGconf_device_user1"
+      export KIOSK_URL="$IGconf_polypod_url"
+      export KIOSK_APP="/usr/bin/chromium $KIOSK_URL https://time.is/London --kiosk --noerrdialogs --disable-infobars --no-first-run --enable-features=OverlayScrollbar --start-maximized"
+      envsubst < kiosk.service.tpl > "$1/etc/systemd/system/kiosk.service"
+
+    # 2) Copy scripts into the image
+    - |
+      install -d "$1/opt/polypod/scripts"
+      cp -a "${@SRCROOT}/scripts/." "$1/opt/polypod/scripts/"
+      chmod -R +x "$1/opt/polypod/scripts" || true
+
+    # 3) Strip sudo from all scripts (build hooks run as root already)
+    - |
+      find "$1/opt/polypod/scripts" -type f -name "*.sh" -print0 | xargs -0 sed -i 's/^[[:space:]]*sudo[[:space:]]\+//'
+
+    # 4) Run build-time init inside the target rootfs
+    #    Pass POLYPOD_USER so init_flutter can run flutter as the normal user.
+    - |
+      chroot "$1" /usr/bin/env -i \
+        HOME="/root" \
+        PATH="/usr/sbin:/usr/bin:/sbin:/bin" \
+        POLYPOD_USER="$IGconf_device_user1" \
+        /bin/bash /opt/polypod/scripts/init.sh
+
+    # 5) Install a systemd service to run your runtime startup script every boot
+    - |
+      install -m 0644 "${@SRCROOT}/polypod.service" "$1/etc/systemd/system/polypod.service"
+
+    # 6) Enable services at build time
+    - $BDEBSTRAP_HOOKS/enable-units "$1" kiosk polypod

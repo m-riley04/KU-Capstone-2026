@@ -1,0 +1,15 @@
+[Unit]
+Description=Polypod startup script
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=$IGconf_device_user1
+WorkingDirectory=/home/$IGconf_device_user1
+ExecStart=/bin/bash /opt/polypod/scripts/startup.sh
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
