@@ -9,10 +9,20 @@
 ---
 mmdebstrap:
   setup-hooks:
+    # Ensure the trusted-key directory used by rpi-image-gen exists
+    - mkdir -p "$IGconf_sys_apt_keydir"
+    - chmod 0755 "$IGconf_sys_apt_keydir"
+
+    # Fetch the latest Debian archive keyring package (contains current signing keys)
     - mkdir -p "$1/tmp/keyrings"
-    - curl -fsSL -o "$1/tmp/keyrings/debian-archive-keyring.deb" "https://deb.debian.org/debian/pool/main/d/debian-archive-keyring/debian-archive-keyring_2023.3+deb12u2_all.deb"
+    - curl -fsSL -o "$1/tmp/keyrings/debian-archive-keyring.deb" "https://deb.debian.org/debian/pool/main/d/debian-archive-keyring/debian-archive-keyring_2025.1_all.deb"
     - dpkg-deb -x "$1/tmp/keyrings/debian-archive-keyring.deb" "$1"
 
+    # Copy the keyring into the directory APT is actually configured to trust
+    - cp -f "$1/usr/share/keyrings/debian-archive-keyring.gpg" "$IGconf_sys_apt_keydir/debian-archive-keyring.gpg"
+    - chmod 0644 "$IGconf_sys_apt_keydir/debian-archive-keyring.gpg"
+
+    # Bookworm sources (no signed-by needed because TrustedParts is set)
     - rm -f "$1/etc/apt/sources.list"
     - rm -f "$1/etc/apt/sources.list.d/"*
     - |-
