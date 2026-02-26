@@ -1,7 +1,7 @@
 # NOTE: structured off of the rpi-image-gen examples.
 
 include:
-  file: trixie-minbase-ab.yaml
+  file: bookworm-minbase-ab.yaml
 
 device:
   layer: rpi5
