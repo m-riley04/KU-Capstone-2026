@@ -19,6 +19,3 @@ layer:
 
 splash:
   image_path: ${@SRCROOT}/splash.tga
-
-kiosk:
-  url: "https://raspberrypi.com"
