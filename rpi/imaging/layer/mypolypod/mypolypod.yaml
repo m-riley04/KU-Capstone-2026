@@ -8,6 +8,32 @@
 # METAEND
 ---
 mmdebstrap:
+  setup-hooks:
+    # --- Keyrings ---
+    - mkdir -p $1/usr/share/keyrings
+
+    # Debian archive keys for Debian 13 (Trixie)
+    - curl -fsSL https://ftp-master.debian.org/keys/archive-key-13.asc | gpg --dearmor -o $1/usr/share/keyrings/debian-archive-keyring.gpg
+    - curl -fsSL https://ftp-master.debian.org/keys/archive-key-13-security.asc | gpg --dearmor -o $1/usr/share/keyrings/debian-security-archive-keyring.gpg
+
+    # Raspberry Pi repo key (since you're using archive.raspberrypi.com)
+    - curl -fsSL https://archive.raspberrypi.com/debian/raspberrypi.gpg.key -o $1/usr/share/keyrings/raspberrypi.gpg
+
+    # --- Replace sources to use signed-by (avoids relying on global trusted.gpg) ---
+    - rm -f $1/etc/apt/sources.list
+    - rm -f $1/etc/apt/sources.list.d/*
+
+    - |-
+      cat <<- EOF > $1/etc/apt/sources.list
+      deb [arch=arm64 signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] http://deb.debian.org/debian trixie main
+      deb [arch=arm64 signed-by=/usr/share/keyrings/debian-security-archive-keyring.gpg] http://deb.debian.org/debian-security trixie-security main
+      deb [arch=arm64 signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] http://deb.debian.org/debian trixie-updates main
+      EOF
+
+    - |-
+      cat <<- EOF > $1/etc/apt/sources.list.d/raspberrypi.list
+      deb [arch=arm64 signed-by=/usr/share/keyrings/raspberrypi.gpg] http://archive.raspberrypi.com/debian trixie main
+      EOF
   packages:
     # Used by hooks/scripts
     - bash
