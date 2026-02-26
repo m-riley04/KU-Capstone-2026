@@ -1,5 +1,5 @@
 [Unit]
-Description=Polypod startup script
+Description=Polypod startup (run prebuilt Flutter app)
 After=network-online.target
 Wants=network-online.target
 
@@ -7,6 +7,7 @@ Wants=network-online.target
 Type=simple
 User=$IGconf_device_user1
 WorkingDirectory=/home/$IGconf_device_user1
+Environment=POLYPOD_USER=$IGconf_device_user1
 ExecStart=/bin/bash /opt/polypod/scripts/startup.sh
 Restart=on-failure
 RestartSec=2
