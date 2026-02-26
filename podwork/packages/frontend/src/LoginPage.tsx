@@ -10,6 +10,7 @@ export default function LoginPage({ onLogin }: LoginProps) {
   // the username and password entered by the user will be stored here 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
 
@@ -17,35 +18,17 @@ export default function LoginPage({ onLogin }: LoginProps) {
     e.preventDefault();
     setError(''); //clears previous errors
 
-    if (isSignUp) {
-        if (username && password){
-            alert(`Account created for ${username}!`);
-            onLogin();
-        }else{
-            setError('Please enter a username and password');
-        }
-    }else{
-        if (username === 'admin' && password === 'password') {
-            onLogin();
-        } else {
-            setError('Invalid credentials');
-        }
-    };  
-    }
-
-    //Code for when we integrate with the backend
     const SERVER = 'http://localhost:3000'
-    /*
+    
     try {
         if (isSignUp){
-
             const payload = {
                 username: username, 
                 password: password,
-                email: `enter email here`
+                email: email
             };
 
-            const response = await fetch(`${SERVER}/users`, {
+            const response = await fetch(`${SERVER}/user/add`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(payload),
@@ -53,14 +36,14 @@ export default function LoginPage({ onLogin }: LoginProps) {
 
             if (response.ok) {
                 const data = await response.json();
-                localStorage.setItem('poly_pod_userId', data.id)
+                localStorage.setItem('polypod_userId', data.id)
                 alert('Account created! You are now logged in.');
                 onLogin();
             } else {
                 setError('Username already taken or invalid.');
             }
         }else{
-            const response = await fetch(SERVER, {
+            const response = await fetch(`${SERVER}/user/${username}`, {
                 method: 'GET',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -71,7 +54,7 @@ export default function LoginPage({ onLogin }: LoginProps) {
             if (response.ok) {
                 const user = await response.json();
                 console.log('user id:', user.id); 
-                localStorage.setItem('polypod_token', user.id)
+                localStorage.setItem('polypod_userId', user.id)
                 onLogin(); 
             } else {
                 setError('Invalid credentials (server rejected you).');
@@ -80,7 +63,7 @@ export default function LoginPage({ onLogin }: LoginProps) {
     }catch (err){
         setError('Server not responding');
     }
-}*/
+}
     
 
 
@@ -108,6 +91,14 @@ export default function LoginPage({ onLogin }: LoginProps) {
             onChange={(e) => setPassword(e.target.value)}
             className="login-input"
             style={{marginBottom: '20px'}}
+          />
+          <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="login-input"
+          style={{marginBottom: '10px'}}
           />
           
           {error && <p style={{color: 'red'}}>{error}</p>}

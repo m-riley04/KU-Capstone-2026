@@ -17,10 +17,12 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   // keep track of things that are checkmnarked
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // keep track of what is actually sent to database
+  const [savedIds, setSavedIds] = useState<string[]>([])
 
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     //check if token exists so a logged in user can stay logged in
-    return localStorage.getItem('polypod_token') !== null;
+    return localStorage.getItem('polypod_userId') !== null;
   });
 
   //state to hold if the user selected preference summary 
@@ -48,6 +50,17 @@ function App() {
     setIsLoggedIn(false);
   }
 
+  const hasUnsavedChanges = () => {
+    // if they have different number of items then it is a change
+    if (selectedIds.length !== savedIds.length) return true;
+
+    // sort both arrays alphabetically so order doesn't matter then compare
+    const sortedSelected = [...selectedIds].sort().join(',');
+    const sortedSaved = [...savedIds].sort().join(',');
+
+    return sortedSelected !== sortedSaved;
+  };
+
   const handleSavePreferences = async () => {
     const userId = localStorage.getItem('polypod_userId');
 
@@ -58,19 +71,21 @@ function App() {
 
     const payload = {
       updated_user: {
-        interests: selectedIds.map(name => ({name: name}))
-      } //the entire array of things the user has selected
+        interests: selectedIds.map(name => ({ name: name }))
+      }
     };
 
     try {
-      const response = await fetch(`http://localhost:3000/users/${userId}`, {
+      console.log(payload);
+      const response = await fetch(`http://localhost:3000/user/${userId}`, {
         method: 'PUT',
         headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(payload), // send the active users token to keep track of whos preferences these are
+          body: JSON.stringify(payload),
         });
 
       if (response.ok){
         alert('Preferences successfully sent to server');
+        setSavedIds([...selectedIds]);
       }else{
         alert('Failed to save preferences.');
       }
@@ -136,11 +151,13 @@ function App() {
               <p>{selectedIds.length} preferences selected</p>
               <small>(Click to view selected preferences)</small>
             </div>
-            <button
-            className='save-btn'
-            onClick={handleSavePreferences}>
+            {hasUnsavedChanges() && (
+              <button
+              className='save-btn'
+              onClick={handleSavePreferences}>
               Save Preferences
             </button>
+            )}
           </div>
 
           {/* level 2 */}
