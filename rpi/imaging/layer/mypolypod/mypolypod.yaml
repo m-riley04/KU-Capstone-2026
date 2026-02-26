@@ -9,35 +9,36 @@
 ---
 mmdebstrap:
   setup-hooks:
-    - mkdir -p $1/usr/share/keyrings
-    - chmod 0755 $1/usr/share/keyrings
+    - mkdir -p "$1/usr/share/keyrings"
+    - chmod 0755 "$1/usr/share/keyrings"
 
-    # Ensure predictable permissions for files we create
-    - sh -c 'umask 022'
+    # Debian archive keys (Trixie / Debian 13)
+    - curl -fsSL https://ftp-master.debian.org/keys/archive-key-13.asc -o "$1/usr/share/keyrings/archive-key-13.asc"
+    - gpg --dearmor --yes -o "$1/usr/share/keyrings/debian-archive-keyring.gpg" "$1/usr/share/keyrings/archive-key-13.asc"
 
-    # Debian (Trixie / Debian 13) archive keys
-    - sh -c 'curl -fsSL https://ftp-master.debian.org/keys/archive-key-13.asc | gpg --dearmor -o $1/usr/share/keyrings/debian-archive-keyring.gpg'
-    - sh -c 'curl -fsSL https://ftp-master.debian.org/keys/archive-key-13-security.asc | gpg --dearmor -o $1/usr/share/keyrings/debian-security-archive-keyring.gpg'
+    - curl -fsSL https://ftp-master.debian.org/keys/archive-key-13-security.asc -o "$1/usr/share/keyrings/archive-key-13-security.asc"
+    - gpg --dearmor --yes -o "$1/usr/share/keyrings/debian-security-archive-keyring.gpg" "$1/usr/share/keyrings/archive-key-13-security.asc"
 
-    # Raspberry Pi archive key
-    - sh -c 'curl -fsSL https://archive.raspberrypi.com/debian/raspberrypi.gpg.key | gpg --dearmor -o $1/usr/share/keyrings/raspberrypi.gpg'
+    # Raspberry Pi repo key
+    - curl -fsSL https://archive.raspberrypi.com/debian/raspberrypi.gpg.key -o "$1/usr/share/keyrings/raspberrypi.asc"
+    - gpg --dearmor --yes -o "$1/usr/share/keyrings/raspberrypi.gpg" "$1/usr/share/keyrings/raspberrypi.asc"
 
-    # Critical: allow _apt to read these keyrings
-    - chmod 0644 $1/usr/share/keyrings/debian-archive-keyring.gpg
-    - chmod 0644 $1/usr/share/keyrings/debian-security-archive-keyring.gpg
-    - chmod 0644 $1/usr/share/keyrings/raspberrypi.gpg
+    # Make keyrings readable by _apt
+    - chmod 0644 "$1/usr/share/keyrings/debian-archive-keyring.gpg"
+    - chmod 0644 "$1/usr/share/keyrings/debian-security-archive-keyring.gpg"
+    - chmod 0644 "$1/usr/share/keyrings/raspberrypi.gpg"
 
-    # Sources using signed-by=
-    - rm -f $1/etc/apt/sources.list
-    - rm -f $1/etc/apt/sources.list.d/*
+    # Sources pinned to those keyrings (signed-by)
+    - rm -f "$1/etc/apt/sources.list"
+    - rm -f "$1/etc/apt/sources.list.d/"*
     - |-
-      cat <<- EOF > $1/etc/apt/sources.list
+      cat > "$1/etc/apt/sources.list" <<'EOF'
       deb [arch=arm64 signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] http://deb.debian.org/debian trixie main
       deb [arch=arm64 signed-by=/usr/share/keyrings/debian-security-archive-keyring.gpg] http://deb.debian.org/debian-security trixie-security main
       deb [arch=arm64 signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] http://deb.debian.org/debian trixie-updates main
       EOF
     - |-
-      cat <<- EOF > $1/etc/apt/sources.list.d/raspberrypi.list
+      cat > "$1/etc/apt/sources.list.d/raspberrypi.list" <<'EOF'
       deb [arch=arm64 signed-by=/usr/share/keyrings/raspberrypi.gpg] http://archive.raspberrypi.com/debian trixie main
       EOF
     
