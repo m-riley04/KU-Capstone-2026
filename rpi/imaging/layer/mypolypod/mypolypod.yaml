@@ -1,67 +1,47 @@
 # METABEGIN
 # X-Env-Layer-Name: mypolypod
 # X-Env-Layer-Category: app
-# X-Env-Layer-Desc:
+# X-Env-Layer-Desc: Polypod - Pi Desktop + displays + Flutter app autostart
 # X-Env-Layer-Requires: rpi-user-credentials,systemd-net-min
 #
 # X-Env-VarPrefix: polypod
 # METAEND
 ---
 mmdebstrap:
-  # NOTE: this entire `setup-hooks` section is just a workaround for an issue in rpi-image-gen.
-  setup-hooks:
-    # Ensure the trusted-key directory used by rpi-image-gen exists
-    - mkdir -p "$IGconf_sys_apt_keydir"
-    - chmod 0755 "$IGconf_sys_apt_keydir"
-
-    # Debian archive keyring (contains current signing keys)
-    - mkdir -p "$1/tmp/keyrings"
-    - curl -fsSL -o "$1/tmp/keyrings/debian-archive-keyring.deb" "https://deb.debian.org/debian/pool/main/d/debian-archive-keyring/debian-archive-keyring_2025.1_all.deb"
-    - dpkg-deb -x "$1/tmp/keyrings/debian-archive-keyring.deb" "$1"
-    - cp -f "$1/usr/share/keyrings/debian-archive-keyring.gpg" "$IGconf_sys_apt_keydir/debian-archive-keyring.gpg"
-    - chmod 0644 "$IGconf_sys_apt_keydir/debian-archive-keyring.gpg"
-
-    # Raspberry Pi repo key -> into TrustedParts (work/keys)
-    - curl -fsSL "https://archive.raspberrypi.com/debian/raspberrypi.gpg.key" | gpg --dearmor --yes -o "$IGconf_sys_apt_keydir/raspberrypi.gpg"
-    - chmod 0644 "$IGconf_sys_apt_keydir/raspberrypi.gpg"
-
-    # Debian Bookworm sources
-    - rm -f "$1/etc/apt/sources.list"
-    - |-
-      cat > "$1/etc/apt/sources.list" <<'EOF'
-      deb http://deb.debian.org/debian bookworm main
-      deb http://deb.debian.org/debian bookworm-updates main
-      deb http://deb.debian.org/debian-security bookworm-security main
-      EOF
-
-    # Re-create Raspberry Pi repo list (bookworm)
-    - mkdir -p "$1/etc/apt/sources.list.d"
-    - |-
-      cat > "$1/etc/apt/sources.list.d/raspberrypi.list" <<'EOF'
-      deb http://archive.raspberrypi.com/debian bookworm main
-      EOF
-    
   packages:
-    # Used by hooks/scripts
+    # Full Raspberry Pi Desktop (LightDM + Wayfire + taskbar + everything)
+    - raspberrypi-ui-mods
+
+    # Wayland utilities
+    - wlr-randr
+
+    # Utilities used by init scripts
     - bash
     - ca-certificates
     - curl
     - git
     - wget
     - unzip
-    - xz-utils
-    - zip
-    - file
-    - gettext-base   # provides envsubst
+    - sudo
 
-    # Flutter (Linux desktop) deps (matching your intent)
+    # Flutter Linux desktop runtime deps
+    - libgtk-3-0
+    - libglib2.0-0
+    - libegl1-mesa
+    - libgl1-mesa-dri
     - libglu1-mesa
+    - mesa-utils
+
+    # Flutter BUILD deps (only needed if building from source in chroot)
+    - build-essential
     - cmake
     - ninja-build
     - clang
     - pkg-config
     - libgtk-3-dev
-    - mesa-utils
+
+    # SPI display support
+    - python3-spidev
 
   customize-hooks:
     # 1) Copy scripts into the image
@@ -70,18 +50,61 @@ mmdebstrap:
       cp -a "$SRCROOT/scripts/." "$1/opt/polypod/scripts/"
       chmod -R +x "$1/opt/polypod/scripts" || true
 
-    # 2) Run build-time init inside the target rootfs
-    #    Pass POLYPOD_USER so init_flutter can run flutter as the normal user.
+    # 2) Run init (Flutter install, display drivers, app build)
     - |
+      CACHE_HOST="$IGconf_sys_workroot/polypod-cache"
+      mkdir -p "$CACHE_HOST"
+
+      CACHE_CHROOT="/tmp/polypod-cache"
+      mkdir -p "$1${CACHE_CHROOT}"
+      mount --bind "$CACHE_HOST" "$1${CACHE_CHROOT}"
+
+      PREBUILT_CHROOT=""
+      if [ -d "$SRCROOT/prebuilt-app" ]; then
+        PREBUILT_CHROOT="/tmp/polypod-prebuilt"
+        mkdir -p "$1${PREBUILT_CHROOT}"
+        mount --bind "$SRCROOT/prebuilt-app" "$1${PREBUILT_CHROOT}"
+      fi
+
       chroot "$1" /usr/bin/env -i \
         HOME="/root" \
         PATH="/usr/sbin:/usr/bin:/sbin:/bin" \
         POLYPOD_USER="$IGconf_device_user1" \
+        POLYPOD_CACHE="${CACHE_CHROOT}" \
+        POLYPOD_PREBUILT="${PREBUILT_CHROOT}" \
         /bin/bash /opt/polypod/scripts/init.sh
 
-    # 3) Install a systemd service to run your runtime startup script every boot
-    - |
-      install -m 0644 "$SRCROOT/polypod.service" "$1/etc/systemd/system/polypod.service"
+      umount "$1${CACHE_CHROOT}" || true
+      [ -n "$PREBUILT_CHROOT" ] && umount "$1${PREBUILT_CHROOT}" || true
 
-    # 4) Enable services at build time
-    - $BDEBSTRAP_HOOKS/enable-units "$1" polypod
+    # 3) Enable LightDM and set graphical boot target
+    - $BDEBSTRAP_HOOKS/enable-units "$1" lightdm
+    - chroot "$1" /bin/systemctl set-default graphical.target
+
+    # 4) Configure LightDM autologin
+    #    CRITICAL: cannot use printf with single-quoted format strings here
+    #    because bdebstrap wraps each hook in sh -c '...' which breaks
+    #    inner single quotes. Use a | block with cat heredoc instead.
+    - |
+      mkdir -p "$1/etc/lightdm/lightdm.conf.d"
+      cat > "$1/etc/lightdm/lightdm.conf.d/10-autologin.conf" << AUTOLOGINEOF
+      [Seat:*]
+      autologin-user=$IGconf_device_user1
+      autologin-user-timeout=0
+      AUTOLOGINEOF
+      sed -i 's/^      //' "$1/etc/lightdm/lightdm.conf.d/10-autologin.conf"
+
+    # 5) XDG autostart — Flutter app launches as a desktop window after login
+    - |
+      AUTOSTART_DIR="$1/home/$IGconf_device_user1/.config/autostart"
+      mkdir -p "$AUTOSTART_DIR"
+      cat > "$AUTOSTART_DIR/polypod.desktop" << DESKTOPEOF
+      [Desktop Entry]
+      Type=Application
+      Name=Polypod
+      Exec=/opt/polypod/app/polypod_hw
+      X-GNOME-Autostart-enabled=true
+      DESKTOPEOF
+      sed -i 's/^      //' "$AUTOSTART_DIR/polypod.desktop"
+      chroot "$1" chown -R "$IGconf_device_user1:$IGconf_device_user1" \
+        "/home/$IGconf_device_user1/.config"

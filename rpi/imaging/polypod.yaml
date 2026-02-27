@@ -7,10 +7,10 @@ device:
   layer: rpi5
   hostname: polypod
   user1: pod
-  user1pass: Fo0bar!! # TODO: this should probs be set via an environment variable, but for testing purposes we'll hardcode it here for now.
+  user1pass: Fo0bar!!
 
 image:
-  system_part_size: 8000M
+  system_part_size: 8000M  # Full Pi desktop needs ~5-6GB
   name: polypod
 
 layer:
