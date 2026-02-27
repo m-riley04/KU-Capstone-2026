@@ -8,6 +8,7 @@
 # METAEND
 ---
 mmdebstrap:
+  # NOTE: this entire `setup-hooks` section is just a workaround for an issue in rpi-image-gen.
   setup-hooks:
     # Ensure the trusted-key directory used by rpi-image-gen exists
     - mkdir -p "$IGconf_sys_apt_keydir"
@@ -66,7 +67,7 @@ mmdebstrap:
     # 1) Copy scripts into the image
     - |
       install -d "$1/opt/polypod/scripts"
-      cp -a "${@SRCROOT}/scripts/." "$1/opt/polypod/scripts/"
+      cp -a "$SRCROOT/scripts/." "$1/opt/polypod/scripts/"
       chmod -R +x "$1/opt/polypod/scripts" || true
 
     # 2) Run build-time init inside the target rootfs
@@ -80,7 +81,7 @@ mmdebstrap:
 
     # 3) Install a systemd service to run your runtime startup script every boot
     - |
-      install -m 0644 "${@SRCROOT}/polypod.service" "$1/etc/systemd/system/polypod.service"
+      install -m 0644 "$SRCROOT/polypod.service" "$1/etc/systemd/system/polypod.service"
 
     # 4) Enable services at build time
     - $BDEBSTRAP_HOOKS/enable-units "$1" polypod

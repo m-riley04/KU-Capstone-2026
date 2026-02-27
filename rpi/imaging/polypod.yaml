@@ -10,7 +10,7 @@ device:
   user1pass: Fo0bar!! # TODO: this should probs be set via an environment variable, but for testing purposes we'll hardcode it here for now.
 
 image:
-  system_part_size: 1500M
+  system_part_size: 8000M
   name: polypod
 
 layer:
