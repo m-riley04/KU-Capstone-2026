@@ -6,6 +6,7 @@ import user_services from './routes/users_services-routes';
 import dotenv from 'dotenv';
 import { runMigrations } from './db/run_migrations';
 import { seedInterests } from './db/seed_interests';
+import notification_services from './routes/notification_services-routes';
 
 dotenv.config();
 
@@ -14,7 +15,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 enum Routes {
-    USER_SERVICES = '/user'
+    userServices = '/user',
+    notificationServices = '/notifications',
 }
 
 // Allow requests from your frontend
@@ -27,7 +29,8 @@ app.get('/', (req, res) => {
     res.send('Hello World!');
 });
 
-app.use(Routes.USER_SERVICES, user_services)
+app.use(Routes.userServices, user_services)
+app.use(Routes.notificationServices, notification_services)
 
 app.listen(PORT, async () => {
     await runMigrations(1);
