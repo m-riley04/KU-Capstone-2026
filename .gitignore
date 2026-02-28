@@ -79,7 +79,8 @@ pnpm-debug.log*
 *.pgdump
 
 #######################
-# Temporary files
+# Imaging
 #######################
 *.tmp
 tmp/
+work/

@@ -7,13 +7,7 @@ OUT_DIR="/opt/polypod/app"
 CACHE_DIR="${POLYPOD_CACHE:-}"
 
 # ------------------------------------------------------------------
-# FAST PATH: If a pre-built bundle exists in the source tree, just
-# copy it and skip the entire Flutter build. This avoids the ~10min+
-# QEMU-emulated arm64 compilation.
-#
-# To use: build on a real Pi or arm64 machine, then copy the
-# build/linux/arm64/release/bundle/ folder to:
-#   <your-imaging-dir>/prebuilt-app/
+# FAST PATH: pre-built bundle
 # ------------------------------------------------------------------
 PREBUILT_DIR="${POLYPOD_PREBUILT:-}"
 if [[ -n "${PREBUILT_DIR}" && -d "${PREBUILT_DIR}" ]]; then
@@ -28,27 +22,29 @@ if [[ -n "${PREBUILT_DIR}" && -d "${PREBUILT_DIR}" ]]; then
 fi
 
 # ------------------------------------------------------------------
-# FULL BUILD PATH: clone repo + flutter build (slow under QEMU)
+# FULL BUILD PATH
 # ------------------------------------------------------------------
 REPO_URL="${POLYPOD_REPO_URL:-https://github.com/m-riley04/KU-Capstone-2026.git}"
+REPO_BRANCH="${POLYPOD_REPO_BRANCH:-I-64}"
 REPO_DIR="/opt/polypod/src/KU-Capstone-2026"
 APP_SUBDIR="rpi/src/polypod_hw"
 
 export FLUTTER_HOME=/opt/flutter
 export PATH="$PATH:$FLUTTER_HOME/bin"
 
-echo "[app-build] Repo: ${REPO_URL}"
+echo "[app-build] Repo: ${REPO_URL} (branch: ${REPO_BRANCH})"
 echo "[app-build] Dest: ${REPO_DIR}"
 echo "[app-build] Out:  ${OUT_DIR}"
 
 mkdir -p "$(dirname "$REPO_DIR")" "$OUT_DIR"
 
 if [[ ! -d "${REPO_DIR}/.git" ]]; then
-  git clone --depth 1 "${REPO_URL}" "${REPO_DIR}"
+  git clone --depth 1 -b "${REPO_BRANCH}" "${REPO_URL}" "${REPO_DIR}"
 else
   echo "[app-build] Repo already present; pulling latest."
-  git -C "${REPO_DIR}" fetch --depth 1 origin
-  git -C "${REPO_DIR}" reset --hard origin/HEAD
+  git -C "${REPO_DIR}" fetch --depth 1 origin "${REPO_BRANCH}"
+  git -C "${REPO_DIR}" checkout "${REPO_BRANCH}" 2>/dev/null || true
+  git -C "${REPO_DIR}" reset --hard "origin/${REPO_BRANCH}"
 fi
 
 chown -R "${POLYPOD_USER}:${POLYPOD_USER}" "$(dirname "$REPO_DIR")"
@@ -75,7 +71,7 @@ cp -a "${BUNDLE_DIR}/." "${OUT_DIR}/"
 chown -R "${POLYPOD_USER}:${POLYPOD_USER}" "${OUT_DIR}"
 chmod +x "${OUT_DIR}/"* 2>/dev/null || true
 
-# Cache the built bundle for next time
+# Cache the built bundle
 if [[ -n "${CACHE_DIR}" ]]; then
   echo "[app-build] Caching built bundle..."
   mkdir -p "${CACHE_DIR}/app-bundle"

@@ -29,7 +29,7 @@ if ! grep -q '^dtparam=spi=on' "${CFG}" 2>/dev/null; then
   fi
 fi
 
-# SPI display overlay block (appended at end)
+# SPI display overlay block
 TITLE="#---- Waveshare 3.5in G Display (SPI) ----"
 read -r -d '' BLOCK <<'CFGEOF' || true
 #---- Waveshare 3.5in G Display (SPI) ----
@@ -47,7 +47,9 @@ if ! grep -qF "${TITLE}" "${CFG}"; then
   printf "\n%s\n" "${BLOCK}" >> "${CFG}"
 fi
 
-# Auto-load the panel-mipi-dbi kernel module at boot
+# Auto-load the panel-mipi-dbi kernel module at boot.
+# The device-tree overlay tells the kernel what hardware exists, but the
+# driver module is not built-in — it must be explicitly loaded.
 echo "[ws35g] Enabling panel-mipi-dbi module autoload"
 echo "panel-mipi-dbi" > /etc/modules-load.d/spi-display.conf
 

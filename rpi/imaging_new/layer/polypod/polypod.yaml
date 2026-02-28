@@ -1,0 +1,140 @@
+# METABEGIN
+# X-Env-Layer-Name: polypod
+# X-Env-Layer-Desc: Polypod dual-display Flutter kiosk (Sway + flutter-elinux)
+# X-Env-Layer-Requires: rpi-user-credentials,systemd-net-min
+# METAEND
+---
+mmdebstrap:
+  packages:
+    # --- Wayland compositor ---
+    - sway
+    - swaybg
+    - swayidle
+    - wlr-randr
+    - xwayland
+
+    # --- Auto-login ---
+    - greetd
+
+    # --- Input / touch ---
+    - libinput-tools
+    - libinput-bin
+    - libts-bin
+
+    # --- Display & GPU ---
+    - mesa-utils
+    - libgles2-mesa
+    - libegl1-mesa
+    - libgbm1
+    - libdrm2
+
+    # --- Flutter runtime dependencies ---
+    - libgtk-3-0
+    - libglib2.0-0
+    - libpango-1.0-0
+    - libcairo2
+    - libfontconfig1
+    - fonts-noto
+    - fonts-noto-cjk
+
+    # --- Networking / remote access ---
+    - openssh-server
+    - rsync
+    - curl
+    - wget
+    - jq
+
+    # --- System utilities ---
+    - systemd-timesyncd
+    - udev
+    - i2c-tools
+    - unzip
+
+    # --- Debugging (removable for production) ---
+    - htop
+    - strace
+    - evtest
+    - weston            # for weston-info debugging
+    - maliit-keyboard   # optional on-screen keyboard
+
+  customize-hooks:
+    # ---- 1. Copy rootfs overlay files into the image ----
+    - |
+      echo "[polypod] Copying rootfs overlay..."
+      cp -a "$BDEBSTRAP_HOOKS/../rootfs-overlay/." "$1/"
+
+    # ---- 2. Download Waveshare DSI (E) overlay ----
+    - |
+      echo "[polypod] Installing Waveshare 3.5in DSI (E) overlay..."
+      if [ -f "$BDEBSTRAP_HOOKS/../../../overlays/Waveshare_35DSI.dtbo" ]; then
+        echo "  Using cached overlay from overlays/"
+        cp "$BDEBSTRAP_HOOKS/../../../overlays/Waveshare_35DSI.dtbo" \
+           "$1/boot/firmware/overlays/Waveshare_35DSI.dtbo"
+      else
+        echo "  Downloading from waveshare.com..."
+        wget -q -O "$1/boot/firmware/overlays/Waveshare_35DSI.dtbo" \
+          "https://files.waveshare.com/wiki/common/Waveshare_35DSI.dtbo"
+      fi
+
+    # ---- 3. Download SPI display (G) firmware binary ----
+    - |
+      echo "[polypod] Installing ST7796S firmware for SPI LCD (G)..."
+      if [ -f "$BDEBSTRAP_HOOKS/../../../firmware/st7796s.bin" ]; then
+        echo "  Using cached firmware from firmware/"
+        cp "$BDEBSTRAP_HOOKS/../../../firmware/st7796s.bin" \
+           "$1/lib/firmware/st7796s.bin"
+      else
+        echo "  Downloading from waveshare.com..."
+        cd /tmp
+        wget -q "https://files.waveshare.com/wiki/common/St7796s.zip"
+        unzip -o St7796s.zip
+        cp st7796s.bin "$1/lib/firmware/st7796s.bin"
+        rm -f St7796s.zip st7796s.bin
+      fi
+
+    # ---- 4. Create data partition mount point & fstab entry ----
+    - |
+      echo "[polypod] Setting up /opt/polypod data directory..."
+      mkdir -p "$1/opt/polypod/top" "$1/opt/polypod/bottom" "$1/opt/polypod/shared"
+      chown -R 1000:1000 "$1/opt/polypod"
+
+    # ---- 5. Enable services ----
+    - |
+      echo "[polypod] Enabling systemd services..."
+      # System services
+      chroot "$1" systemctl enable greetd.service
+      chroot "$1" systemctl enable ssh.service
+      chroot "$1" systemctl enable systemd-timesyncd.service
+      chroot "$1" systemctl enable app-update.timer
+      chroot "$1" systemctl enable polypod-setup.service
+
+      # Disable conflicting services
+      chroot "$1" systemctl disable getty@tty1.service || true
+
+    # ---- 6. Set up pi user systemd user services (enabled at first boot) ----
+    - |
+      echo "[polypod] Configuring user services..."
+      mkdir -p "$1/home/pi/.config/systemd/user/default.target.wants"
+      ln -sf /home/pi/.config/systemd/user/polypod-top.service \
+             "$1/home/pi/.config/systemd/user/default.target.wants/polypod-top.service"
+      ln -sf /home/pi/.config/systemd/user/polypod-bottom.service \
+             "$1/home/pi/.config/systemd/user/default.target.wants/polypod-bottom.service"
+      chown -R 1000:1000 "$1/home/pi/.config"
+
+    # ---- 7. Make scripts executable ----
+    - |
+      chmod +x "$1/usr/local/bin/start-sway.sh"
+      chmod +x "$1/usr/local/bin/polypod-deploy.sh"
+      chmod +x "$1/usr/local/bin/polypod-update.sh"
+      chmod +x "$1/usr/local/bin/polypod-identify-displays.sh"
+      chmod +x "$1/usr/local/bin/polypod-spi-fallback.sh"
+
+    # ---- 8. Set kernel cmdline for HDMI hotplug ----
+    - |
+      echo "[polypod] Patching cmdline.txt for HDMI hot-plug..."
+      CMDLINE="$1/boot/firmware/cmdline.txt"
+      if [ -f "$CMDLINE" ]; then
+        # Append our parameters (cmdline.txt must be a single line)
+        EXISTING=$(cat "$CMDLINE" | tr -d '\n')
+        echo "${EXISTING} video=HDMI-A-1:1920x1080M@60D vc4.force_hotplug=1 consoleblank=0" > "$CMDLINE"
+      fi

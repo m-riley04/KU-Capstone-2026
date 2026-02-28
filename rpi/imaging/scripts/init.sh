@@ -8,7 +8,7 @@ echo "[init] POLYPOD_USER=${POLYPOD_USER:-pod}"
 echo "[init] POLYPOD_CACHE=${POLYPOD_CACHE:-<not set>}"
 echo "[init] POLYPOD_PREBUILT=${POLYPOD_PREBUILT:-<not set>}"
 
-# 1) Display drivers (fast — just downloads + config.txt edits)
+# 1) Display drivers
 bash "$INIT_DIR/init_waveshare35e.sh"
 bash "$INIT_DIR/init_waveshare35g.sh"
 

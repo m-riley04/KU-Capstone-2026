@@ -1,7 +1,7 @@
 # METABEGIN
 # X-Env-Layer-Name: mypolypod
 # X-Env-Layer-Category: app
-# X-Env-Layer-Desc: Polypod - Sway dual-display kiosk + Flutter app
+# X-Env-Layer-Desc: Polypod - Dual-display cage kiosk + Flutter app
 # X-Env-Layer-Requires: rpi-user-credentials,systemd-net-min
 #
 # X-Env-VarPrefix: polypod
@@ -9,9 +9,9 @@
 ---
 mmdebstrap:
   packages:
-    # Sway compositor (multi-output Wayland)
-    - sway
-    # Seat manager — sway needs this to access DRM/input
+    # Cage kiosk compositor (one instance per display)
+    - cage
+    # Seat manager
     - seatd
     # Wayland utilities
     - wlr-randr
@@ -53,7 +53,7 @@ mmdebstrap:
     - mesa-utils
 
   customize-hooks:
-    # 1) Copy scripts (including sway_config) into the image
+    # 1) Copy scripts into the image
     - |
       install -d "$1/opt/polypod/scripts"
       cp -a "$SRCROOT/scripts/." "$1/opt/polypod/scripts/"
@@ -86,11 +86,13 @@ mmdebstrap:
       umount "$1${CACHE_CHROOT}" || true
       [ -n "$PREBUILT_CHROOT" ] && umount "$1${PREBUILT_CHROOT}" || true
 
-    # 3) Install polypod.service from template
+    # 3) Install service files from templates
     - |
       export POLYPOD_USER="$IGconf_device_user1"
-      envsubst < "$SRCROOT/polypod.service.tpl" > "$1/etc/systemd/system/polypod.service"
-      chmod 0644 "$1/etc/systemd/system/polypod.service"
+      envsubst < "$SRCROOT/polypod-top.service.tpl" > "$1/etc/systemd/system/polypod-top.service"
+      envsubst < "$SRCROOT/polypod-bottom.service.tpl" > "$1/etc/systemd/system/polypod-bottom.service"
+      chmod 0644 "$1/etc/systemd/system/polypod-top.service"
+      chmod 0644 "$1/etc/systemd/system/polypod-bottom.service"
 
     # 4) Enable seatd
     - $BDEBSTRAP_HOOKS/enable-units "$1" seatd
@@ -98,5 +100,6 @@ mmdebstrap:
     # 5) Add user to display/input groups
     - chroot "$1" usermod -aG video,render,input "$IGconf_device_user1"
 
-    # 6) Enable polypod service
-    - $BDEBSTRAP_HOOKS/enable-units "$1" polypod
+    # 6) Enable both display services
+    - $BDEBSTRAP_HOOKS/enable-units "$1" polypod-top
+    - $BDEBSTRAP_HOOKS/enable-units "$1" polypod-bottom
