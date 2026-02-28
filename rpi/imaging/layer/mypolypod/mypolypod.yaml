@@ -1,7 +1,7 @@
 # METABEGIN
 # X-Env-Layer-Name: mypolypod
 # X-Env-Layer-Category: app
-# X-Env-Layer-Desc: Polypod - Pi Desktop + displays + Flutter app autostart
+# X-Env-Layer-Desc: Polypod - Cage kiosk + displays + Flutter app
 # X-Env-Layer-Requires: rpi-user-credentials,systemd-net-min
 #
 # X-Env-VarPrefix: polypod
@@ -9,9 +9,10 @@
 ---
 mmdebstrap:
   packages:
-    # Full Raspberry Pi Desktop (LightDM + Wayfire + taskbar + everything)
-    - raspberrypi-ui-mods
-
+    # Cage kiosk compositor (single fullscreen Wayland window)
+    - cage
+    # Seat manager — cage needs this to access DRM/input without a display manager
+    - seatd
     # Wayland utilities
     - wlr-randr
 
@@ -24,10 +25,11 @@ mmdebstrap:
     - unzip
     - sudo
     - file
-    - xz-utils 
+    - xz-utils
     - zip
+    - gettext-base  # provides envsubst
 
-    # python
+    # Python
     - python3
     - python3-venv
     - python3-pip
@@ -83,34 +85,17 @@ mmdebstrap:
       umount "$1${CACHE_CHROOT}" || true
       [ -n "$PREBUILT_CHROOT" ] && umount "$1${PREBUILT_CHROOT}" || true
 
-    # 3) Enable LightDM and set graphical boot target
-    - $BDEBSTRAP_HOOKS/enable-units "$1" lightdm
-    - chroot "$1" /bin/systemctl set-default graphical.target
-
-    # 4) Configure LightDM autologin
-    #    CRITICAL: cannot use printf with single-quoted format strings here
-    #    because bdebstrap wraps each hook in sh -c '...' which breaks
-    #    inner single quotes. Use a | block with cat heredoc instead.
+    # 3) Install polypod.service from template (envsubst, like the kiosk example)
     - |
-      mkdir -p "$1/etc/lightdm/lightdm.conf.d"
-      cat > "$1/etc/lightdm/lightdm.conf.d/10-autologin.conf" << AUTOLOGINEOF
-      [Seat:*]
-      autologin-user=$IGconf_device_user1
-      autologin-user-timeout=0
-      AUTOLOGINEOF
-      sed -i 's/^      //' "$1/etc/lightdm/lightdm.conf.d/10-autologin.conf"
+      export POLYPOD_USER="$IGconf_device_user1"
+      envsubst < "$SRCROOT/polypod.service.tpl" > "$1/etc/systemd/system/polypod.service"
+      chmod 0644 "$1/etc/systemd/system/polypod.service"
 
-    # 5) XDG autostart - Flutter app launches as a desktop window after login
-    - |
-      AUTOSTART_DIR="$1/home/$IGconf_device_user1/.config/autostart"
-      mkdir -p "$AUTOSTART_DIR"
-      cat > "$AUTOSTART_DIR/polypod.desktop" << DESKTOPEOF
-      [Desktop Entry]
-      Type=Application
-      Name=Polypod
-      Exec=/opt/polypod/app/polypod_hw
-      X-GNOME-Autostart-enabled=true
-      DESKTOPEOF
-      sed -i 's/^      //' "$AUTOSTART_DIR/polypod.desktop"
-      chroot "$1" chown -R "$IGconf_device_user1:$IGconf_device_user1" \
-        "/home/$IGconf_device_user1/.config"
+    # 4) Enable seatd (cage needs it for DRM/input access)
+    - $BDEBSTRAP_HOOKS/enable-units "$1" seatd
+
+    # 5) Add user to seat-related groups
+    - chroot "$1" usermod -aG video,render,input "$IGconf_device_user1"
+
+    # 6) Enable polypod service
+    - $BDEBSTRAP_HOOKS/enable-units "$1" polypod
