@@ -7,7 +7,7 @@ device:
   layer: rpi5
   hostname: polypod
   user1: pod
-  user1pass: podpass
+  user1pass: PolyP0d!!
 
 image:
   system_part_size: 6000M
