@@ -1,0 +1,75 @@
+# Polypod sway config — dual-display kiosk
+# Docs: man 5 sway
+
+# ──────────────────────────────────────────────
+# Outputs
+# ──────────────────────────────────────────────
+# SPI G display (320x480)
+output SPI-1 {
+    mode 320x480
+    position 0 0
+    transform normal
+}
+
+# DSI E display
+output DSI-2 {
+    position 320 0
+    transform normal
+}
+
+# Disable HDMI when not debugging (uncomment to enable)
+# output HDMI-A-1 disable
+# output HDMI-A-2 disable
+
+# ──────────────────────────────────────────────
+# Kiosk appearance
+# ──────────────────────────────────────────────
+# No window borders or titlebars
+default_border none
+default_floating_border none
+font pango:monospace 0
+titlebar_border_thickness 0
+titlebar_padding 0
+
+# No bar
+bar {
+    mode invisible
+}
+
+# No gaps
+gaps inner 0
+gaps outer 0
+
+# Disable idle / screen blanking
+exec swaymsg "inhibit_idle visible"
+
+# ──────────────────────────────────────────────
+# Window assignment
+# ──────────────────────────────────────────────
+# Flutter GTK apps use the binary name as app_id by default.
+# The main window will be "polypod_hw".
+# The secondary window from desktop_multi_window may have a
+# different app_id or title — check with:
+#   swaymsg -t get_tree | grep -i "app_id\|name"
+#
+# Assign by app_id (adjust after checking):
+assign [app_id="polypod_hw"] output SPI-1
+# If the second window has a different title, assign it:
+# assign [title="Secondary"] output DSI-2
+
+# Make all windows fullscreen by default
+for_window [app_id="polypod_hw"] fullscreen enable
+
+# ──────────────────────────────────────────────
+# Focus / input
+# ──────────────────────────────────────────────
+focus_follows_mouse no
+mouse_warping none
+
+# Touchscreen on G display (SPI) — map to correct output
+# input type:touch map_to_output SPI-1
+
+# ──────────────────────────────────────────────
+# Auto-start the app
+# ──────────────────────────────────────────────
+exec /opt/polypod/app/polypod_hw

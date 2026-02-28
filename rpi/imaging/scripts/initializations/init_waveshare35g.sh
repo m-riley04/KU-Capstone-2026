@@ -30,8 +30,6 @@ if ! grep -q '^dtparam=spi=on' "${CFG}" 2>/dev/null; then
 fi
 
 # SPI display overlay block (appended at end)
-# NOTE: dtparam=spi=on is NOT here — it's at the top of the file (global).
-# The dtparam lines below correctly apply to the mipi-dbi-spi overlay.
 TITLE="#---- Waveshare 3.5in G Display (SPI) ----"
 read -r -d '' BLOCK <<'CFGEOF' || true
 #---- Waveshare 3.5in G Display (SPI) ----
@@ -48,5 +46,9 @@ touch "${CFG}"
 if ! grep -qF "${TITLE}" "${CFG}"; then
   printf "\n%s\n" "${BLOCK}" >> "${CFG}"
 fi
+
+# Auto-load the panel-mipi-dbi kernel module at boot
+echo "[ws35g] Enabling panel-mipi-dbi module autoload"
+echo "panel-mipi-dbi" > /etc/modules-load.d/spi-display.conf
 
 echo "[ws35g] Done."

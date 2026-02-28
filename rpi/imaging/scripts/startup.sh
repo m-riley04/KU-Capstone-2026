@@ -1,27 +1,37 @@
 #!/bin/bash
 set -euo pipefail
 
-APP_DIR="/opt/polypod/app"
+CONFIG="/opt/polypod/scripts/sway_config"
 
-# Find the Flutter binary
-BIN="$(find "${APP_DIR}" -maxdepth 1 -type f -executable | head -n 1 || true)"
-if [[ -z "${BIN}" ]]; then
-  echo "[startup] ERROR: No executable found in ${APP_DIR}"
+if [[ ! -f "${CONFIG}" ]]; then
+  echo "[startup] ERROR: Sway config not found at ${CONFIG}"
   exit 1
 fi
 
-cd "${APP_DIR}"
+# Collect all DRM devices that have display connectors (skip v3d/render-only).
+# This ensures sway sees both the SPI and DSI/HDMI displays.
+DRM_DEVICES=""
+for card in /sys/class/drm/card*-*; do
+  [[ -e "${card}" ]] || continue
+  cardname="${card##*/}"
+  cardname="${cardname%%-*}"
+  devpath="/dev/dri/${cardname}"
+  # Deduplicate
+  if [[ ":${DRM_DEVICES}:" != *":${devpath}:"* ]]; then
+    if [[ -n "${DRM_DEVICES}" ]]; then
+      DRM_DEVICES="${DRM_DEVICES}:${devpath}"
+    else
+      DRM_DEVICES="${devpath}"
+    fi
+  fi
+done
 
-if command -v cage &>/dev/null; then
-  echo "[startup] Launching via Cage (Wayland kiosk)"
-  exec cage -s -- "${BIN}"
-elif [[ -n "${WAYLAND_DISPLAY:-}" ]]; then
-  echo "[startup] Launching on existing Wayland session"
-  exec "${BIN}"
-elif [[ -n "${DISPLAY:-}" ]]; then
-  echo "[startup] Launching on existing X11 session"
-  exec "${BIN}"
-else
-  echo "[startup] ERROR: No display server available"
+if [[ -z "${DRM_DEVICES}" ]]; then
+  echo "[startup] ERROR: No display DRM devices found"
   exit 1
 fi
+
+echo "[startup] DRM devices: ${DRM_DEVICES}"
+export WLR_DRM_DEVICES="${DRM_DEVICES}"
+
+exec sway --config "${CONFIG}"

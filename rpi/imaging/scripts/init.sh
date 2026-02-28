@@ -18,9 +18,4 @@ bash "$INIT_DIR/init_flutter.sh"
 # 3) Build/install the Flutter app
 bash "$INIT_DIR/init_app_build.sh"
 
-# 4) Install cage for kiosk mode
-if ! command -v cage &>/dev/null; then
-  apt-get install -y cage || echo "[init] WARNING: cage not available in repo"
-fi
-
 echo "[init] Complete."
