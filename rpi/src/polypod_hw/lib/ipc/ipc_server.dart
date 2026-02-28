@@ -37,8 +37,23 @@ class IpcServer {
   // ---------------------------------------------------------------------------
 
   /// Bind the server socket and start accepting connections.
+  ///
+  /// If the port is still held by a stale process (e.g. a zombie from a
+  /// previous run), we attempt to free it with `fuser -k` and retry once.
   Future<void> start() async {
-    _server = await ServerSocket.bind(InternetAddress.loopbackIPv4, port);
+    try {
+      _server = await ServerSocket.bind(InternetAddress.loopbackIPv4, port);
+    } on SocketException {
+      // Port likely held by a stale process — try to reclaim it.
+      if (kDebugMode) {
+        print('[IpcServer] port $port busy, attempting to free it…');
+      }
+      try {
+        await Process.run('fuser', ['-k', '$port/tcp']);
+      } catch (_) {}
+      await Future.delayed(const Duration(milliseconds: 500));
+      _server = await ServerSocket.bind(InternetAddress.loopbackIPv4, port);
+    }
     _server!.listen(_handleConnection);
     if (kDebugMode) {
       print('[IpcServer] listening on 127.0.0.1:$port');

@@ -1,20 +1,32 @@
 #!/usr/bin/env bash
-# run_both.sh — Launch both Polypod windows in separate processes (development)
-# Run from the polypod_hw directory.
+# run_both.sh — Development launcher for Polypod dual-window mode.
+#
+# This script kills any leftover polypod_hw zombie processes BEFORE
+# launching flutter run, preventing the hangflutter run's debugger
+# race condition where it discovers a stale VM service.
+#
+# Usage:
+#   ./run_both.sh            # default: both windows (auto-spawn)
+#   ./run_both.sh --single   # single combined window
+#   ./run_both.sh --top      # top window only
 set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
-echo "Starting Polypod top window..."
-flutter run --dart-define=POLYPOD_WINDOW=top &
-TOP_PID=$!
+# ── Kill zombies from previous runs ─────────────────────────────────────────
+PIDFILE="/tmp/polypod_bottom.pid"
+if [[ -f "$PIDFILE" ]]; then
+  OLD_PID=$(<"$PIDFILE")
+  if kill -0 "$OLD_PID" 2>/dev/null; then
+    echo "[run_both] Killing leftover bottom window (pid=$OLD_PID)"
+    kill -9 "$OLD_PID" 2>/dev/null || true
+  fi
+  rm -f "$PIDFILE"
+fi
 
-# Small delay so the IPC server has time to start before the client connects.
-sleep 3
+# Also sweep any stale polypod_hw binaries (belt-and-suspenders).
+pkill -9 -x polypod_hw 2>/dev/null || true
+sleep 0.5
 
-echo "Starting Polypod bottom window..."
-flutter run --dart-define=POLYPOD_WINDOW=bottom &
-BOTTOM_PID=$!
-
-echo "Both windows launched (top PID=$TOP_PID, bottom PID=$BOTTOM_PID)."
-wait
+# ── Launch ──────────────────────────────────────────────────────────────────
+flutter run "$@"
