@@ -32,7 +32,10 @@ Future<void> main(List<String> args) async {
   //   2. CLI args: --top, --bottom, --single              (works with compiled binary)
   //   3. desktop_multi_window sub-window detection
   //   4. Default: top window
-  const envWindow = String.fromEnvironment('POLYPOD_WINDOW');
+  final envWindow = (
+    Platform.environment['POLYPOD_WINDOW'] 
+    ?? const String.fromEnvironment('POLYPOD_WINDOW', defaultValue: 'both')
+  ).toLowerCase();
 
   PolypodWindowKind? resolvedKind;
 
