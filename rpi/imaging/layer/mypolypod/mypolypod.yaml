@@ -15,7 +15,7 @@ mmdebstrap:
     # Wayland utilities
     - wlr-randr
 
-    # Utilities used by init scripts
+    # Utilities
     - bash
     - ca-certificates
     - curl
@@ -23,6 +23,23 @@ mmdebstrap:
     - wget
     - unzip
     - sudo
+    - file
+    - xz-utils 
+    - zip
+
+    # python
+    - python3
+    - python3-venv
+    - python3-pip
+    - python3-spidev
+
+    # Flutter BUILD deps
+    - build-essential
+    - cmake
+    - ninja-build
+    - clang
+    - pkg-config
+    - libgtk-3-dev
 
     # Flutter Linux desktop runtime deps
     - libgtk-3-0
@@ -31,17 +48,6 @@ mmdebstrap:
     - libgl1-mesa-dri
     - libglu1-mesa
     - mesa-utils
-
-    # Flutter BUILD deps (only needed if building from source in chroot)
-    - build-essential
-    - cmake
-    - ninja-build
-    - clang
-    - pkg-config
-    - libgtk-3-dev
-
-    # SPI display support
-    - python3-spidev
 
   customize-hooks:
     # 1) Copy scripts into the image
@@ -94,7 +100,7 @@ mmdebstrap:
       AUTOLOGINEOF
       sed -i 's/^      //' "$1/etc/lightdm/lightdm.conf.d/10-autologin.conf"
 
-    # 5) XDG autostart — Flutter app launches as a desktop window after login
+    # 5) XDG autostart - Flutter app launches as a desktop window after login
     - |
       AUTOSTART_DIR="$1/home/$IGconf_device_user1/.config/autostart"
       mkdir -p "$AUTOSTART_DIR"
