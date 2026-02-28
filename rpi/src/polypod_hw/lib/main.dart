@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io' show Platform, Process, ProcessStartMode;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'config/theme_config.dart';
+import 'config/ipc_config.dart';
 import 'screens/top_screen.dart';
 import 'screens/bottom_screen.dart';
 import 'apps/base_app.dart';
@@ -17,31 +19,67 @@ import 'apps/notes_app.dart';
 import 'controllers/clock_timer_controller.dart';
 import 'controllers/idle_state_controller.dart';
 import 'controllers/notification_controller.dart';
+import 'ipc/ipc.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'multi_window/multi_window.dart';
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (!_isDesktopPlatform) {
-    runApp(const PolypodHWApp(windowKind: PolypodWindowKind.single));
-    return;
+  // Window mode is determined by (in priority order):
+  //   1. --dart-define=POLYPOD_WINDOW=top|bottom|single  (works with flutter run)
+  //   2. CLI args: --top, --bottom, --single              (works with compiled binary)
+  //   3. desktop_multi_window sub-window detection
+  //   4. Default: top window
+  const envWindow = String.fromEnvironment('POLYPOD_WINDOW');
+
+  PolypodWindowKind? resolvedKind;
+
+  // 1. Check --dart-define and CLI args
+  if (envWindow == 'single' || args.contains('--single')) {
+    resolvedKind = PolypodWindowKind.single;
+  } else if (envWindow == 'bottom' || args.contains('--bottom')) {
+    resolvedKind = PolypodWindowKind.bottom;
+  } else if (envWindow == 'both' || args.contains('--both')) {
+    // Launch a second process for the bottom window, then continue as top.
+    _spawnBottomProcess();
+    resolvedKind = PolypodWindowKind.top;
+  } else if (envWindow == 'top' || args.contains('--top')) {
+    resolvedKind = PolypodWindowKind.top;
   }
 
-  final multiWindow = createMultiWindow();
-  if (!multiWindow.isSupported) {
-    runApp(const PolypodHWApp(windowKind: PolypodWindowKind.single));
-    return;
+  // 2. If no explicit flag, check desktop_multi_window sub-window args
+  if (resolvedKind == null && _isDesktopPlatform) {
+    final multiWindow = createMultiWindow();
+    if (multiWindow.isSupported) {
+      final current = await multiWindow.fromCurrentEngine();
+      final parsed = PolypodWindowArgs.parse(current?.arguments);
+      if (parsed.kind == PolypodWindowKind.bottom) {
+        runApp(PolypodHWApp(
+          windowKind: PolypodWindowKind.bottom,
+          mainWindowId: parsed.mainWindowId,
+        ));
+        return;
+      }
+    }
   }
 
-  final current = await multiWindow.fromCurrentEngine();
-  final parsed = PolypodWindowArgs.parse(current?.arguments);
-  runApp(
-    PolypodHWApp(
-      windowKind: parsed.kind,
-      mainWindowId: parsed.mainWindowId,
-    ),
-  );
+  // 3. Default to top window
+  resolvedKind ??= PolypodWindowKind.top;
+
+  // Set the OS window title bar text.
+  if (_isDesktopPlatform) {
+    await windowManager.ensureInitialized();
+    final title = switch (resolvedKind) {
+      PolypodWindowKind.top => 'Polypod_Top_Screen',
+      PolypodWindowKind.bottom => 'Polypod_Bottom_Window',
+      PolypodWindowKind.single => 'Polypod Hardware Control',
+    };
+    await windowManager.setTitle(title);
+  }
+
+  runApp(PolypodHWApp(windowKind: resolvedKind));
 }
 
 bool get _isDesktopPlatform {
@@ -50,6 +88,16 @@ bool get _isDesktopPlatform {
     TargetPlatform.windows || TargetPlatform.linux || TargetPlatform.macOS => true,
     _ => false,
   };
+}
+
+/// Spawn a detached child process that runs as the bottom window.
+/// Works with compiled binaries (uses the current executable path).
+void _spawnBottomProcess() {
+  final exe = Platform.resolvedExecutable;
+  Process.start(exe, ['--bottom'], mode: ProcessStartMode.detached);
+  if (kDebugMode) {
+    print('[Polypod] Spawned bottom window process: $exe --bottom');
+  }
 }
 
 enum PolypodWindowKind { single, top, bottom }
@@ -116,7 +164,7 @@ class PolypodHWApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final String appTitle = switch (windowKind) {
       PolypodWindowKind.top => 'Polypod_Top_Screen',
-      PolypodWindowKind.bottom => 'Polypod_Bottom_Screen',
+      PolypodWindowKind.bottom => 'Polypod_Bottom_Window',
       PolypodWindowKind.single => 'Polypod Hardware Control',
     };
 
@@ -153,9 +201,8 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
 
   late final Map<String, BaseApp> _apps;
 
-  final PolypodMultiWindow _multiWindow = createMultiWindow();
-  PolypodWindowController? _topWindowController;
-  PolypodWindowController? _bottomWindowController;
+  // ── IPC ──────────────────────────────────────────────────────────────────
+  late final IpcServer _ipcServer;
 
   @override
   void initState() {
@@ -173,12 +220,43 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
       'Settings': const SettingsApp(),
     };
 
+    _ipcServer = IpcServer(port: IpcConfig.port);
+    _ipcServer.onMessage = _handleIpcMessage;
+
     _initWindowing();
   }
 
+  /// Handle an incoming IPC message from the bottom window.
+  void _handleIpcMessage(IpcMessage msg) {
+    switch (msg.type) {
+      case 'selectApp':
+        final name = msg.payload?['appName'];
+        if (name is String) _openApp(name);
+      case 'home':
+        _returnToHome();
+      case 'timerSelection':
+        final p = msg.payload;
+        if (p != null) {
+          _timerController.updateSelection(
+            Duration(
+              hours: _intFromDynamic(p['hours']),
+              minutes: _intFromDynamic(p['minutes']),
+              seconds: _intFromDynamic(p['seconds']),
+            ),
+          );
+        }
+      case 'timerStart':
+        _timerController.start();
+      case 'timerPause':
+        _timerController.pause();
+      case 'timerReset':
+        _timerController.reset();
+    }
+  }
+
   Future<void> _initWindowing() async {
-    if (!_multiWindow.isSupported) return;
-    _topWindowController = await _multiWindow.fromCurrentEngine();
+    // Start the IPC server so the bottom window can connect.
+    await _ipcServer.start();
 
     SystemChrome.setApplicationSwitcherDescription(
       const ApplicationSwitcherDescription(
@@ -186,41 +264,6 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
         primaryColor: 0xFF000000,
       ),
     );
-
-    await _topWindowController?.setMethodHandler((method, arguments) async {
-      switch (method) {
-        case 'polypod/selectApp':
-          if (arguments is String) _openApp(arguments);
-          return null;
-        case 'polypod/home':
-          _returnToHome();
-          return null;
-        case 'polypod/timerSelection':
-          if (arguments is Map) {
-            final hours = _intFromDynamic(arguments['hours']);
-            final minutes = _intFromDynamic(arguments['minutes']);
-            final seconds = _intFromDynamic(arguments['seconds']);
-            _timerController.updateSelection(
-              Duration(hours: hours, minutes: minutes, seconds: seconds),
-            );
-          }
-          return null;
-        case 'polypod/timerStart':
-          _timerController.start();
-          return null;
-        case 'polypod/timerPause':
-          _timerController.pause();
-          return null;
-        case 'polypod/timerReset':
-          _timerController.reset();
-          return null;
-      }
-      return null;
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _ensureBottomWindow();
-    });
   }
 
   int _intFromDynamic(dynamic value) {
@@ -229,39 +272,14 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
-  Future<void> _ensureBottomWindow() async {
-    if (!_multiWindow.isSupported) return;
-    final topId = _topWindowController?.windowId;
-    if (topId == null) return;
-
-    final existing = await _multiWindow.getAll();
-    for (final controller in existing) {
-      final args = PolypodWindowArgs.parse(controller.arguments);
-      if (args.kind == PolypodWindowKind.bottom && args.mainWindowId == topId) {
-        _bottomWindowController = controller;
-        await _bottomWindowController?.show();
-        await _notifyBottomAppChanged();
-        return;
-      }
-    }
-
-    _bottomWindowController = await _multiWindow.create(
-      arguments: PolypodWindowArgs.encodeBottomArgs(mainWindowId: topId),
-      hiddenAtLaunch: true,
-    );
-    await _bottomWindowController?.show();
-    await _notifyBottomAppChanged();
-  }
-
-  Future<void> _notifyBottomAppChanged() async {
-    await _bottomWindowController?.invokeMethod(
-      'polypod/appChanged',
-      {'currentAppKey': _currentAppKey},
-    );
+  /// Notify the bottom window of the current app via IPC.
+  void _notifyBottomAppChanged() {
+    _ipcServer.broadcast(IpcMessage.appChanged(_currentAppKey));
   }
 
   @override
   void dispose() {
+    _ipcServer.dispose();
     _idleController.dispose();
     _timerController.dispose();
     _notificationController.dispose();
@@ -323,10 +341,11 @@ class BottomControlWindow extends StatefulWidget {
 
 class _BottomControlWindowState extends State<BottomControlWindow> {
   final PolypodMultiWindow _multiWindow = createMultiWindow();
-  PolypodWindowController? _bottomWindowController;
-  PolypodWindowController? _mainWindowController;
 
   String _currentAppKey = 'Home';
+
+  // ── IPC ──────────────────────────────────────────────────────────────────
+  late final IpcClient _ipcClient;
 
   static const List<String> _availableApps = [
     'Timer',
@@ -339,12 +358,29 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
   @override
   void initState() {
     super.initState();
+    _ipcClient = IpcClient(port: IpcConfig.port);
+    _ipcClient.onMessage = _handleIpcMessage;
     _initWindowing();
   }
 
+  /// Handle an incoming IPC message from the top window.
+  void _handleIpcMessage(IpcMessage msg) {
+    switch (msg.type) {
+      case 'appChanged':
+        final next = msg.payload?['currentAppKey']?.toString();
+        if (next != null && mounted) {
+          setState(() {
+            _currentAppKey = next;
+          });
+        }
+    }
+  }
+
   Future<void> _initWindowing() async {
+    // Connect to the top window's IPC server.
+    await _ipcClient.connect();
+
     if (!_multiWindow.isSupported) return;
-    _bottomWindowController = await _multiWindow.fromCurrentEngine();
 
     SystemChrome.setApplicationSwitcherDescription(
       const ApplicationSwitcherDescription(
@@ -352,45 +388,32 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
         primaryColor: 0xFF000000,
       ),
     );
-
-    if (widget.mainWindowId != null) {
-      _mainWindowController = await _multiWindow.fromWindowId(widget.mainWindowId!);
-    }
-
-    await _bottomWindowController?.setMethodHandler((method, arguments) async {
-      switch (method) {
-        case 'polypod/appChanged':
-          if (arguments is Map) {
-            final next = arguments['currentAppKey']?.toString();
-            if (next != null && mounted) {
-              setState(() {
-                _currentAppKey = next;
-              });
-            }
-          }
-          return null;
-      }
-      return null;
-    });
   }
 
-  Future<void> _sendToMain(String method, [dynamic arguments]) async {
-    await _mainWindowController?.invokeMethod(method, arguments);
+  /// Send an IPC message to the top window.
+  void _sendToMain(IpcMessage message) {
+    _ipcClient.send(message);
+  }
+
+  @override
+  void dispose() {
+    _ipcClient.dispose();
+    super.dispose();
   }
 
   BaseApp _bottomProxyApp() {
     return _BottomProxyApp(
       currentAppKey: _currentAppKey,
       onTimerSelectionChanged: (duration) {
-        _sendToMain('polypod/timerSelection', {
-          'hours': duration.inHours,
-          'minutes': duration.inMinutes.remainder(60),
-          'seconds': duration.inSeconds.remainder(60),
-        });
+        _sendToMain(IpcMessage.timerSelection(
+          hours: duration.inHours,
+          minutes: duration.inMinutes.remainder(60),
+          seconds: duration.inSeconds.remainder(60),
+        ));
       },
-      onTimerStart: () => _sendToMain('polypod/timerStart'),
-      onTimerPause: () => _sendToMain('polypod/timerPause'),
-      onTimerReset: () => _sendToMain('polypod/timerReset'),
+      onTimerStart: () => _sendToMain(IpcMessage.timerStart()),
+      onTimerPause: () => _sendToMain(IpcMessage.timerPause()),
+      onTimerReset: () => _sendToMain(IpcMessage.timerReset()),
     );
   }
 
@@ -400,8 +423,8 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
       backgroundColor: EarthyTheme.background,
       body: Center(
         child: BottomScreen(
-          onAppSelected: (name) => _sendToMain('polypod/selectApp', name),
-          onHomePressed: () => _sendToMain('polypod/home'),
+          onAppSelected: (name) => _sendToMain(IpcMessage.selectApp(name)),
+          onHomePressed: () => _sendToMain(IpcMessage.home()),
           availableApps: _availableApps,
           currentApp: _bottomProxyApp(),
         ),

@@ -24,10 +24,31 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
 
   project.set_dart_entrypoint_arguments(std::move(command_line_arguments));
 
+  // Determine window title from command line arguments or POLYPOD_WINDOW env.
+  std::wstring window_title = L"Polypod_Top_Screen";
+  std::wstring cmd(command_line);
+  if (cmd.find(L"--bottom") != std::wstring::npos) {
+    window_title = L"Polypod_Bottom_Window";
+  } else if (cmd.find(L"--single") != std::wstring::npos) {
+    window_title = L"Polypod Hardware Control";
+  }
+  // Also check POLYPOD_WINDOW dart-define (passed via env or embedded).
+  // When using flutter run --dart-define=POLYPOD_WINDOW=bottom, the define
+  // isn't available natively, so we also check the POLYPOD_WINDOW env var.
+  wchar_t env_buf[64] = {};
+  if (::GetEnvironmentVariableW(L"POLYPOD_WINDOW", env_buf, 64) > 0) {
+    std::wstring env_val(env_buf);
+    if (env_val == L"bottom") {
+      window_title = L"Polypod_Bottom_Window";
+    } else if (env_val == L"single") {
+      window_title = L"Polypod Hardware Control";
+    }
+  }
+
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
   Win32Window::Size size(1280, 720);
-  if (!window.Create(L"Polypod_Top_Screen", origin, size)) {
+  if (!window.Create(window_title.c_str(), origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);
