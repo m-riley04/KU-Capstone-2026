@@ -1,9 +1,0 @@
-# All build artifacts live under work/
-work/
-
-# Backup files created during build
-*.orig
-
-# OS junk
-.DS_Store
-Thumbs.db
