@@ -1,0 +1,28 @@
+[Unit]
+Description=Polypod Top Window (Flutter)
+After=graphical-session.target
+Requires=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+Environment=HOME=/home/pi
+EnvironmentFile=/etc/polypod/polypod.conf
+
+# Single binary, CLI arg selects which window to show.
+# flutter-elinux embedder args come first, then app args after '--'.
+ExecStart=/bin/sh -c 'exec ${POLYPOD_APP_BUNDLE}/${POLYPOD_APP_BINARY} ${POLYPOD_TOP_ELINUX_ARGS} -- ${POLYPOD_TOP_ARGS}'
+
+Restart=always
+RestartSec=5
+StartLimitBurst=10
+StartLimitIntervalSec=120
+WatchdogSec=30
+MemoryMax=512M
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=polypod-top
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,32 @@
+# =============================================================================
+# Polypod Display Configuration — APPENDED to base config.txt
+# =============================================================================
+
+# --- Core GPU ---
+dtoverlay=vc4-kms-v3d
+max_framebuffers=4
+gpu_mem=256
+disable_overscan=1
+
+# --- I2C (DSI touch controller) ---
+dtparam=i2c_arm=on
+
+# --- SPI (LCD G + touch) ---
+dtparam=spi=on
+
+# --- DISPLAY 1: Waveshare 3.5" DSI LCD (E) — 640×480 ---
+display_auto_detect=0
+disable_splash=1
+dtoverlay=vc4-kms-dsi-generic,hactive=640,hfp=48,hsync=32,hbp=80,vactive=480,vfp=3,vsync=4,vbp=13
+dtoverlay=Waveshare_35DSI
+
+# --- DISPLAY 2: Waveshare 3.5" SPI LCD (G) — 320×480 ---
+dtoverlay=mipi-dbi-spi,speed=48000000
+dtparam=compatible=st7796s\0panel-mipi-dbi-spi
+dtparam=width=320,height=480,width-mm=49,height-mm=79
+dtparam=reset-gpio=27,dc-gpio=22,backlight-gpio=18
+dtoverlay=ads7846,speed=2000000,penirq=17,xmin=300,ymin=300,xmax=3900,ymax=3800,pmin=0,pmax=65535,xohms=400
+extra_transpose_buffer=2
+
+# --- Hardware watchdog ---
+dtparam=watchdog=on

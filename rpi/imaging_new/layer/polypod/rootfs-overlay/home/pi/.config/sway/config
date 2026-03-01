@@ -1,0 +1,76 @@
+# =============================================================================
+# Polypod — Sway Configuration
+# ~/.config/sway/config
+# =============================================================================
+# Environment variables (POLYPOD_*) are set by start-sway.sh from polypod.conf.
+# =============================================================================
+
+# --- Basics ---
+set $mod Mod4
+default_border none
+titlebar_border_thickness 0
+titlebar_padding 0
+font pango:monospace 0
+focus_follows_mouse no
+
+# --- Kiosk: hide cursor ---
+seat * hide_cursor 1000
+seat * hide_cursor when-typing enable
+
+# --- No status bar ---
+bar {
+    mode invisible
+}
+
+# --- Output configuration ---
+# Top display (DSI-2 or HDMI-A-1 in dev mode)
+output $POLYPOD_TOP_OUTPUT {
+    resolution $POLYPOD_TOP_RES
+    transform $POLYPOD_TOP_TRANSFORM
+    position 0 0
+    bg #000000 solid_color
+}
+
+# Bottom display (SPI-1 or HDMI-A-2 in fallback)
+output $POLYPOD_BOTTOM_OUTPUT {
+    resolution $POLYPOD_BOTTOM_RES
+    transform $POLYPOD_BOTTOM_TRANSFORM
+    position 0 480
+    bg #000000 solid_color
+}
+
+# --- HDMI hot-plug: accept any HDMI output that appears ---
+output HDMI-A-1 bg #222222 solid_color
+output HDMI-A-2 bg #222222 solid_color
+
+# --- Window rules ---
+# Both app windows use the same binary, so they share an app_id.
+# We can't use Sway's assign rules to distinguish them.
+# Instead, we fullscreen all polypod_hw windows and use the IPC
+# placement script (polypod-place-windows.sh) to move the second
+# window to the correct output after it opens.
+for_window [app_id="$POLYPOD_TOP_APP_ID"] fullscreen enable
+
+# --- Touch input defaults ---
+input type:touch {
+    events enabled
+    drag enabled
+    tap enabled
+}
+
+# --- Prevent screen blanking ---
+exec swayidle -w timeout 0 ''
+
+# --- Import env for systemd user services ---
+exec "systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP SWAYSOCK POLYPOD_APP_DIR POLYPOD_IPC_SOCKET"
+exec "systemctl --user start graphical-session.target"
+
+# --- Window placement daemon ---
+# Watches for new windows and moves the bottom one to the correct output.
+exec /usr/local/bin/polypod-place-windows.sh &
+
+# --- Emergency key bindings (for debugging with a keyboard) ---
+bindsym Ctrl+Alt+BackSpace exec swaymsg exit
+bindsym Ctrl+Alt+t exec foot || alacritty || xterm
+bindsym Ctrl+Alt+r reload
+bindsym Ctrl+Alt+i exec /usr/local/bin/polypod-identify-displays.sh --label

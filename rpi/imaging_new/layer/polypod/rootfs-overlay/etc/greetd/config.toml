@@ -1,0 +1,13 @@
+# /etc/greetd/config.toml
+# Auto-login as 'pi' and start Sway compositor
+
+[terminal]
+vt = 7
+
+[default_session]
+command = "agreety --cmd /bin/bash"
+user = "greetd"
+
+[initial_session]
+command = "/usr/local/bin/start-sway.sh"
+user = "pi"

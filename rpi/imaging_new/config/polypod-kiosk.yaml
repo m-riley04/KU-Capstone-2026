@@ -17,7 +17,7 @@ device:
   hostname: polypod
   user1: pi
   # CHANGE THIS — or override with IGconf_device_user1pass
-  user1pass: 'PolyP0d!!'
+  user1pass: 'changeme'
 
 image:
   layer: image-rpios
@@ -31,6 +31,6 @@ image:
 layer:
   app: polypod
 
-# SSH public key for remote access (TODO:)
-#ssh:
-#  pubkey_user1: ""
+# SSH public key for remote access (paste your key here)
+ssh:
+  pubkey_user1: ""
