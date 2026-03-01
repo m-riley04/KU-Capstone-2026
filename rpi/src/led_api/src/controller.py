@@ -34,9 +34,9 @@ class LEDController:
 
     def cleanup(self):
         """
-        Cleans up the GPIO pins. This function should be called when the program is exiting to ensure that the GPIO pins are reset to a safe state.
+        Cleans up the GPIO pins used by this controller. This function should be called when the program is exiting to ensure that the GPIO pins are reset to a safe state without affecting unrelated GPIO channels.
         """
-        GPIO.cleanup()
+        GPIO.cleanup([self._redPin, self._greenPin, self._bluePin])
 
     def color(self) -> LEDColor:
         """
