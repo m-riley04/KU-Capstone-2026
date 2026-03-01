@@ -1,6 +1,19 @@
 import { connectionType, createDbConnect } from "../db";
 import { UserInterests } from "../models/user";
 
+export const deleteAllUserInterestsFromDatabase = async (connection: connectionType, userId: number) => {
+    const db = await createDbConnect(connection);
+    if (!db) {
+        throw new Error('Failed to connect to database');
+    }
+
+    await db.run(
+        `DELETE FROM user_interests WHERE user_id = ?`,
+        userId
+    );
+    await db.close();
+}
+
 export const addUserInterestToDatabase = async (connection: connectionType, userId: number, interestId: number) => {
     const db = await createDbConnect(connection);
     if (!db) {

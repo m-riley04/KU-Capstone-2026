@@ -18,9 +18,7 @@ enum Routes {
 }
 
 // Allow requests from your frontend
-app.use(cors({
-    origin: process.env.LOCAL_HOST || 'http://localhost:3000',
-}));
+app.use(cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {
