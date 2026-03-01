@@ -30,13 +30,26 @@ done
 
 chmod +x "$SCRIPTS_DIR/startup.sh" # make the startup script executable
 
-# Add startup script to the desktop's autostart to run on boot
-AUTOSTART_PATH="/etc/xdg/lxsession/rpd-x/autostart"
-if ! grep -q "@bash $SCRIPTS_DIR/startup.sh" "$AUTOSTART_PATH"; then
-    echo "Adding startup script to autostart"
-    echo "@bash $SCRIPTS_DIR/startup.sh" | sudo tee -a "$AUTOSTART_PATH" > /dev/null
+# Add autostart directory
+AUTOSTART_DIR="$HOME/.config/autostart"
+mkdir -p "$AUTOSTART_DIR" # ensure the autostart directory exists
+
+# Copy .desktop file to autostart directory 
+AUTOSTART_PATH="$AUTOSTART_DIR/polypod.desktop"
+if [ -f "$AUTOSTART_PATH" ]; then
+    echo "Autostart file already exists at $AUTOSTART_PATH. Skipping copy."
 else
-    echo "Startup script already in autostart"
+    cp "$SCRIPTS_DIR/polypod.desktop" "$AUTOSTART_PATH"
+    echo "Copied polypod.desktop to $AUTOSTART_PATH for autostart on boot."
+fi
+
+# copy .desktop file to the desktop for easy access
+DESKTOP_PATH="$HOME/Desktop/polypod.desktop"
+if [ -f "$DESKTOP_PATH" ]; then
+    echo "Desktop shortcut already exists at $DESKTOP_PATH. Skipping copy."
+else
+    cp "$SCRIPTS_DIR/polypod.desktop" "$DESKTOP_PATH"
+    echo "Copied polypod.desktop to $DESKTOP_PATH for easy access."
 fi
 
 echo "Initialization complete. Please reboot the Raspberry Pi to apply changes and start the Polypod application."
