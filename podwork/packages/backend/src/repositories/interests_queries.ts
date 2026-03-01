@@ -30,6 +30,21 @@ export const getUserInterestsFromDatabase = async (connection: connectionType, u
     return interests;
 }
 
+export const getUserIdWithInterestFromDatabase = async (connection: connectionType, interestId: number) => {
+    const db = await createDbConnect(connection);
+    if (!db) {
+        throw new Error('Failed to connect to database');
+    }
+    const users = await db.all(
+        `SELECT u.id FROM users u
+        JOIN user_interests ui ON u.id = ui.user_id
+        WHERE ui.interest_id = ?`,
+        interestId
+    );
+    await db.close();
+    return users;
+}
+
 export const getInterests = async (connection: connectionType, interest: UserInterests) => {
     const db = await createDbConnect(connection);
     if (!db) {
@@ -41,6 +56,19 @@ export const getInterests = async (connection: connectionType, interest: UserInt
     }
     await db.close();
     return interestData;
+}
+
+export const getInterestIDFromName = async (connection: connectionType, interestName: string) => {
+    const db = await createDbConnect(connection);
+    if (!db) {
+        throw new Error('Failed to connect to database');
+    }
+    const interestId = await db.get(`SELECT id FROM interests WHERE name = ?`, interestName);
+    if (!interestId) {
+        throw new Error('Interest not found');
+    }
+    await db.close();
+    return interestId;
 }
 
 const addInterestToDatabase = async (connection: connectionType, name: string, category: string) => {
