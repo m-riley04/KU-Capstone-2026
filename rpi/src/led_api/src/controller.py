@@ -22,6 +22,8 @@ class LEDController:
         self._color: LEDColor = LEDColor.OFF
 
         self._setup()
+        # Ensure GPIO outputs match the initial OFF state
+        self.setColor(self._color)
 
     def _setup(self):
         """
