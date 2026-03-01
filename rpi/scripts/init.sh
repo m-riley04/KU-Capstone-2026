@@ -32,24 +32,32 @@ chmod +x "$SCRIPTS_DIR/startup.sh" # make the startup script executable
 
 # Add autostart directory
 AUTOSTART_DIR="$HOME/.config/autostart"
-mkdir -p "$AUTOSTART_DIR" # ensure the autostart directory exists
+mkdir -p "$AUTOSTART_DIR" # create the autostart directory if it doesn't exist
 
-# Copy .desktop file to autostart directory 
-AUTOSTART_PATH="$AUTOSTART_DIR/polypod.desktop"
-if [ -f "$AUTOSTART_PATH" ]; then
-    echo "Autostart file already exists at $AUTOSTART_PATH. Skipping copy."
-else
-    cp "$SCRIPTS_DIR/polypod.desktop" "$AUTOSTART_PATH"
-    echo "Copied polypod.desktop to $AUTOSTART_PATH for autostart on boot."
+# Copy the .desktop file to launch the startup script at boot
+DESKTOP_FILE="$SCRIPTS_DIR/polypod_startup.desktop"
+
+# check if desktop file DOESNT exist
+if [ ! -f "$DESKTOP_FILE" ]; then
+    echo "Error: Desktop file $DESKTOP_FILE does not exist. Please make sure it is in the scripts directory."
+    exit 1
 fi
 
-# copy .desktop file to the desktop for easy access
-DESKTOP_PATH="$HOME/Desktop/polypod.desktop"
-if [ -f "$DESKTOP_PATH" ]; then
-    echo "Desktop shortcut already exists at $DESKTOP_PATH. Skipping copy."
+# check if desktop file already exists in autostart directory
+if [ -f "$AUTOSTART_DIR/polypod_startup.desktop" ]; then
+    echo "Desktop file already exists in autostart directory. Skipping copy."
 else
-    cp "$SCRIPTS_DIR/polypod.desktop" "$DESKTOP_PATH"
-    echo "Copied polypod.desktop to $DESKTOP_PATH for easy access."
+    cp "$DESKTOP_FILE" "$AUTOSTART_DIR/polypod_startup.desktop"
+    echo "Copied desktop file to autostart directory: $AUTOSTART_DIR/polypod_startup.desktop"
+fi
+
+# copy the desktop file to the desktop for easy access
+DESKTOP_DIR="$HOME/Desktop"
+if [ -f "$DESKTOP_DIR/polypod_startup.desktop" ]; then
+    echo "Desktop file already exists on desktop. Skipping copy."
+else
+    cp "$DESKTOP_FILE" "$DESKTOP_DIR/polypod_startup.desktop"
+    echo "Copied desktop file to desktop: $DESKTOP_DIR/polypod_startup.desktop"
 fi
 
 echo "Initialization complete. Please reboot the Raspberry Pi to apply changes and start the Polypod application."
