@@ -1,5 +1,6 @@
 // src/LoginPage.tsx
 import { useState } from 'react';
+import { registerUser, loginUser } from './services/api';
 import './styles/login.css';
 
 interface LoginProps {
@@ -17,8 +18,6 @@ export default function LoginPage({ onLogin }: LoginProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(''); //clears previous errors
-
-    const SERVER = 'http://localhost:3000'
     
     try {
         if (isSignUp){
@@ -28,33 +27,24 @@ export default function LoginPage({ onLogin }: LoginProps) {
                 email: email
             };
 
-            const response = await fetch(`${SERVER}/user/add`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload),
-            });
+            const response = await registerUser(payload);
 
             if (response.ok) {
                 const data = await response.json();
                 localStorage.setItem('polypod_userId', data.id)
+                localStorage.setItem('polypod_interests', JSON.stringify([]))
                 alert('Account created! You are now logged in.');
                 onLogin();
             } else {
                 setError('Username already taken or invalid.');
             }
         }else{
-            const response = await fetch(`${SERVER}/user/${username}`, {
-                method: 'GET',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'x-password': password
-                },
-            });
+            const response = await loginUser(username, password);
             
             if (response.ok) {
                 const user = await response.json();
-                console.log('user id:', user.id); 
                 localStorage.setItem('polypod_userId', user.id)
+                localStorage.setItem('polypod_interests', JSON.stringify(user.interests || []))
                 onLogin(); 
             } else {
                 setError('Invalid credentials (server rejected you).');
@@ -65,8 +55,6 @@ export default function LoginPage({ onLogin }: LoginProps) {
     }
 }
     
-
-
   return (
     <div className="login-container">
       <div className="login-card">
@@ -112,12 +100,13 @@ export default function LoginPage({ onLogin }: LoginProps) {
         {/* sign up button */}
         <button className='sign-up'
         onClick={() => {setIsSignUp(!isSignUp);
-        setError('');
-        setUsername('');
-        setPassword('');
+            setError('');
+            setUsername('');
+            setPassword('');
+            setEmail('');
         }}
         style={{marginTop: '1rem', background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', textDecoration: 'underline'}}>
-        Don't have an account? Sign up here!</button>
+        {isSignUp ? "Already have an account? Log in here!" : "Don't have an account? Sign up here!"}</button>
       </div>
     </div>
   );
