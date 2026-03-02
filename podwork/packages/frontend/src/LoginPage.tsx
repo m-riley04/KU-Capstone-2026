@@ -1,5 +1,6 @@
 // src/LoginPage.tsx
 import { useState } from 'react';
+import { registerUser, loginUser } from './services/api';
 import './styles/login.css';
 
 interface LoginProps {
@@ -10,55 +11,40 @@ export default function LoginPage({ onLogin }: LoginProps) {
   // the username and password entered by the user will be stored here 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(''); //clears previous errors
-
-    if (isSignUp) {
-        if (username && password){
-            alert(`Account created for ${username}!`);
-            onLogin();
-        }else{
-            setError('Please enter a username and password');
-        }
-    }else{
-        if (username === 'admin' && password === 'password') {
-            onLogin();
-        } else {
-            setError('Invalid credentials');
-        }
-    };  
-    }
-
-    //Code for when we integrate with the backend
-    /* 
-    const payload = {username, password};
-
+    
     try {
         if (isSignUp){
-            const response = await fetch(SERVER. {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json');
-                body: JSON.stringify(payload),
-            });
+            const payload = {
+                username: username, 
+                password: password,
+                email: email
+            };
+
+            const response = await registerUser(payload);
+
             if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('polypod_userId', data.id)
+                localStorage.setItem('polypod_interests', JSON.stringify([]))
                 alert('Account created! You are now logged in.');
                 onLogin();
             } else {
                 setError('Username already taken or invalid.');
             }
         }else{
-            const response = await fetch(SERVER, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload), 
-            });
+            const response = await loginUser(username, password);
+            
             if (response.ok) {
-                const data = await response.json();
-                console.log('Server token:', data.token); 
+                const user = await response.json();
+                localStorage.setItem('polypod_userId', user.id)
+                localStorage.setItem('polypod_interests', JSON.stringify(user.interests || []))
                 onLogin(); 
             } else {
                 setError('Invalid credentials (server rejected you).');
@@ -67,10 +53,8 @@ export default function LoginPage({ onLogin }: LoginProps) {
     }catch (err){
         setError('Server not responding');
     }
-    */
+}
     
-
-
   return (
     <div className="login-container">
       <div className="login-card">
@@ -96,6 +80,14 @@ export default function LoginPage({ onLogin }: LoginProps) {
             className="login-input"
             style={{marginBottom: '20px'}}
           />
+          <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="login-input"
+          style={{marginBottom: '10px'}}
+          />
           
           {error && <p style={{color: 'red'}}>{error}</p>}
           
@@ -108,13 +100,14 @@ export default function LoginPage({ onLogin }: LoginProps) {
         {/* sign up button */}
         <button className='sign-up'
         onClick={() => {setIsSignUp(!isSignUp);
-        setError('');
-        setUsername('');
-        setPassword('');
+            setError('');
+            setUsername('');
+            setPassword('');
+            setEmail('');
         }}
         style={{marginTop: '1rem', background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', textDecoration: 'underline'}}>
-        Don't have an account? Sign up here!</button>
+        {isSignUp ? "Already have an account? Log in here!" : "Don't have an account? Sign up here!"}</button>
       </div>
     </div>
   );
-}
+};

@@ -1,11 +1,13 @@
 // src/App.tsx
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import './styles/base.css';
 import './styles/layout.css';
 import './styles/components.css';
 import { SUB_CATEGORY_DATA } from './utilities/sub_categories';
 import { DATA_SOURCE } from './utilities/main_categories'
 import LoginPage from './LoginPage';
+import { getSlideClass, getSelectedNames } from './utilities/helpers';
+import { savePreferencesToDatabase } from './services/api';
 
 type CategoryName = keyof typeof DATA_SOURCE;
 
@@ -17,9 +19,31 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   // keep track of things that are checkmnarked
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // keep track of what is actually sent to database
+  const [savedIds, setSavedIds] = useState<string[]>([])
+
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    // check if token exists so a logged in user can stay logged in
+    return localStorage.getItem('polypod_userId') !== null;
+  });
+
   // state to hold if the user selected preference summary 
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+
+  // when user logs in pull up their saved preferences
+  useEffect(() => {
+    if (isLoggedIn) {
+      const cachedInterests = localStorage.getItem('polypod_interests');
+
+      if (cachedInterests) {
+        const parsedInterests = JSON.parse(cachedInterests);
+        const interestNames = parsedInterests.map((item: { name: string}) => item.name);
+
+        setSelectedIds(interestNames);
+        setSavedIds(interestNames);
+      }
+    }
+  }, [isLoggedIn]); // run whenever a log in status changes
 
   // toggle item on/off
   const toggleSelection = useCallback((id: string) => {
@@ -31,36 +55,53 @@ function App() {
     });
   }, []);
 
-  // calculate which "level" we are on for CSS
-  const getSlideClass = () => {
-    if (activeSubCategory) return 'level-3';
-    if (activeCategory) return 'level-2';
-    return '';    
+  // logout user from session
+  const handleLogout = () => {
+    localStorage.removeItem('polypod_userId'); //remove userID
+    setIsLoggedIn(false);
+  }
+
+  // check if user has made changes to their preferences
+  const hasUnsavedChanges = () => {
+    // if they have different number of items then it is a change
+    if (selectedIds.length !== savedIds.length) return true;
+
+    // sort both arrays alphabetically so order doesn't matter then compare
+    const sortedSelected = [...selectedIds].sort().join(',');
+    const sortedSaved = [...savedIds].sort().join(',');
+
+    return sortedSelected !== sortedSaved;
   };
+
+  // function to send preferences to the backend
+  const handleSavePreferences = async () => {
+    const userId = localStorage.getItem('polypod_userId');
+
+    if (!userId) {
+      alert("You are not logged in properly");
+      return;
+    }
+
+    try {
+      const response = await savePreferencesToDatabase(userId, selectedIds);
+
+      if (response.ok){
+        alert('Preferences successfully sent to server');
+        setSavedIds([...selectedIds]);
+
+        const formattedInterests = selectedIds.map(name => ({name: name}));
+        localStorage.setItem('polypod_interests', JSON.stringify(formattedInterests))
+      }else{
+        alert('Failed to save preferences.');
+      }
+    }catch (error){
+      alert('Server not responding')
+    }
+  }
 
   // show login page if not logged in
   if (!isLoggedIn) {
     return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
-  }
-
-  const getSelectedNames = () => {
-    const subCategoryNames: string[] = [];
-    const weatherNames: string[] = [];
-    
-    Object.values(SUB_CATEGORY_DATA).forEach(element => {
-      element.forEach((item) => {
-        if (selectedIds.includes(item.id)){
-          subCategoryNames.push(item.id);
-        }
-      })
-    });
-    Object.values(DATA_SOURCE['Weather']).forEach(element => {
-        if (selectedIds.includes(element.id)){
-          weatherNames.push(element.id);
-        }
-      });
-
-    return {subCategoryNames, weatherNames};
   }
 
   return (
@@ -69,9 +110,11 @@ function App() {
         <h1>Polywork</h1>
       </header>
 
+      <button className='logout' onClick={handleLogout}>Sign Out</button>
+
       {/* sliding window */}
       <div className='slider-viewport'>
-        <div className={`slider-track ${getSlideClass()}`}>
+        <div className={`slider-track ${getSlideClass(activeCategory, activeSubCategory)}`}>
 
           {/* level 1 */}
           <div className='slide-page'>
@@ -90,9 +133,16 @@ function App() {
             {/* show whats active */}
             <div className='summary-box' onClick={() => setIsSummaryOpen(true)}>
               <h3>Currently Active</h3>
-              <p>{selectedIds.length} preferences enabled</p>
+              <p>{selectedIds.length} preferences selected</p>
               <small>(Click to view selected preferences)</small>
             </div>
+            {hasUnsavedChanges() && (
+              <button
+              className='save-btn'
+              onClick={handleSavePreferences}>
+              Save Preferences
+            </button>
+            )}
           </div>
 
           {/* level 2 */}
@@ -186,12 +236,15 @@ function App() {
               <p>No preferenced selected.</p>
             ) : (
               <ul className='summary-list'>
-                {getSelectedNames().subCategoryNames.map((name) => (
-                  <li key={name}>{name}</li>
-                ))}
-                {getSelectedNames().weatherNames.map((name) => (
-                  <li key={name}>{name}</li>
-                ))}
+                {(() => {
+                  const {subCategoryNames, weatherNames} = getSelectedNames(selectedIds);
+                  return (
+                    <>
+                      {subCategoryNames.map((name) => <li key={name}>{name}</li>)}
+                      {weatherNames.map((name) => <li key={name}>{name}</li>)}
+                    </>
+                  )
+                })()}
               </ul>
             )}
             <button
