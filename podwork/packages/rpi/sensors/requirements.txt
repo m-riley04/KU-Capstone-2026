@@ -1,0 +1,2 @@
+adafruit-circuitpython-bme680
+adafruit-blinka
