@@ -8,15 +8,16 @@ import 'screens/top_screen.dart';
 import 'screens/bottom_screen.dart';
 import 'apps/base_app.dart';
 import 'apps/idle_app.dart';
-import 'apps/home_app.dart';
 import 'apps/clock_app.dart';
 import 'apps/weather_app.dart';
 import 'apps/media_app.dart';
 import 'apps/settings_app.dart';
-import 'apps/notes_app.dart';
+import 'apps/polypod_app.dart';
 import 'controllers/clock_timer_controller.dart';
 import 'controllers/idle_state_controller.dart';
 import 'controllers/notification_controller.dart';
+import 'controllers/polypod_animation_controller.dart';
+import 'controllers/polypod_maintenance_controller.dart';
 
 import 'multi_window/multi_window.dart';
 
@@ -148,7 +149,9 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
   late IdleStateController _idleController;
   late ClockTimerController _timerController;
   late NotificationController _notificationController;
-  BaseApp _currentApp = const IdleApp();
+  late PolypodAnimationController _polypodController;
+  late PolypodMaintenanceController _maintenanceController;
+  late BaseApp _currentApp;
   String _currentAppKey = 'Home';
 
   late final Map<String, BaseApp> _apps;
@@ -164,14 +167,22 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     _idleController.setIdleCallback(_returnToIdle);
     _timerController = ClockTimerController();
     _notificationController = NotificationController();
+    _polypodController = PolypodAnimationController();
+    _maintenanceController = PolypodMaintenanceController();
     _apps = {
-      'Home': const HomeApp(),
+      'Home': IdleApp(maintenanceController: _maintenanceController),
       'Timer': ClockApp(controller: _timerController),
       'Weather': const WeatherApp(),
       'Media': const MediaApp(),
-      'Notes': const NotesApp(),
+      'Polypod': PolypodApp(
+        controller: _polypodController,
+        onFeed: _maintenanceController.feed,
+        onWater: _maintenanceController.water,
+        onPet: _maintenanceController.pet,
+      ),
       'Settings': const SettingsApp(),
     };
+    _currentApp = IdleApp(maintenanceController: _maintenanceController);
 
     _initWindowing();
   }
@@ -213,6 +224,18 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
           return null;
         case 'polypod/timerReset':
           _timerController.reset();
+          return null;
+        case 'polypod/feed':
+          _polypodController.triggerFeed();
+          _maintenanceController.feed();
+          return null;
+        case 'polypod/water':
+          _polypodController.triggerWater();
+          _maintenanceController.water();
+          return null;
+        case 'polypod/pet':
+          _polypodController.triggerPet();
+          _maintenanceController.pet();
           return null;
       }
       return null;
@@ -265,12 +288,14 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     _idleController.dispose();
     _timerController.dispose();
     _notificationController.dispose();
+    _polypodController.dispose();
+    _maintenanceController.dispose();
     super.dispose();
   }
 
   void _returnToIdle() {
     setState(() {
-      _currentApp = const IdleApp();
+      _currentApp = IdleApp(maintenanceController: _maintenanceController);
       _currentAppKey = 'Home';
     });
     _notifyBottomAppChanged();
@@ -279,7 +304,7 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
   void _returnToHome() {
     _idleController.resetIdleTimer();
     setState(() {
-      _currentApp = const IdleApp();
+      _currentApp = IdleApp(maintenanceController: _maintenanceController);
       _currentAppKey = 'Home';
     });
     _notifyBottomAppChanged();
@@ -289,7 +314,7 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     _idleController.resetIdleTimer();
     setState(() {
       _currentAppKey = appName;
-      _currentApp = _apps[appName] ?? const HomeApp();
+      _currentApp = _apps[appName] ?? IdleApp(maintenanceController: _maintenanceController);
     });
     _notifyBottomAppChanged();
   }
@@ -332,7 +357,7 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
     'Timer',
     'Weather',
     'Media',
-    'Notes',
+    'Polypod',
     'Settings',
   ];
 
@@ -391,6 +416,9 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
       onTimerStart: () => _sendToMain('polypod/timerStart'),
       onTimerPause: () => _sendToMain('polypod/timerPause'),
       onTimerReset: () => _sendToMain('polypod/timerReset'),
+      onFeed: () => _sendToMain('polypod/feed'),
+      onWater: () => _sendToMain('polypod/water'),
+      onPet: () => _sendToMain('polypod/pet'),
     );
   }
 
@@ -417,6 +445,9 @@ class _BottomProxyApp extends BaseApp {
     required this.onTimerStart,
     required this.onTimerPause,
     required this.onTimerReset,
+    required this.onFeed,
+    required this.onWater,
+    required this.onPet,
   });
 
   final String currentAppKey;
@@ -424,6 +455,9 @@ class _BottomProxyApp extends BaseApp {
   final VoidCallback onTimerStart;
   final VoidCallback onTimerPause;
   final VoidCallback onTimerReset;
+  final VoidCallback onFeed;
+  final VoidCallback onWater;
+  final VoidCallback onPet;
 
   @override
   String get appName => currentAppKey;
@@ -436,6 +470,13 @@ class _BottomProxyApp extends BaseApp {
         onStart: onTimerStart,
         onPause: onTimerPause,
         onReset: onTimerReset,
+      );
+    }
+    if (currentAppKey == 'Polypod') {
+      return PolypodCareControls(
+        onFeedPressed: onFeed,
+        onWaterPressed: onWater,
+        onPetPressed: onPet,
       );
     }
     return null;
@@ -465,7 +506,9 @@ class _DualScreenHomeState extends State<DualScreenHome> {
   late IdleStateController _idleController;
   late ClockTimerController _timerController;
   late NotificationController _notificationController;
-  BaseApp _currentApp = const IdleApp();
+  late PolypodAnimationController _polypodController;
+  late PolypodMaintenanceController _maintenanceController;
+  late BaseApp _currentApp;
 
   late final Map<String, BaseApp> _apps;
 
@@ -476,14 +519,22 @@ class _DualScreenHomeState extends State<DualScreenHome> {
     _idleController.setIdleCallback(_returnToIdle);
     _timerController = ClockTimerController();
     _notificationController = NotificationController();
+    _polypodController = PolypodAnimationController();
+    _maintenanceController = PolypodMaintenanceController();
     _apps = {
-      'Home': const HomeApp(),
+      'Home': IdleApp(maintenanceController: _maintenanceController),
       'Timer': ClockApp(controller: _timerController),
       'Weather': const WeatherApp(),
       'Media': const MediaApp(),
-      'Notes': const NotesApp(),
+      'Polypod': PolypodApp(
+        controller: _polypodController,
+        onFeed: _maintenanceController.feed,
+        onWater: _maintenanceController.water,
+        onPet: _maintenanceController.pet,
+      ),
       'Settings': const SettingsApp(),
     };
+    _currentApp = IdleApp(maintenanceController: _maintenanceController);
   }
 
   @override
@@ -491,26 +542,28 @@ class _DualScreenHomeState extends State<DualScreenHome> {
     _idleController.dispose();
     _timerController.dispose();
     _notificationController.dispose();
+    _polypodController.dispose();
+    _maintenanceController.dispose();
     super.dispose();
   }
 
   void _returnToIdle() {
     setState(() {
-      _currentApp = const IdleApp();
+      _currentApp = IdleApp(maintenanceController: _maintenanceController);
     });
   }
 
   void _returnToHome() {
     _idleController.resetIdleTimer();
     setState(() {
-      _currentApp = const IdleApp();
+      _currentApp = IdleApp(maintenanceController: _maintenanceController);
     });
   }
 
   void _openApp(String appName) {
     _idleController.resetIdleTimer();
     setState(() {
-      _currentApp = _apps[appName] ?? const HomeApp();
+      _currentApp = _apps[appName] ?? IdleApp(maintenanceController: _maintenanceController);
     });
   }
 

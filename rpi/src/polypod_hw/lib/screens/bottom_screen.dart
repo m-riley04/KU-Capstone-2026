@@ -66,7 +66,7 @@ class BottomScreen extends StatelessWidget {
       'Timer': Icons.access_time_rounded,
       'Weather': Icons.wb_sunny_rounded,
       'Media': Icons.music_note_rounded,
-      'Notes': Icons.note_rounded,
+      'Polypod': Icons.pets_rounded,
       'Settings': Icons.settings_rounded,
     };
 
