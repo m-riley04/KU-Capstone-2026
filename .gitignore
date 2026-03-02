@@ -77,3 +77,10 @@ pnpm-debug.log*
 *.sql.gz
 *.sql.zip
 *.pgdump
+
+#######################
+# Imaging
+#######################
+*.tmp
+tmp/
+work/

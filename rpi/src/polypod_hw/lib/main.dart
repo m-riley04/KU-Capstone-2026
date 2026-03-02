@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'config/theme_config.dart';
 import 'screens/top_screen.dart';
 import 'screens/bottom_screen.dart';
@@ -113,8 +114,14 @@ class PolypodHWApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String appTitle = switch (windowKind) {
+      PolypodWindowKind.top => 'Polypod_Top_Screen',
+      PolypodWindowKind.bottom => 'Polypod_Bottom_Screen',
+      PolypodWindowKind.single => 'Polypod Hardware Control',
+    };
+
     return MaterialApp(
-      title: 'Polypod Hardware Control',
+      title: appTitle,
       theme: ThemeData.dark(
         useMaterial3: true,
       ).copyWith(
@@ -172,6 +179,13 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
   Future<void> _initWindowing() async {
     if (!_multiWindow.isSupported) return;
     _topWindowController = await _multiWindow.fromCurrentEngine();
+
+    SystemChrome.setApplicationSwitcherDescription(
+      const ApplicationSwitcherDescription(
+        label: 'Polypod_Top_Screen',
+        primaryColor: 0xFF000000,
+      ),
+    );
 
     await _topWindowController?.setMethodHandler((method, arguments) async {
       switch (method) {
@@ -331,6 +345,14 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
   Future<void> _initWindowing() async {
     if (!_multiWindow.isSupported) return;
     _bottomWindowController = await _multiWindow.fromCurrentEngine();
+
+    SystemChrome.setApplicationSwitcherDescription(
+      const ApplicationSwitcherDescription(
+        label: 'Polypod_Bottom_Screen',
+        primaryColor: 0xFF000000,
+      ),
+    );
+
     if (widget.mainWindowId != null) {
       _mainWindowController = await _multiWindow.fromWindowId(widget.mainWindowId!);
     }
