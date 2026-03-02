@@ -11,8 +11,8 @@ npm run build:backend
 npm run start:backend
 ```
 
-## server
-This directory is for storing all code related to the backend server.
+## Quick Overview 
+This is a typescript backend, that connects to a SQLite DB 
 
 ## Routes and What is returned 
 
@@ -38,14 +38,40 @@ Common error responses:
 
 ---
 
-# Get User (Authenticate)
-GET /users/:username
+# notification services 
+## Get Notifications 
+GET /notifications/:userId
 
-## Required
+### Required 
+- `req.params.userId`
+
+### Successful Response
+<!-- TODO: come back to and fix -->
+status: 200 
+{
+    notifType: "base"
+    from_source: "NFL"
+    data: {
+      timestamp: Date;
+      media: string; //HANNAH IS THIS RIGHT? 
+      headline: string;
+      info: string;
+      seemore: string;
+    } 
+}
+
+
+### Other possible responses  
+
+# User Services 
+## Get User (Authenticate)
+GET /user/:username
+
+### Required
 - `req.params.username`
 - Header: `x-password`
 
-## Success Response    
+### Success Response    
 Status: 200 
 {
   "id": 1,
@@ -58,16 +84,16 @@ Status: 200
   ]
 }
 
-# Create User  
-## Assumes that users will never be created with interests
-POST /users
-## Required
+## Create User  
+### Assumes that users will never be created with interests
+POST /user
+### Required
 {
   "username": "hannah",
   "email": "hannah@email.com",
   "password": "password123"
 }
-## Success Response
+### Success Response
 status 201 
 {
   "id": 1,
@@ -76,12 +102,12 @@ status 201
   "password": "$2b$10$hashedValue..."
 }
 
-# Update User  
-PUT /users/:userId
-## Required
+## Update User  
+PUT /user/:userId
+### Required
 req.params.userId
 Body must include updated_user
-### Example Body
+**Example Body**
 {
   "updated_user": {
     "username": "newName",
@@ -97,7 +123,7 @@ Body must include updated_user
     ]
   }
 }
-## Success Response
+### Success Response
 status 200 
 {
     "id": 1,
@@ -119,17 +145,14 @@ status 200
         }
     ]
 }
-# Delete User   
-DELETE /users/:userId
-## Required
+## Delete User   
+DELETE /user/:userId
+### Required
 req.params.userId
-## Success Response
+### Success Response
 status 200 
 { "message": "User deleted successfully" }
 
-
-## Quick Overview 
-This is a typescript backend, that connects to a mySQL DB 
 
 ## File Structure 
 There are a lot of folders here is a break down going top to bottom 
