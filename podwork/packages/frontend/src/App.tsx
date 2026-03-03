@@ -21,6 +21,8 @@ function App() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   // keep track of what is actually sent to database
   const [savedIds, setSavedIds] = useState<string[]>([])
+  // state for toast notification
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     // check if token exists so a logged in user can stay logged in
@@ -44,6 +46,14 @@ function App() {
       }
     }
   }, [isLoggedIn]); // run whenever a log in status changes
+
+  // auto save
+  useEffect(() => {
+    // if on level 1 (activeCategory is null) and there are changes to save
+    if (activeCategory === null && hasUnsavedChanges()) {
+      handleSavePreferences();
+    }
+  }, [activeCategory, selectedIds, savedIds]);
 
   // toggle item on/off
   const toggleSelection = useCallback((id: string) => {
@@ -73,12 +83,20 @@ function App() {
     return sortedSelected !== sortedSaved;
   };
 
+  // trigger the toast and hide it after 3 seconds
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    
+    setTimeout(() => {
+      setToast(null);
+    }, 3000);
+  };
+
   // function to send preferences to the backend
   const handleSavePreferences = async () => {
     const userId = localStorage.getItem('polypod_userId');
 
     if (!userId) {
-      alert("You are not logged in properly");
       return;
     }
 
@@ -86,16 +104,20 @@ function App() {
       const response = await savePreferencesToDatabase(userId, selectedIds);
 
       if (response.ok){
-        alert('Preferences successfully sent to server');
+        //maybe add small notification that it was saved
+        console.log("Successfully saved preferences")
         setSavedIds([...selectedIds]);
 
         const formattedInterests = selectedIds.map(name => ({name: name}));
         localStorage.setItem('polypod_interests', JSON.stringify(formattedInterests))
+        showToast('Preferences auto-saved ✓', 'success');
       }else{
-        alert('Failed to save preferences.');
+        showToast('Failed to save preferences', 'error');
+        console.error('Failed to save preferences.');
       }
     }catch (error){
-      alert('Server not responding')
+      showToast('Server not responding', 'error');
+      console.error('Server not responding')
     }
   }
 
@@ -136,13 +158,6 @@ function App() {
               <p>{selectedIds.length} preferences selected</p>
               <small>(Click to view selected preferences)</small>
             </div>
-            {hasUnsavedChanges() && (
-              <button
-              className='save-btn'
-              onClick={handleSavePreferences}>
-              Save Preferences
-            </button>
-            )}
           </div>
 
           {/* level 2 */}
@@ -230,7 +245,7 @@ function App() {
       {isSummaryOpen && (
         <div className='summary-modal' onClick={() => setIsSummaryOpen(false)}>
           <div className='summary-modal-content' onClick={(e) => e.stopPropagation()}>
-            <h2>Selected Preferences</h2>
+            <h2 style={{ textAlign: 'center' }}>Selected Preferences</h2>
 
             {selectedIds.length === 0 ? (
               <p>No preferenced selected.</p>
@@ -240,8 +255,32 @@ function App() {
                   const {subCategoryNames, weatherNames} = getSelectedNames(selectedIds);
                   return (
                     <>
-                      {subCategoryNames.map((name) => <li key={name}>{name}</li>)}
-                      {weatherNames.map((name) => <li key={name}>{name}</li>)}
+                      {subCategoryNames.map((name) => (
+                        <li key={name} className='preference-list'>
+                          <button 
+                            className='remove-preference'
+                            onClick={() => toggleSelection(name)}
+                            aria-label = {`Remove ${name}`}
+                            title="Remove preference"
+                          >
+                           ✕
+                          </button>
+                          <span>{name}</span>
+                        </li>
+                      ))}
+                      {weatherNames.map((name) => (
+                        <li key={name} className='preference-list'>
+                          <button 
+                            className='remove-preference'
+                            onClick={() => toggleSelection(name)}
+                            aria-label={`Remove ${name}`}
+                            title="Remove preference"
+                          >
+                            ✕
+                          </button>
+                          <span>{name}</span>
+                        </li>
+                      ))}
                     </>
                   )
                 })()}
@@ -254,6 +293,11 @@ function App() {
               Close
             </button>
           </div>
+        </div>
+      )}
+      {toast && (
+        <div className={`toast-notification ${toast.type}`}>
+          {toast.message}
         </div>
       )}
     </div>
