@@ -4,13 +4,10 @@ import 'package:flutter/material.dart';
 
 import '../config/theme_config.dart';
 
-enum MouthMood { neutral, surprise, sad, evil }
+enum MouthMood { neutral, surprise, sad, evil, silly }
 
 class MouthAnimation extends StatefulWidget {
-  const MouthAnimation({
-    super.key,
-    this.mood = MouthMood.neutral,
-  });
+  const MouthAnimation({super.key, this.mood = MouthMood.neutral});
 
   final MouthMood mood;
 
@@ -19,7 +16,7 @@ class MouthAnimation extends StatefulWidget {
 }
 
 class _MouthAnimationState extends State<MouthAnimation>
-  with TickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _mouthController;
   late final AnimationController _moodController;
   late final Animation<double> _mouthOpen;
@@ -43,10 +40,9 @@ class _MouthAnimationState extends State<MouthAnimation>
     _fromMood = widget.mood;
     _toMood = widget.mood;
 
-    _mouthOpen = Tween<double>(
-      begin: 0.05,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _mouthController, curve: Curves.easeInOut));
+    _mouthOpen = Tween<double>(begin: 0.05, end: 1.0).animate(
+      CurvedAnimation(parent: _mouthController, curve: Curves.easeInOut),
+    );
   }
 
   @override
@@ -69,7 +65,7 @@ class _MouthAnimationState extends State<MouthAnimation>
   _MouthStyle _styleFor(MouthMood mood, double openness) {
     return switch (mood) {
       MouthMood.neutral => _MouthStyle(
-        scaleX: 1.0,
+        scaleX: 0.90,
         scaleY: 0.20 + (openness * 0.95),
         tilt: (openness - 0.5) * 0.10,
         verticalShift: (1.0 - openness) * 14,
@@ -87,10 +83,16 @@ class _MouthAnimationState extends State<MouthAnimation>
         verticalShift: 8,
       ),
       MouthMood.evil => _MouthStyle(
-        scaleX: 1.04,
+        scaleX: 0.90,
         scaleY: 0.42 + (openness * 0.55),
         tilt: -0.03,
         verticalShift: 8,
+      ),
+      MouthMood.silly => _MouthStyle(
+        scaleX: 0.95,
+        scaleY: 0.88 + (openness * 0.15),
+        tilt: 0.02,
+        verticalShift: 7,
       ),
     };
   }
@@ -106,7 +108,9 @@ class _MouthAnimationState extends State<MouthAnimation>
           final mouthWidth = size.width * 0.78;
           final mouthHeight = size.height * 0.20;
           final openness = _mouthOpen.value;
-          final transitionT = Curves.easeInOutCubic.transform(_moodController.value);
+          final transitionT = Curves.easeInOutCubic.transform(
+            _moodController.value,
+          );
 
           final fromStyle = _styleFor(_fromMood, openness);
           final toStyle = _styleFor(_toMood, openness);
@@ -155,7 +159,11 @@ class MouthPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final baseColor = Color.lerp(Colors.pink.shade300, Colors.pink.shade500, 0.5)!;
+    final baseColor = Color.lerp(
+      Colors.pink.shade300,
+      Colors.pink.shade500,
+      0.5,
+    )!;
 
     final shapeRect = Rect.fromCenter(
       center: Offset(size.width / 2, size.height / 2),
@@ -214,7 +222,9 @@ class MouthPainter extends CustomPainter {
         ..close();
 
       final fangPaint = Paint()
-        ..color = Colors.white.withValues(alpha: (0.35 + (0.65 * evilStrength)).clamp(0.0, 1.0))
+        ..color = Colors.white.withValues(
+          alpha: (0.35 + (0.65 * evilStrength)).clamp(0.0, 1.0),
+        )
         ..style = PaintingStyle.fill;
 
       canvas.save();
@@ -222,6 +232,70 @@ class MouthPainter extends CustomPainter {
       canvas.drawPath(leftFang, fangPaint);
       canvas.drawPath(rightFang, fangPaint);
       canvas.restore();
+    }
+
+    final sillyStrength = _moodStrength(MouthMood.silly);
+    if (sillyStrength > 0) {
+      final tongueTopY = size.height * 0.50;
+      final tongueLength = size.height * (0.75 + (0.2 * openness));
+      final tongueHalfWidth = size.width * 0.09;
+      final tongueCenterX = size.width * 0.6;
+
+      final tongueLeft = tongueCenterX - tongueHalfWidth;
+      final tongueRight = tongueCenterX + tongueHalfWidth;
+      final tongueBottom = tongueTopY + tongueLength;
+      final tongueTipRadiusY = tongueLength * 0.20;
+
+      final tonguePath = Path()
+        ..moveTo(tongueLeft, tongueTopY)
+        ..lineTo(tongueRight, tongueTopY)
+        ..lineTo(tongueRight, tongueBottom - tongueTipRadiusY)
+        ..quadraticBezierTo(
+          tongueRight,
+          tongueBottom,
+          tongueCenterX,
+          tongueBottom,
+        )
+        ..quadraticBezierTo(
+          tongueLeft,
+          tongueBottom,
+          tongueLeft,
+          tongueBottom - tongueTipRadiusY,
+        )
+        ..lineTo(tongueLeft, tongueTopY)
+        ..close();
+
+      final tongueoutlinePaint = Paint()
+        ..color = const Color.fromARGB(255, 87, 14, 14).withValues(
+          alpha: (0.12 + (0.3 * sillyStrength)).clamp(0.0, 1.0),
+        )
+        ..strokeWidth = size.width * 0.007
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+
+      final tonguePaint = Paint()
+        ..color = Colors.red.shade600.withValues(
+          alpha: (0.2 + (0.8 * sillyStrength)).clamp(0.0, 1.0),
+        )
+        ..style = PaintingStyle.fill;
+
+      canvas.drawPath(tonguePath, tonguePaint);
+
+      canvas.drawPath(tonguePath, tongueoutlinePaint);
+
+      final groovePaint = Paint()
+        ..color = Colors.red.shade900.withValues(
+          alpha: (0.12 + (0.3 * sillyStrength)).clamp(0.0, 1.0),
+        )
+        ..strokeWidth = size.width * 0.007
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+
+      canvas.drawLine(
+        Offset(tongueCenterX, tongueTopY + (tongueLength * 0.18)),
+        Offset(tongueCenterX, tongueTopY + (tongueLength * 0.86)),
+        groovePaint,
+      );
     }
   }
 
@@ -241,6 +315,12 @@ class MouthPainter extends CustomPainter {
           ..addArc(shapeRect, math.pi, math.pi)
           ..close(),
       MouthMood.evil =>
+        Path()
+          ..moveTo(0, 0)
+          ..lineTo(size.width, 0)
+          ..addArc(shapeRect, 0, math.pi)
+          ..close(),
+      MouthMood.silly =>
         Path()
           ..moveTo(0, 0)
           ..lineTo(size.width, 0)
@@ -289,7 +369,8 @@ class _MouthStyle {
       scaleX: a.scaleX + ((b.scaleX - a.scaleX) * t),
       scaleY: a.scaleY + ((b.scaleY - a.scaleY) * t),
       tilt: a.tilt + ((b.tilt - a.tilt) * t),
-      verticalShift: a.verticalShift + ((b.verticalShift - a.verticalShift) * t),
+      verticalShift:
+          a.verticalShift + ((b.verticalShift - a.verticalShift) * t),
     );
   }
 }
