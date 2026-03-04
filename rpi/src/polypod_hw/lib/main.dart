@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -159,6 +160,12 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
   PolypodWindowController? _topWindowController;
   PolypodWindowController? _bottomWindowController;
 
+  /// Completer that the child (bottom) window signals when it has finished
+  /// setting its title and is ready to be shown.  On Wayland, showing the
+  /// window before the title is set would prevent the compositor's
+  /// window-rule from matching, so the parent waits for this signal.
+  Completer<void>? _childReadyCompleter;
+
   @override
   void initState() {
     super.initState();
@@ -216,9 +223,20 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
         case 'polypod/timerReset':
           _timerController.reset();
           return null;
+        case 'polypod/childReady':
+          // The child window has set its title and is ready to be shown.
+          if (_childReadyCompleter != null &&
+              !_childReadyCompleter!.isCompleted) {
+            _childReadyCompleter!.complete();
+          }
+          return null;
       }
       return null;
     });
+
+    // Set the native window title so the compositor (labwc on Wayland) can
+    // match it against its window rules and place it on the correct output.
+    await DisplayManager.setWindowTitle('Polypod_Top_Screen');
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ensureBottomWindow();
@@ -250,10 +268,30 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
       }
     }
 
+    // On Wayland, the child window's title must be set before it is shown so
+    // that the compositor's window rule fires on the correct title.  We create
+    // the child hidden, wait for it to signal readiness (title set), and then
+    // show it.
+    _childReadyCompleter = Completer<void>();
+
     _bottomWindowController = await _multiWindow.create(
       arguments: PolypodWindowArgs.encodeBottomArgs(mainWindowId: topId),
       hiddenAtLaunch: true,
     );
+
+    if (DisplayManager.isWayland) {
+      // Wait for the child engine to set its title (with a timeout fallback).
+      await _childReadyCompleter!.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint(
+            'DisplayManager: child window did not signal readiness in time - '
+            'showing anyway.',
+          );
+        },
+      );
+    }
+
     await _bottomWindowController?.show();
     await _notifyBottomAppChanged();
   }
@@ -361,6 +399,16 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
     if (widget.mainWindowId != null) {
       _mainWindowController = await _multiWindow.fromWindowId(widget.mainWindowId!);
     }
+
+    // Set the native window title BEFORE the window is shown.  On Wayland the
+    // compositor (labwc) uses this title to match a window rule that places
+    // the window on the correct output (SPI-1).
+    await DisplayManager.setWindowTitle('Polypod_Bottom_Screen');
+
+    // Signal the parent window that our title is set and we are ready to be
+    // shown.  The parent waits for this before calling show() so the
+    // compositor sees the correct title on first map.
+    await _mainWindowController?.invokeMethod('polypod/childReady');
 
     await _bottomWindowController?.setMethodHandler((method, arguments) async {
       switch (method) {
