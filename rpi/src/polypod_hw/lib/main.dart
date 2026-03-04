@@ -19,9 +19,11 @@ import 'controllers/idle_state_controller.dart';
 import 'controllers/notification_controller.dart';
 
 import 'multi_window/multi_window.dart';
+import 'config/display_manager.dart';
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  await DisplayManager.init();
 
   if (!_isDesktopPlatform) {
     runApp(const PolypodHWApp(windowKind: PolypodWindowKind.single));
@@ -221,6 +223,9 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ensureBottomWindow();
     });
+
+    // Fullscreen this window on the first display.
+    await DisplayManager.setFullscreenOnDisplay(0);
   }
 
   int _intFromDynamic(dynamic value) {
@@ -372,6 +377,9 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
       }
       return null;
     });
+
+    // Fullscreen this window on the second display.
+    await DisplayManager.setFullscreenOnDisplay(1);
   }
 
   Future<void> _sendToMain(String method, [dynamic arguments]) async {
@@ -484,6 +492,13 @@ class _DualScreenHomeState extends State<DualScreenHome> {
       'Notes': const NotesApp(),
       'Settings': const SettingsApp(),
     };
+
+    // Fullscreen on the primary display in single-window mode.
+    _initDisplay();
+  }
+
+  Future<void> _initDisplay() async {
+    await DisplayManager.setFullscreenOnDisplay(0);
   }
 
   @override
