@@ -188,22 +188,29 @@
 }
 
 .remove-preference {
+  display: flex;
+  position: absolute;
+  align-items: center;
   background: none;
   border: none;
-  color: #ef4444;
+  color: #2c522f;
   cursor: pointer;
   font-weight: bold;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   padding: 0;
+  margin-left: 10%;
+}
+
+.remove-preference:hover{
+  transform: scale(1.05);
+  color: gray
 }
 
 .preference-list {
   display: flex;
   align-items: center;
-  gap: 25%;
   padding: 8px 0;
-  border-bottom:1px solid #eee;
-  width: 90%;
+  margin-left: 20%;
 }
 
 /* toast notification styles */
