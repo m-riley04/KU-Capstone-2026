@@ -27,6 +27,7 @@ class _IdleAppState extends State<IdleApp> {
     MouthMood.neutral,
     MouthMood.sad,
     MouthMood.evil,
+    MouthMood.silly, 
   ];
 
   Timer? _debugMoodTimer;
