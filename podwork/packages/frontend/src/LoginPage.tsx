@@ -57,7 +57,7 @@ export default function LoginPage({ onLogin }: LoginProps) {
     <div className="login-container">
       <div className="login-card">
         <h1 className='welcome-text'>
-            {isSignUp ? 'Create Account': 'Welcome to Polywork'}
+            {isSignUp ? 'Create Account': 'Welcome to Podwork'}
         </h1>
         
         {/* form to enter username and password*/}

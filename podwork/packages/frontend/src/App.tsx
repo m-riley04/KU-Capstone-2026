@@ -129,7 +129,7 @@ function App() {
   return (
     <div className='app-container'>
       <header className='hero'>
-        <h1>Polywork</h1>
+        <h1>Podwork</h1>
       </header>
 
       <button className='logout' onClick={handleLogout}>Sign Out</button>
