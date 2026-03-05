@@ -28,9 +28,9 @@ export const getUserService = async (username: string, password: string) => {
 }
 
 //should never add user with interests
-export const addUserService = async (username: string, email: string, password: string,) => {
+export const addUserService = async (username: string, password: string) => {
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-    const newUser = await addUserToDatabase(1, username, email, hashedPassword);
+    const newUser = await addUserToDatabase(1, username, hashedPassword);
     if (!newUser) {
         throw new Error('Failed to create user');
     }
@@ -45,7 +45,7 @@ export const updateUserService = async (userId: number, updatedUserData: Partial
     if (updatedUserData?.password) {
         updatedUserData.password = await bcrypt.hash(updatedUserData.password, SALT_ROUNDS);
     }
-    if (updatedUserData?.username, updatedUserData?.email, updatedUserData?.password) {
+    if (updatedUserData?.username || updatedUserData?.password) {
         await updateUserInDatabase(1, userId, updatedUserData);
     } 
     if (updatedUserData?.interests) {

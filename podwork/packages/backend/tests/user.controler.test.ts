@@ -8,7 +8,6 @@ describe('UserController', () => {
     const mockUser = {
         id: 1,
         username: 'testuser',
-        email: 'test@example.com',
         password: 'hashedpassword',
     };
 
@@ -57,12 +56,12 @@ describe('UserController', () => {
             const res = mockResponse();
             await addUserRequest(req, res);
             expect(res.status).toHaveBeenCalledWith(400);
-            expect(res.json).toHaveBeenCalledWith({ error: 'Username, email, and password are required' });
+            expect(res.json).toHaveBeenCalledWith({ error: 'Username and password are required' });
         });
 
         test('should return 201 with new user', async () => {
             (userServices.addUserService as jest.Mock).mockResolvedValue(mockUser);
-            const req = { body: { username: 'testuser', email: 'test@example.com', password: 'password123' } } as Request;
+            const req = { body: { username: 'testuser', password: 'password123' } } as Request;
             const res = mockResponse();
             await addUserRequest(req, res);
             expect(res.status).toHaveBeenCalledWith(201);

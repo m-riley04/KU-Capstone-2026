@@ -76,7 +76,6 @@ Status: 200
 {
   "id": 1,
   "username": "hannah",
-  "email": "hannah@email.com",
   "password": "$2b$10$hashedValue...",
   "interests": [
     { "id": 2, "name": "NBA" },
@@ -90,7 +89,6 @@ POST /user
 ### Required
 {
   "username": "hannah",
-  "email": "hannah@email.com",
   "password": "password123"
 }
 ### Success Response
@@ -98,7 +96,6 @@ status 201
 {
   "id": 1,
   "username": "hannah",
-  "email": "hannah@email.com",
   "password": "$2b$10$hashedValue..."
 }
 
@@ -111,7 +108,6 @@ Body must include updated_user
 {
   "updated_user": {
     "username": "newName",
-    "email": "new@email.com",
     "password": "newPassword",
     "interests": [
       {
@@ -127,7 +123,6 @@ Body must include updated_user
 status 200 
 {
     "id": 1,
-    "email": "Breanna.Spencer@hotmail.com",
     "password": "$2b$10$32Y5gDfdCcj/iHX1RmTr4eB5WPjbskXSjoSmgxXJFdjnK8diQ7TJu",
     "username": "hannah_smith",
     "created_at": "2026-02-24 05:20:46",
