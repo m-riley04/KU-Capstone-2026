@@ -63,7 +63,7 @@ class DisplayManager {
     // would race with the compositor's own actions.
     if (isWayland) {
       debugPrint(
-        'DisplayManager: Wayland detected – compositor handles placement '
+        'DisplayManager: Wayland detected - compositor handles placement '
         'for display index $displayIndex.',
       );
       return;
@@ -72,7 +72,7 @@ class DisplayManager {
     // ── X11 / Windows / macOS path ───────────────────────────────────────
     final displays = await screen.screenRetriever.getAllDisplays();
     if (displays.isEmpty) {
-      // Last resort – just fullscreen wherever the OS placed us.
+      // Last resort - just fullscreen wherever the OS placed us.
       await windowManager.setFullScreen(true);
       return;
     }

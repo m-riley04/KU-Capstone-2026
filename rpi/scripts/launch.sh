@@ -23,7 +23,7 @@ if pgrep -x labwc > /dev/null 2>&1; then
     export XDG_SESSION_TYPE="${XDG_SESSION_TYPE:-wayland}"
     export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
     export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-    echo "Detected labwc – Wayland env: WAYLAND_DISPLAY=$WAYLAND_DISPLAY"
+    echo "Detected labwc - Wayland env: WAYLAND_DISPLAY=$WAYLAND_DISPLAY"
 fi
 
 echo "Launching Polypod application in release mode..."
