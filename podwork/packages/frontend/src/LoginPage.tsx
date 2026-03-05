@@ -11,7 +11,6 @@ export default function LoginPage({ onLogin }: LoginProps) {
   // the username and password entered by the user will be stored here 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
 
@@ -24,7 +23,6 @@ export default function LoginPage({ onLogin }: LoginProps) {
             const payload = {
                 username: username, 
                 password: password,
-                email: email
             };
 
             const response = await registerUser(payload);
@@ -80,14 +78,6 @@ export default function LoginPage({ onLogin }: LoginProps) {
             className="login-input"
             style={{marginBottom: '20px'}}
           />
-          <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="login-input"
-          style={{marginBottom: '10px'}}
-          />
           
           {error && <p style={{color: 'red'}}>{error}</p>}
           
@@ -103,7 +93,6 @@ export default function LoginPage({ onLogin }: LoginProps) {
             setError('');
             setUsername('');
             setPassword('');
-            setEmail('');
         }}
         style={{marginTop: '1rem', background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', textDecoration: 'underline'}}>
         {isSignUp ? "Already have an account? Log in here!" : "Don't have an account? Sign up here!"}</button>

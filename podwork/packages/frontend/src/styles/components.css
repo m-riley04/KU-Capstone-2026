@@ -53,6 +53,7 @@
 }
 
 .summary-modal-content {
+  display: grid;
   background: #3a3129;
   padding: 2rem;
   border-radius: 16px;
@@ -188,17 +189,15 @@
 }
 
 .remove-preference {
-  display: flex;
-  position: absolute;
-  align-items: center;
   background: none;
   border: none;
   color: #2c522f;
   cursor: pointer;
-  font-weight: bold;
-  font-size: 1.1rem;
   padding: 0;
-  margin-left: 10%;
+  width: 110px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-start;
 }
 
 .remove-preference:hover{
@@ -210,7 +209,9 @@
   display: flex;
   align-items: center;
   padding: 8px 0;
-  margin-left: 20%;
+  margin-left: 15%;
+  width: 100%;
+  max-width: 300px;
 }
 
 /* toast notification styles */

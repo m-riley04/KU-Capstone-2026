@@ -248,7 +248,7 @@ function App() {
             <h2 style={{ textAlign: 'center' }}>Selected Preferences</h2>
 
             {selectedIds.length === 0 ? (
-              <p>No preferenced selected.</p>
+              <p style={{textAlign: 'center'}}>No preferenced selected.</p>
             ) : (
               <ul className='summary-list'>
                 {(() => {
@@ -257,7 +257,7 @@ function App() {
                     <>
                       {subCategoryNames.map((name) => (
                         <li key={name} className='preference-list'>
-                          <span>{name}</span>
+                          <span style={{flexGrow: 1}}>{name}</span>
                           <button 
                             className='remove-preference'
                             onClick={() => toggleSelection(name)}
