@@ -28,16 +28,15 @@ export const getUserWithID = async (connection: connectionType, userId: number):
     return user ?? null;
 };
 
-export const addUserToDatabase = async (connection: connectionType, username: string, email: string, password: string): Promise<User| null> => {
+export const addUserToDatabase = async (connection: connectionType, username: string, password: string): Promise<User| null> => {
     const db = await createDbConnect(connection);
     if (!db) {
         throw new Error('Failed to connect to database');
     }
     try {
         const result = await db.run(
-            `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`,
+            `INSERT INTO users (username, password) VALUES (?, ?)`,
             username,
-            email,
             password
         );
         const newUserId = result.lastID;
@@ -48,10 +47,6 @@ export const addUserToDatabase = async (connection: connectionType, username: st
         if (error.code === 'SQLITE_CONSTRAINT' && error.message.includes('username')) {
             await db.close();
             throw new Error('Username already exists');
-        }
-        if (error.code === 'SQLITE_CONSTRAINT' && error.message.includes('email')) {
-            await db.close();
-            throw new Error('Email already exists');
         }
         await db.close();
         throw error;
@@ -68,10 +63,6 @@ export const updateUserInDatabase = async (connection: connectionType, userId: n
     if (updatedUserData.username) {
         fieldsToUpdate.push('username = ?');
         values.push(updatedUserData.username);
-    }
-    if (updatedUserData.email) {
-        fieldsToUpdate.push('email = ?');
-        values.push(updatedUserData.email);
     }
     if (updatedUserData.password) {
         fieldsToUpdate.push('password = ?');

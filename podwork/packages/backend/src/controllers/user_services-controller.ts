@@ -19,12 +19,12 @@ export const getUserRequest = async (req: Request, res: Response) => {
 }};
 
 export const addUserRequest = async (req: Request, res: Response) => {
-    const { username, email, password } = req.body;
-    if (!username || !email || !password) {
-        return res.status(400).json({ error: 'Username, email, and password are required' });
+    const { username, password } = req.body;
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required' });
     }
     try {
-        const newUser = await addUserService(username, email, password);
+        const newUser = await addUserService(username, password);
         return res.status(201).json(newUser);
     } catch (error) {
         res.status(500).json({ error: 'Internal server error' });
