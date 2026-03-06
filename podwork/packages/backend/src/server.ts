@@ -9,12 +9,15 @@ import { seedInterests } from './db/seed_interests';
 import notification_services from './routes/notification_services-routes';
 import * as cron from 'node-cron';
 import { getNasaApod } from './jobs/NASA-poller';
+import { getSportsNews } from './jobs/Sports-poller';
 
 dotenv.config();
 
 //interests that update daily 
-const dailyPollers = () => {
-    getNasaApod(); 
+const dailyPollers = async () => {
+    await getNasaApod();
+    await getSportsNews('cbb');
+    await getSportsNews('nfl');
 }
     
 
@@ -40,9 +43,16 @@ app.use(Routes.notificationServices, notification_services)
 app.listen(PORT, async () => {
     await runMigrations(1);
     await seedInterests(1);
-    await dailyPollers(); 
+    
+    // Run pollers, but don't crash if they fail
+    try {
+        await dailyPollers();
+    } catch (error) {
+        console.error('Error running daily pollers on startup:', error);
+    }
+    
     cron.schedule('0 0 * * *', () => {
-        dailyPollers();
+        dailyPollers().catch(err => console.error('Error running scheduled pollers:', err));
         }, {
             timezone: "America/Chicago" //might change this 
     });
