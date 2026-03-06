@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'base_app.dart';
 import '../config/theme_config.dart';
 
@@ -44,9 +47,38 @@ class _SettingsAppState extends State<SettingsApp> {
           _buildSettingItem('Volume', Icons.volume_up_rounded),
           _buildSettingItem('Network', Icons.wifi_rounded),
           _buildSettingItem('About Device', Icons.info_outline_rounded),
+          GestureDetector(
+            onTap: () => _confirmQuit(context),
+            child: _buildSettingItem('Quit Polypod', Icons.exit_to_app_rounded),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _confirmQuit(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: EarthyTheme.surface,
+        title: Text('Quit Polypod?', style: TextStyle(color: EarthyTheme.textPrimary)),
+        content: Text('Are you sure you want to quit?', style: TextStyle(color: EarthyTheme.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Cancel', style: TextStyle(color: EarthyTheme.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('Quit', style: TextStyle(color: EarthyTheme.clay)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      SystemNavigator.pop();
+      exit(0);
+    }
   }
 
   Widget _buildSettingItem(String label, IconData icon) {
