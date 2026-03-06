@@ -1,5 +1,3 @@
-
-
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import user_services from './routes/users_services-routes';
@@ -9,12 +7,18 @@ import { seedInterests } from './db/seed_interests';
 import notification_services from './routes/notification_services-routes';
 import * as cron from 'node-cron';
 import { getNasaApod } from './jobs/NASA-poller';
+import { getEspnMensCollegeBasketballScoreboard } from './jobs/ESPN-poller';
 
 dotenv.config();
 
-//interests that update daily 
-const dailyPollers = () => {
-    getNasaApod(); 
+// interests that update daily
+const dailyPollers = async () => {
+    await getNasaApod();
+}
+
+// interests that update frequently
+const frequentPollers = async () => {
+    await getEspnMensCollegeBasketballScoreboard();
 }
     
 
@@ -40,12 +44,23 @@ app.use(Routes.notificationServices, notification_services)
 app.listen(PORT, async () => {
     await runMigrations(1);
     await seedInterests(1);
-    await dailyPollers(); 
+
+    // Run pollers once at startup so devices have fresh data immediately.
+    await dailyPollers();
+    await frequentPollers();
+
     cron.schedule('0 0 * * *', () => {
-        dailyPollers();
+        void dailyPollers();
         }, {
             timezone: "America/Chicago" //might change this 
     });
+
+    cron.schedule('*/10 * * * *', () => {
+        void frequentPollers();
+        }, {
+            timezone: "America/Chicago"
+    });
+
     console.log('The application is listening '
     + 'on port http://localhost:'+ PORT +'/');
 })
