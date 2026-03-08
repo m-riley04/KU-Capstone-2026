@@ -15,6 +15,9 @@ DEFAULT_MODEL_PATH = "yolov8n.onnx"
 DEFAULT_VIDEO_INDEX = 0
 COCO_YAML_PATH = "coco8.yaml"
 
+### Frequently used ML class ids
+CLASS_ID_PERSON = 0
+
 ### Post-processing and ML
 VIDEO_WIDTH = 640
 VIDEO_HEIGHT = 640
