@@ -1,4 +1,11 @@
-
+/* 
+api.tsx
+Colin Treanor
+This file contains calls to the server that are needed for the frontend
+- Login
+- Sign up 
+- Save selected preferences
+*/
 const SERVER = 'http://localhost:3000';
 
 export const registerUser = async (payload: any) => {

@@ -1,4 +1,10 @@
-// src/LoginPage.tsx
+/* src/LoginPage.tsx
+File to handle the login/signup 
+Key functionality 
+- user can log in with an existing account
+- user can create an account if they don't have one already
+- makes call to the api.tsx file 
+*/
 import { useState } from 'react';
 import { registerUser, loginUser } from './services/api';
 import './styles/login.css';

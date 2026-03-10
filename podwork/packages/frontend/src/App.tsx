@@ -1,4 +1,13 @@
-// src/App.tsx
+/*App.tsx
+Main page for the website, after user logs in this file is rendered
+Key functionality
+- Keep track of which category or screen the user is on
+- Keep track of selected preferences
+- Log out user
+- Auto save changes
+- Render user icon, username, and ID
+*/
+
 import { useCallback, useEffect, useState } from 'react';
 import './styles/base.css';
 import './styles/layout.css';

@@ -1,3 +1,9 @@
+/* 
+This file contains the css for the base level of the website
+Define the default colors, text, and centering
+*/
+
+
 :root {
   --primary: #3a3129;
   --bg: #5a4134;

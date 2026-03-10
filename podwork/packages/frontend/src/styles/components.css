@@ -1,3 +1,18 @@
+/*
+This file contains all the css for any button, component, or container
+that has its own functionality
+- save button
+- summary box
+- search bar
+- interest list
+- menu 
+- category card
+- back button
+- logout
+- remove preference
+- toast notification
+*/
+
 .save-btn {
   position: absolute;
   top: 18px;
