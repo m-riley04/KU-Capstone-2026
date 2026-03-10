@@ -31,6 +31,7 @@ export default function LoginPage({ onLogin }: LoginProps) {
                 const data = await response.json();
                 localStorage.setItem('polypod_userId', data.id)
                 localStorage.setItem('polypod_interests', JSON.stringify([]))
+                localStorage.setItem('polypod_username', username);
                 alert('Account created! You are now logged in.');
                 onLogin();
             } else {
@@ -43,6 +44,7 @@ export default function LoginPage({ onLogin }: LoginProps) {
                 const user = await response.json();
                 localStorage.setItem('polypod_userId', user.id)
                 localStorage.setItem('polypod_interests', JSON.stringify(user.interests || []))
+                localStorage.setItem('polypod_username', user.username || username);
                 onLogin(); 
             } else {
                 setError('Invalid credentials (server rejected you).');
