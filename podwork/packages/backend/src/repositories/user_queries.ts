@@ -28,7 +28,7 @@ export const getUserWithID = async (connection: connectionType, userId: number):
     return user ?? null;
 };
 
-export const addUserToDatabase = async (connection: connectionType, username: string, email: string, password: string): Promise<User| null> => {
+export const addUserToDatabase = async (connection: connectionType, username: string, email: string | null, password: string): Promise<User| null> => {
     const db = await createDbConnect(connection);
     if (!db) {
         throw new Error('Failed to connect to database');
@@ -48,10 +48,6 @@ export const addUserToDatabase = async (connection: connectionType, username: st
         if (error.code === 'SQLITE_CONSTRAINT' && error.message.includes('username')) {
             await db.close();
             throw new Error('Username already exists');
-        }
-        if (error.code === 'SQLITE_CONSTRAINT' && error.message.includes('email')) {
-            await db.close();
-            throw new Error('Email already exists');
         }
         await db.close();
         throw error;
