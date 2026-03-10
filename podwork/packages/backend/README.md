@@ -90,7 +90,6 @@ POST /user
 ### Required
 {
   "username": "hannah",
-  "email": "hannah@email.com",
   "password": "password123"
 }
 ### Success Response
