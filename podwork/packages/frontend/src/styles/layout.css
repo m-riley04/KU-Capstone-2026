@@ -10,13 +10,13 @@ Handles the sliding animation and dealing wiht smaller screens
   overflow: hidden;
   background:
     linear-gradient(rgba(28, 27, 27, 0.55), rgba(90,65,52,0.65)),
-    url("/7637091.jpg");
+    url("/mainscreenbackground.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed; 
-  padding: 0 30%; /* Adds 20px of breathing room to the left and right */
-  box-sizing: border-box; /* Ensures the padding doesn't accidentally make the screen wider than 100vw */
+  padding: 0 30%; 
+  box-sizing: border-box; /* ensure padding doesn't accidentally make the screen wider than 100vw */
 }
 
 .slider-viewport {
