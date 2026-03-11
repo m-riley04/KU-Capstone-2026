@@ -12,9 +12,8 @@ import { useCallback, useEffect, useState } from 'react';
 import './styles/base.css';
 import './styles/layout.css';
 import './styles/components.css';
-import { SUB_CATEGORY_DATA } from './utilities/sub_categories';
 import LoginPage from './LoginPage';
-import { getSlideClass, getSelectedNames, fetchAndParseInterestsXML } from './utilities/helpers';
+import { getSlideClass, fetchAndParseInterestsXML } from './utilities/helpers';
 import { savePreferencesToDatabase } from './services/api';
 
 function App() {
@@ -165,7 +164,7 @@ function App() {
       </header>
 
       
-{user && (
+      {user && (
         <div className="profile-badge">
           <div className="avatar">
             {user?.username?.charAt(0).toUpperCase() || "?"}
@@ -219,39 +218,66 @@ function App() {
 
           {/* level 2 */}
           <div className='slide-page'>
-            <button className='back-btn' onClick={() => setActiveCategory(null)}>
+            <button className='back-btn' onClick={() => {
+              setActiveCategory(null);
+              setSearchQuery("");
+            }}>
             ← Back to Categories
             </button>
 
             <h2>{activeCategory} Options</h2>
 
+            <input 
+              type="text" 
+              placeholder={`Search ${activeCategory}...`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-bar"
+            />
+
             <div className='interest-list'>
-              {activeCategory && dataSource[activeCategory].map((item) => {
-                const hasChildren = item.id in SUB_CATEGORY_DATA;
-                
-                return hasChildren ? (
-                  // option 1: is a folder with subcategories -> Show Arrow Button
-                  <button 
-                    key={item.id} 
-                    className='interest-item' 
-                    onClick={() => setActiveSubCategory(item.id)}
-                    style={{justifyContent: 'space-between', fontWeight: 'bold'}}
-                  >
-                    <span>{item.id}</span>
-                    <span>→</span>
-                  </button>
-                ) : (
-                // option 2: not a folder -> show checkbox
-                <label key={item.id} className={`interest-item ${selectedIds.includes(item.id) ? 'active' : ''}`}>
-                  <input 
-                    type="checkbox" 
-                    checked={selectedIds.includes(item.id)}
-                    onChange={() => toggleSelection(item.id)}
-                  />
-                  <span>{item.id}</span>
-                </label>
-                );
+              {activeCategory && dataSource[activeCategory]
+                .filter(item => item.id.toLowerCase().includes(searchQuery.toLowerCase()))
+                .map((item) => {
+                  const hasChildren = item.id in dataSource; 
+                  
+                  return hasChildren ? (
+                    // show arrow button if there is more data
+                    <button 
+                      key={item.id} 
+                      className='interest-item' 
+                      onClick={() => {
+                        setActiveSubCategory(item.id);
+                        setSearchQuery(""); //clear search for the next level
+                      }}
+                      style={{justifyContent: 'space-between', fontWeight: 'bold'}}
+                    >
+                      <span>{item.id}</span>
+                      <span>→</span>
+                    </button>
+                  ) : (
+                    // show checkbox if not a folder
+                    <label key={item.id} className={`interest-item ${selectedIds.includes(item.id) ? 'active' : ''}`}>
+                      <input 
+                        type="checkbox" 
+                        checked={selectedIds.includes(item.id)}
+                        onChange={() => toggleSelection(item.id)}
+                      />
+                      <span>{item.id}</span>
+                    </label>
+                  );
               })}
+              
+              {/* no results in search message */}
+              {activeCategory && 
+               dataSource[activeCategory]?.filter(item => 
+                 item.id.toLowerCase().includes(searchQuery.toLowerCase())
+               ).length === 0 && (
+                 <p className="no-results" style={{textAlign: 'center', marginTop: '20px'}}>
+                   No results found for "{searchQuery}"
+                 </p>
+               )
+              }
             </div>
           </div>
           {/* level 3 */}
@@ -272,7 +298,7 @@ function App() {
             />
 
             <div className='interest-list'>
-              {activeSubCategory && SUB_CATEGORY_DATA[activeSubCategory]?.filter(item =>
+              {activeSubCategory && dataSource[activeSubCategory]?.filter(item =>
               item.id.toLowerCase().includes(searchQuery.toLowerCase())
               ).map((item) => (
                 <label key={item.id} className={`interest-item ${selectedIds.includes(item.id) ? 'active' : ''}`}>
@@ -287,7 +313,7 @@ function App() {
 
               {/* No results in search message */}
               {activeSubCategory && 
-               SUB_CATEGORY_DATA[activeSubCategory]?.filter(item => 
+               dataSource[activeSubCategory]?.filter(item => 
                  item.id.toLowerCase().includes(searchQuery.toLowerCase())
                ).length === 0 && (
                  <p className="no-results">No results found for "{searchQuery}"</p>
