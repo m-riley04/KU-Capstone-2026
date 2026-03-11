@@ -5,10 +5,7 @@
 OPTIONS_TITLE="#---- Waveshare 3.5in DSI E Display ----"
 OPTIONS="$OPTIONS_TITLE
 dtoverlay=vc4-kms-v3d
-#DSI1 Use
-dtoverlay=waveshare_35DSI,35E,dsi1
-#DSI0 Use
-#dtoverlay=waveshare_35DSI,35E,dsi0" # TODO: check which DSI to use for our display. Also make sure this works with multiple displays.
+dtoverlay=waveshare_35DSI,35E,dsi1"
 
 # Copy overlay to /boot/overlays
 cd /tmp
