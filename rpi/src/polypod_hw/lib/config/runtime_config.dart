@@ -1,3 +1,4 @@
+/// Holds runtime configuration options that can be overridden by CLI args or loaded from disk.
 class RuntimeConfig {
   const RuntimeConfig({
     required this.fullscreen,
@@ -16,10 +17,10 @@ class RuntimeConfig {
 
   /// Parses simple CLI flags from [args]. Intended for desktop/embedded builds.
   ///
-  /// Supported flags:
-  /// - `--fullscreen` / `--no-fullscreen`
-  /// - `--top-display=<int>`
-  /// - `--bottom-display=<int>`
+  /// Supported flags for --dart-define overrides:
+  /// - `--FULLSCREEN=<bool>`
+  /// - `--TOP_DISPLAY_INDEX=<int>`
+  /// - `--BOTTOM_DISPLAY_INDEX=<int>`
   RuntimeConfig applyArgs(List<String> args) {
     bool? fullscreen;
     int? top;
@@ -55,6 +56,7 @@ class RuntimeConfig {
     );
   }
 
+  /// Maps this config to a JSON-serializable map. Useful for saving/loading from disk or sending over a network.
   Map<String, Object?> toJson() {
     return {
       'fullscreen': fullscreen,
@@ -63,6 +65,7 @@ class RuntimeConfig {
     };
   }
 
+  /// Parses a [RuntimeConfig] from a JSON-like map. Returns null if parsing fails.
   static RuntimeConfig? fromJson(dynamic raw) {
     if (raw is! Map) return null;
 
