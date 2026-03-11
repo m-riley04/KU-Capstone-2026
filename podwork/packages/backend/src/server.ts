@@ -9,6 +9,7 @@ import { seedInterests } from './db/seed_interests';
 import notification_services from './routes/notification_services-routes';
 import * as cron from 'node-cron';
 import { getNasaApod } from './jobs/NASA-poller';
+import interests_services from './routes/interests_services-routes';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ const PORT = process.env.PORT || 3000;
 enum Routes {
     userServices = '/user',
     notificationServices = '/notifications',
+    interestsServices = '/interests'
 }
 
 // Allow requests from your frontend
@@ -36,6 +38,7 @@ app.get('/', (req, res) => {
 
 app.use(Routes.userServices, user_services)
 app.use(Routes.notificationServices, notification_services)
+app.use(Routes.interestsServices, interests_services)
 
 app.listen(PORT, async () => {
     await runMigrations(1);

@@ -2,7 +2,7 @@ import bcrypt from 'bcrypt';
 import { User, UserInterests } from '../models/user';
 import { addUserToDatabase, deleteUserFromDatabase, getUserForAuth, getUserWithID, updateUserInDatabase } from '../repositories/user_queries';
 import dotenv from 'dotenv';
-import { deleteAllUserInterestsFromDatabase, addUserInterestToDatabase, getInterests, getUserInterestsFromDatabase } from '../repositories/interests_queries';
+import { deleteAllUserInterestsFromDatabase, addUserInterestToDatabase, getUserInterestsFromDatabase, getInterestsByName } from '../repositories/interests_queries';
 
 dotenv.config();
 const SALT_ROUNDS = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) : 10;
@@ -53,7 +53,7 @@ export const updateUserService = async (userId: number, updatedUserData: Partial
 
         let interests : UserInterests[] = [];
         for (const interest of updatedUserData.interests) {
-            const interestData = await getInterests(1, interest);
+            const interestData = await getInterestsByName(1, interest);
             await addUserInterestToDatabase(1, userId, interestData.id);
             interests.push(interestData);
         }

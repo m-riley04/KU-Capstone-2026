@@ -1,4 +1,3 @@
-import { json } from "node:stream/consumers";
 import { databaseNotification, eventData, polypodNotification } from "../models/notifications";
 import { getEventsFromInterests } from "../repositories/event_quaries";
 import { getInterestIDFromName, getUserIdWithInterestFromDatabase } from "../repositories/interests_queries";
