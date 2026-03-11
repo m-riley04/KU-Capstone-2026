@@ -20,8 +20,8 @@ export const getUserRequest = async (req: Request, res: Response) => {
 
 export const addUserRequest = async (req: Request, res: Response) => {
     const { username, email, password } = req.body;
-    if (!username || !email || !password) {
-        return res.status(400).json({ error: 'Username, email, and password are required' });
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required' });
     }
     try {
         const newUser = await addUserService(username, email, password);

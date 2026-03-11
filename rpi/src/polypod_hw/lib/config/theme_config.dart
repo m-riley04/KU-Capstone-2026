@@ -12,17 +12,19 @@ class EarthyTheme {
   static const Color bark = Color(0xFF5C4033);
   static const Color wheat = Color(0xFFC9A961);
 
+  static const Color polypod = Color.fromARGB(100,83,104,114);
+
   static const Color background = Color(0xFF2B2520);
   static const Color surface = Color(0xFF3A3128);
   static const Color textPrimary = Color(0xFFE8DCC4);
   static const Color textSecondary = Color(0xFFC4B5A0);
 
   static List<Color> get buttonColors => [
-        forestGreen,
-        terracotta,
-        sage,
-        clay,
-        moss,
-        sandstone,
-      ];
+    forestGreen,
+    terracotta,
+    sage,
+    clay,
+    moss,
+    sandstone,
+  ];
 }

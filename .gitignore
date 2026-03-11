@@ -5,6 +5,7 @@ Thumbs.db
 *.tmp
 *.swp
 *.swo
+.git-*/
 
 # Environment files
 *.env

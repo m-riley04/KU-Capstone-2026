@@ -56,40 +56,64 @@ class _HorizontalWheelListState extends State<HorizontalWheelList> {
 
   @override
   Widget build(BuildContext context) {
-    // Helper to create a single scrollable wheel
-    Widget buildWheel(String name, int choices, ValueChanged<int> onChanged) {
+    /// Builds a single column with an up arrow, the current value, and a
+    /// down arrow.  [maxValue] is exclusive (e.g. 12 for hours, 60 for
+    /// minutes/seconds).
+    Widget buildPicker(
+      String label,
+      int value,
+      int maxValue,
+      ValueChanged<int> onChanged,
+    ) {
       return Expanded(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              name,
+              label,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: EarthyTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: 6),
-            Expanded(
-              child: ListWheelScrollView.useDelegate(
-                itemExtent: 50, // Height of each item
-                perspective: 0.005, // 3D effect strength
-                diameterRatio: 1.5, // Cylinder diameter
-                physics: const FixedExtentScrollPhysics(), // Snaps to items
-                onSelectedItemChanged: onChanged,
-                childDelegate: ListWheelChildBuilderDelegate(
-                  childCount: choices,
-                  builder: (context, index) {
-                    return Card(
-                      color: EarthyTheme.buttonColors[index % 5],
-                      child: Center(
-                        child: Text(index.toString().padLeft(2, '0')),
-                      ),
-                    );
-                  },
+            const SizedBox(height: 4),
+            IconButton(
+              iconSize: 32,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              icon: Icon(Icons.keyboard_arrow_up_rounded,
+                  color: EarthyTheme.wheat),
+              onPressed: () {
+                onChanged((value + 1) % maxValue);
+              },
+            ),
+            Container(
+              width: 54,
+              height: 42,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: EarthyTheme.forestGreen,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                value.toString().padLeft(2, '0'),
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: EarthyTheme.wheat,
                 ),
               ),
+            ),
+            IconButton(
+              iconSize: 32,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              icon: Icon(Icons.keyboard_arrow_down_rounded,
+                  color: EarthyTheme.wheat),
+              onPressed: () {
+                onChanged((value - 1 + maxValue) % maxValue);
+              },
             ),
           ],
         ),
@@ -98,26 +122,20 @@ class _HorizontalWheelListState extends State<HorizontalWheelList> {
 
     return Scaffold(
       body: Center(
-        child: SizedBox(
-          height: 200, // explicit height
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           child: Row(
             children: [
-              buildWheel('Hour', 12, (value) {
-                setState(() {
-                  _hours = value;
-                });
+              buildPicker('Hour', _hours, 12, (v) {
+                setState(() => _hours = v);
                 _notifySelection();
               }),
-              buildWheel('Minute', 60, (value) {
-                setState(() {
-                  _minutes = value;
-                });
+              buildPicker('Min', _minutes, 60, (v) {
+                setState(() => _minutes = v);
                 _notifySelection();
               }),
-              buildWheel('Second', 60, (value) {
-                setState(() {
-                  _seconds = value;
-                });
+              buildPicker('Sec', _seconds, 60, (v) {
+                setState(() => _seconds = v);
                 _notifySelection();
               }),
               Container(

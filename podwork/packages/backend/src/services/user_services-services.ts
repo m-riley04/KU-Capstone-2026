@@ -28,7 +28,7 @@ export const getUserService = async (username: string, password: string) => {
 }
 
 //should never add user with interests
-export const addUserService = async (username: string, email: string, password: string,) => {
+export const addUserService = async (username: string, email: string | null, password: string) => {
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
     const newUser = await addUserToDatabase(1, username, email, hashedPassword);
     if (!newUser) {
