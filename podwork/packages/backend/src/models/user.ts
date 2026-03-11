@@ -2,7 +2,7 @@
 export interface User {
     id: number;
     username: string;
-    email: string;
+    email: string | null;
     password: string;
     interests ?: UserInterests[];
     created_at: Date;
