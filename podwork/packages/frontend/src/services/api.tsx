@@ -43,3 +43,19 @@ export const savePreferencesToDatabase = async (userId: string, selectedIds: str
 
     return response;
 };
+
+export const getAvailableInterests = async () => {
+  try {
+    // Make sure this matches your teammate's actual route path!
+    const response = await fetch(`${SERVER}/api/interests`); 
+    
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Failed to fetch interests:", error);
+    return null;
+  }
+};

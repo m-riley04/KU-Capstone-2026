@@ -13,8 +13,12 @@ import './styles/base.css';
 import './styles/layout.css';
 import './styles/components.css';
 import LoginPage from './LoginPage';
-import { getSlideClass, fetchAndParseInterestsXML } from './utilities/helpers';
+import { fetchAndParseInterestsXML } from './utilities/helpers';
 import { savePreferencesToDatabase } from './services/api';
+import ToastNotification from './components/ToastNotification';
+import ProfileBadge from './components/ProfileBadge';
+import SummaryModal from './components/SummaryModal';
+import CategorySlider from './components/CategorySlider';
 
 function App() {
 // useStates to keep track of categories being displayed on the screen
@@ -60,6 +64,38 @@ function App() {
       });
     }
   }, []);
+
+// grab available interests from backend 
+  /* 
+  useEffect(() => {
+    const loadDatabaseInterests = async () => {
+      const rawData = await getAvailableInterests();
+      
+      if (rawData) {
+        // Create an empty object to hold our sorted buckets
+        const groupedData: Record<string, { id: string }[]> = {};
+
+        // Loop through every item the backend sent us
+        rawData.forEach((interest: { id: number, name: string, category: string }) => {
+          
+          // If the category bucket doesn't exist yet, create it
+          if (!groupedData[interest.category]) {
+            groupedData[interest.category] = [];
+          }
+          
+          // Push the item into the correct category bucket
+          // We set 'id' to the name string so your existing UI checkboxes don't break
+          groupedData[interest.category].push({ id: interest.name });
+        });
+
+        // Feed the sorted buckets to your app!
+        setDataSource(groupedData);
+      }
+    };
+
+    loadDatabaseInterests();
+  }, []);
+  */
 
   // when user logs in pull up their saved preferences
   useEffect(() => {
@@ -164,212 +200,30 @@ function App() {
       </header>
 
       
-      {user && (
-        <div className="profile-badge">
-          <div className="avatar">
-            {user?.username?.charAt(0).toUpperCase() || "?"}
-          </div>
-          <div className="user-info">
-            <span className="username">{user?.username || "Unknown"}</span>
-            <span className="user-id">ID: #{user?.id}</span>
-          </div>
-          
-          <button 
-            className="badge-logout-btn" 
-            onClick={handleLogout}
-            title="Sign Out"
-            aria-label="Sign Out"
-          >
-            {/* log out icon */}
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
-          </button>
-        </div>
-      )}
+      <ProfileBadge user={user} onLogout={handleLogout} />
 
-      {/* sliding window */}
-      <div className='slider-viewport'>
-        <div className={`slider-track ${getSlideClass(activeCategory, activeSubCategory)}`}>
-
-          {/* level 1 */}
-          <div className='slide-page'>
-            <h2> Select a Category </h2>
-            <div className='menu-grid'>
-              {Object.keys(dataSource).map((cat) => (
-                <button key={cat}
-                className='category-card'
-                onClick={() => setActiveCategory(cat)}>
-                  <span className='cat-name'>{cat}</span>
-                  <span className='arrow'>→</span>
-                </button>
-              ))}
-            </div>
-
-            {/* show whats active */}
-            <div className='summary-box' onClick={() => setIsSummaryOpen(true)}>
-              <h3>Currently Active</h3>
-              <p>{selectedIds.length} preferences selected</p>
-              <small>(Click to view selected preferences)</small>
-            </div>
-          </div>
-
-          {/* level 2 */}
-          <div className='slide-page'>
-            <button className='back-btn' onClick={() => {
-              setActiveCategory(null);
-              setSearchQuery("");
-            }}>
-            ← Back to Categories
-            </button>
-
-            <h2>{activeCategory} Options</h2>
-
-            <input 
-              type="text" 
-              placeholder={`Search ${activeCategory}...`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-bar"
-            />
-
-            <div className='interest-list'>
-              {activeCategory && dataSource[activeCategory]
-                .filter(item => item.id.toLowerCase().includes(searchQuery.toLowerCase()))
-                .map((item) => {
-                  const hasChildren = item.id in dataSource; 
-                  
-                  return hasChildren ? (
-                    // show arrow button if there is more data
-                    <button 
-                      key={item.id} 
-                      className='interest-item' 
-                      onClick={() => {
-                        setActiveSubCategory(item.id);
-                        setSearchQuery(""); //clear search for the next level
-                      }}
-                      style={{justifyContent: 'space-between', fontWeight: 'bold'}}
-                    >
-                      <span>{item.id}</span>
-                      <span>→</span>
-                    </button>
-                  ) : (
-                    // show checkbox if not a folder
-                    <label key={item.id} className={`interest-item ${selectedIds.includes(item.id) ? 'active' : ''}`}>
-                      <input 
-                        type="checkbox" 
-                        checked={selectedIds.includes(item.id)}
-                        onChange={() => toggleSelection(item.id)}
-                      />
-                      <span>{item.id}</span>
-                    </label>
-                  );
-              })}
-              
-              {/* no results in search message */}
-              {activeCategory && 
-               dataSource[activeCategory]?.filter(item => 
-                 item.id.toLowerCase().includes(searchQuery.toLowerCase())
-               ).length === 0 && (
-                 <p className="no-results" style={{textAlign: 'center', marginTop: '20px'}}>
-                   No results found for "{searchQuery}"
-                 </p>
-               )
-              }
-            </div>
-          </div>
-          {/* level 3 */}
-          <div className='slide-page'>
-             <button className='back-btn' onClick={() => {setActiveSubCategory(null); setSearchQuery("")}}>
-              {/* Go back to Level 2 */}
-              ← Back to {activeCategory}
-            </button>
-            
-            <h2>{activeSubCategory}</h2>
-
-            <input 
-            type="text" 
-            placeholder={`Search ${activeSubCategory}...`}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-bar"
-            />
-
-            <div className='interest-list'>
-              {activeSubCategory && dataSource[activeSubCategory]?.filter(item =>
-              item.id.toLowerCase().includes(searchQuery.toLowerCase())
-              ).map((item) => (
-                <label key={item.id} className={`interest-item ${selectedIds.includes(item.id) ? 'active' : ''}`}>
-                  <input 
-                    type="checkbox" 
-                    checked={selectedIds.includes(item.id)}
-                    onChange={() => toggleSelection(item.id)}
-                  />
-                  <span>{item.id}</span>
-                </label>
-              ))}
-
-              {/* No results in search message */}
-              {activeSubCategory && 
-               dataSource[activeSubCategory]?.filter(item => 
-                 item.id.toLowerCase().includes(searchQuery.toLowerCase())
-               ).length === 0 && (
-                 <p className="no-results">No results found for "{searchQuery}"</p>
-               )
-              }
-            </div>
-          </div>
-
-        </div>
-      </div>
-      {/*summary modal */}
+      <CategorySlider
+        dataSource={dataSource}
+        selectedIds={selectedIds}
+        onToggle={toggleSelection}
+        activeCategory={activeCategory}
+        setActiveCategory={setActiveCategory}
+        activeSubCategory={activeSubCategory}
+        setActiveSubCategory={setActiveSubCategory}
+        onSummaryOpen={() => setIsSummaryOpen(true)}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+      />
+      
       {isSummaryOpen && (
-        <div className='summary-modal' onClick={() => setIsSummaryOpen(false)}>
-          <div className='summary-modal-content' onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ textAlign: 'center' }}>Selected Preferences</h2>
+        <SummaryModal
+          selectedIds={selectedIds}
+          onToggle={toggleSelection}
+          onClose={() => setIsSummaryOpen(false)}
+        />
+       )}
 
-            {selectedIds.length === 0 ? (
-              <p style={{textAlign: 'center'}}>No preferenced selected.</p>
-            ) : (
-            <ul className='summary-list'>
-                {/* We map directly over selectedIds now! */}
-                {selectedIds.map((name) => (
-                  <li key={name} className='preference-list'>
-                    <span style={{flexGrow: 1}}>{name}</span>
-                    <button 
-                      className='remove-preference'
-                      onClick={() => toggleSelection(name)}
-                      aria-label={`Remove ${name}`}
-                      title="Remove preference"
-                    >
-                      {/* Trash can icon */}
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                        <line x1="14" y1="11" x2="14" y2="17"></line>
-                      </svg>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <button
-              className='save-btn'
-              onClick={() => setIsSummaryOpen(false)}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-      {toast && (
-        <div className={`toast-notification ${toast.type}`}>
-          {toast.message}
-        </div>
-      )}
+      <ToastNotification toast={toast}/>
     </div>
     )}
 
