@@ -22,28 +22,56 @@ import 'controllers/polypod_maintenance_controller.dart';
 
 import 'multi_window/multi_window.dart';
 import 'config/display_manager.dart';
+import 'config/runtime_config.dart';
 
 Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
   await DisplayManager.init();
 
+  // Defaults come from compile-time defines (e.g. `--dart-define=FULLSCREEN=true`).
+  // CLI args can override these at runtime on desktop/embedded platforms.
+  const defaultConfig = RuntimeConfig(
+    fullscreen: bool.fromEnvironment('FULLSCREEN', defaultValue: true), // default to true for embedded pod device
+    topDisplayIndex: int.fromEnvironment('TOP_DISPLAY_INDEX', defaultValue: 0),
+    bottomDisplayIndex: int.fromEnvironment(
+      'BOTTOM_DISPLAY_INDEX',
+      defaultValue: 1,
+    ),
+  );
+  final runtimeConfig = defaultConfig.applyArgs(args);
+
   if (!_isDesktopPlatform) {
-    runApp(const PolypodHWApp(windowKind: PolypodWindowKind.single));
+    runApp(
+      PolypodHWApp(
+        windowKind: PolypodWindowKind.single,
+        runtimeConfig: runtimeConfig,
+      ),
+    );
     return;
   }
 
   final multiWindow = createMultiWindow();
   if (!multiWindow.isSupported) {
-    runApp(const PolypodHWApp(windowKind: PolypodWindowKind.single));
+    runApp(
+      PolypodHWApp(
+        windowKind: PolypodWindowKind.single,
+        runtimeConfig: runtimeConfig,
+      ),
+    );
     return;
   }
 
   final current = await multiWindow.fromCurrentEngine();
   final parsed = PolypodWindowArgs.parse(current?.arguments);
+
+  // Bottom child windows get their config via the encoded JSON `arguments`.
+  // The primary/top engine uses the process CLI args.
+  final configForThisEngine = parsed.runtimeConfig ?? runtimeConfig;
   runApp(
     PolypodHWApp(
       windowKind: parsed.kind,
       mainWindowId: parsed.mainWindowId,
+      runtimeConfig: configForThisEngine,
     ),
   );
 }
@@ -51,7 +79,9 @@ Future<void> main(List<String> args) async {
 bool get _isDesktopPlatform {
   if (kIsWeb) return false;
   return switch (defaultTargetPlatform) {
-    TargetPlatform.windows || TargetPlatform.linux || TargetPlatform.macOS => true,
+    TargetPlatform.windows ||
+    TargetPlatform.linux ||
+    TargetPlatform.macOS => true,
     _ => false,
   };
 }
@@ -62,10 +92,12 @@ class PolypodWindowArgs {
   const PolypodWindowArgs({
     required this.kind,
     this.mainWindowId,
+    this.runtimeConfig,
   });
 
   final PolypodWindowKind kind;
   final String? mainWindowId;
+  final RuntimeConfig? runtimeConfig;
 
   static PolypodWindowArgs parse(String? raw) {
     if (raw == null || raw.trim().isEmpty) {
@@ -80,11 +112,13 @@ class PolypodWindowArgs {
 
       final type = decoded['type']?.toString();
       final mainId = decoded['mainWindowId']?.toString();
+      final runtimeConfig = RuntimeConfig.fromJson(decoded['runtimeConfig']);
 
       if (type == 'bottom') {
         return PolypodWindowArgs(
           kind: PolypodWindowKind.bottom,
           mainWindowId: mainId,
+          runtimeConfig: runtimeConfig,
         );
       }
 
@@ -98,10 +132,14 @@ class PolypodWindowArgs {
     }
   }
 
-  static String encodeBottomArgs({required String mainWindowId}) {
+  static String encodeBottomArgs({
+    required String mainWindowId,
+    required RuntimeConfig runtimeConfig,
+  }) {
     return jsonEncode({
       'type': 'bottom',
       'mainWindowId': mainWindowId,
+      'runtimeConfig': runtimeConfig.toJson(),
     });
   }
 }
@@ -110,10 +148,12 @@ class PolypodHWApp extends StatelessWidget {
   const PolypodHWApp({
     super.key,
     required this.windowKind,
+    required this.runtimeConfig,
     this.mainWindowId,
   });
 
   final PolypodWindowKind windowKind;
+  final RuntimeConfig runtimeConfig;
   final String? mainWindowId;
 
   @override
@@ -128,13 +168,16 @@ class PolypodHWApp extends StatelessWidget {
       title: appTitle,
       theme: ThemeData.dark(
         useMaterial3: true,
-      ).copyWith(
-        scaffoldBackgroundColor: EarthyTheme.background,
-      ),
+      ).copyWith(scaffoldBackgroundColor: EarthyTheme.background),
       home: switch (windowKind) {
-        PolypodWindowKind.bottom => BottomControlWindow(mainWindowId: mainWindowId),
-        PolypodWindowKind.top => const TopOnlyWindow(),
-        PolypodWindowKind.single => const DualScreenHome(),
+        PolypodWindowKind.bottom => BottomControlWindow(
+          mainWindowId: mainWindowId,
+          runtimeConfig: runtimeConfig,
+        ),
+        PolypodWindowKind.top => TopOnlyWindow(runtimeConfig: runtimeConfig),
+        PolypodWindowKind.single => DualScreenHome(
+          runtimeConfig: runtimeConfig,
+        ),
       },
       debugShowCheckedModeBanner: false,
     );
@@ -142,7 +185,9 @@ class PolypodHWApp extends StatelessWidget {
 }
 
 class TopOnlyWindow extends StatefulWidget {
-  const TopOnlyWindow({super.key});
+  const TopOnlyWindow({super.key, required this.runtimeConfig});
+
+  final RuntimeConfig runtimeConfig;
 
   @override
   State<TopOnlyWindow> createState() => _TopOnlyWindowState();
@@ -264,8 +309,12 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
       _ensureBottomWindow();
     });
 
-    // Fullscreen this window on the first display.
-    await DisplayManager.setFullscreenOnDisplay(0);
+    // Fullscreen this window on the configured display.
+    if (widget.runtimeConfig.fullscreen) {
+      await DisplayManager.setFullscreenOnDisplay(
+        widget.runtimeConfig.topDisplayIndex,
+      );
+    }
   }
 
   int _intFromDynamic(dynamic value) {
@@ -297,7 +346,10 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     _childReadyCompleter = Completer<void>();
 
     _bottomWindowController = await _multiWindow.create(
-      arguments: PolypodWindowArgs.encodeBottomArgs(mainWindowId: topId),
+      arguments: PolypodWindowArgs.encodeBottomArgs(
+        mainWindowId: topId,
+        runtimeConfig: widget.runtimeConfig,
+      ),
       hiddenAtLaunch: true,
     );
 
@@ -319,10 +371,9 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
   }
 
   Future<void> _notifyBottomAppChanged() async {
-    await _bottomWindowController?.invokeMethod(
-      'polypod/appChanged',
-      {'currentAppKey': _currentAppKey},
-    );
+    await _bottomWindowController?.invokeMethod('polypod/appChanged', {
+      'currentAppKey': _currentAppKey,
+    });
   }
 
   @override
@@ -356,7 +407,9 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     _idleController.resetIdleTimer();
     setState(() {
       _currentAppKey = appName;
-      _currentApp = _apps[appName] ?? IdleApp(maintenanceController: _maintenanceController);
+      _currentApp =
+          _apps[appName] ??
+          IdleApp(maintenanceController: _maintenanceController);
     });
     _notifyBottomAppChanged();
   }
@@ -380,9 +433,11 @@ class BottomControlWindow extends StatefulWidget {
   const BottomControlWindow({
     super.key,
     required this.mainWindowId,
+    required this.runtimeConfig,
   });
 
   final String? mainWindowId;
+  final RuntimeConfig runtimeConfig;
 
   @override
   State<BottomControlWindow> createState() => _BottomControlWindowState();
@@ -421,7 +476,9 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
     );
 
     if (widget.mainWindowId != null) {
-      _mainWindowController = await _multiWindow.fromWindowId(widget.mainWindowId!);
+      _mainWindowController = await _multiWindow.fromWindowId(
+        widget.mainWindowId!,
+      );
     }
 
     // Set the native window title BEFORE the window is shown.  On Wayland the
@@ -450,8 +507,12 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
       return null;
     });
 
-    // Fullscreen this window on the second display.
-    await DisplayManager.setFullscreenOnDisplay(1);
+    // Fullscreen this window on the configured display.
+    if (widget.runtimeConfig.fullscreen) {
+      await DisplayManager.setFullscreenOnDisplay(
+        widget.runtimeConfig.bottomDisplayIndex,
+      );
+    }
   }
 
   Future<void> _sendToMain(String method, [dynamic arguments]) async {
@@ -548,10 +609,11 @@ class _BottomProxyAppState extends State<_BottomProxyApp> {
   }
 }
 
-
 /// Main home page that manages both top and bottom screens
 class DualScreenHome extends StatefulWidget {
-  const DualScreenHome({super.key});
+  const DualScreenHome({super.key, required this.runtimeConfig});
+
+  final RuntimeConfig runtimeConfig;
 
   @override
   State<DualScreenHome> createState() => _DualScreenHomeState();
@@ -597,7 +659,11 @@ class _DualScreenHomeState extends State<DualScreenHome> {
   }
 
   Future<void> _initDisplay() async {
-    await DisplayManager.setFullscreenOnDisplay(0);
+    if (widget.runtimeConfig.fullscreen) {
+      await DisplayManager.setFullscreenOnDisplay(
+        widget.runtimeConfig.topDisplayIndex,
+      );
+    }
   }
 
   @override
@@ -626,7 +692,9 @@ class _DualScreenHomeState extends State<DualScreenHome> {
   void _openApp(String appName) {
     _idleController.resetIdleTimer();
     setState(() {
-      _currentApp = _apps[appName] ?? IdleApp(maintenanceController: _maintenanceController);
+      _currentApp =
+          _apps[appName] ??
+          IdleApp(maintenanceController: _maintenanceController);
     });
   }
 
@@ -649,7 +717,9 @@ class _DualScreenHomeState extends State<DualScreenHome> {
               BottomScreen(
                 onAppSelected: _openApp,
                 onHomePressed: _returnToHome,
-                availableApps: _apps.keys.where((name) => name != 'Home').toList(),
+                availableApps: _apps.keys
+                    .where((name) => name != 'Home')
+                    .toList(),
                 currentApp: _currentApp,
               ),
             ],
