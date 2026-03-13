@@ -10,7 +10,7 @@ https://github.com/ultralytics/ultralytics/tree/main/examples/YOLOv8-OpenCV-ONNX
 import argparse, cv2, cv2.dnn
 import numpy as np
 from constants import CLASS_ID_PERSON, DEFAULT_MODEL_PATH, DEFAULT_VIDEO_INDEX, KEY_QUIT, NMS_ETA, NMS_THRESHOLD, OPENCV_KEY_DELAY, SCALE_FACTOR, SCORE_THRESHOLD, VIDEO_HEIGHT, VIDEO_WIDTH, WINDOW_NAME
-from helpers import collect_bounding_boxes, collect_bounding_boxes, draw_bounding_box
+from helpers import collect_bounding_boxes, draw_bounding_box
 from detection import Detection
 from datetime import datetime, timedelta
 
@@ -35,17 +35,15 @@ def process_frame(cap: cv2.VideoCapture, model: cv2.dnn.Net) -> bool:
 
     # Read the input image
     [height, width, _] = frame.shape
-
-    # Prepare a square image for inference
     length = max((height, width))
-    image = np.zeros((length, length, 3), np.uint8)
-    image[0:height, 0:width] = frame
-
-    # Make image smaller for faster processing and to match model input size
-    image = cv2.resize(image, (VIDEO_WIDTH, VIDEO_HEIGHT))
-
-    # Calculate scale factor
     scale = length / VIDEO_WIDTH
+
+    # Resize frame first, then pad into a small 640x640 buffer
+    # (avoids allocating a large intermediate square image, e.g. 1920x1920)
+    resized_h = int(height / scale)
+    resized_w = int(width / scale)
+    image = np.zeros((VIDEO_HEIGHT, VIDEO_WIDTH, 3), np.uint8)
+    image[0:resized_h, 0:resized_w] = cv2.resize(frame, (resized_w, resized_h))
 
     # Preprocess the image and prepare blob for model
     blob = cv2.dnn.blobFromImage(image, scalefactor=SCALE_FACTOR, size=(VIDEO_WIDTH, VIDEO_HEIGHT), swapRB=True)
@@ -56,31 +54,34 @@ def process_frame(cap: cv2.VideoCapture, model: cv2.dnn.Net) -> bool:
 
     # Prepare output array
     outputs = np.array([cv2.transpose(outputs[0])])
-    rows = outputs.shape[1]
 
-    # Iterate through output to collect bounding boxes, confidence scores, and class IDs
-    boxes, scores, class_ids = collect_bounding_boxes(rows, outputs)
+    # Collect bounding boxes, confidence scores, and class IDs (vectorized)
+    boxes, scores, class_ids = collect_bounding_boxes(outputs)
+
+    # Filter for person class before NMS to reduce processing
+    if len(boxes) > 0:
+        person_mask = class_ids == CLASS_ID_PERSON
+        boxes = boxes[person_mask]
+        scores = scores[person_mask]
+        class_ids = class_ids[person_mask]
 
     # Apply NMS (Non-maximum suppression)
-    result_boxes = np.array(cv2.dnn.NMSBoxes(boxes, scores, SCORE_THRESHOLD, NMS_THRESHOLD, NMS_ETA)).flatten()
-
-    # Iterate through NMS results to draw bounding boxes and labels
     detections = []
-    for index in result_boxes:
-        index = int(index)
-        box = boxes[index]
+    if len(boxes) > 0:
+        result_indices = np.array(
+            cv2.dnn.NMSBoxes(boxes.tolist(), scores.tolist(), SCORE_THRESHOLD, NMS_THRESHOLD, NMS_ETA)
+        ).flatten()
 
-        if class_ids[index] != CLASS_ID_PERSON:
-            continue
-
-        detection = Detection(
-            class_id=class_ids[index],
-            confidence=scores[index],
-            box=box,
-            scale=scale,
-        )
-        detections.append(detection)
-        draw_bounding_box(frame, detection)
+        for index in result_indices:
+            index = int(index)
+            detection = Detection(
+                class_id=class_ids[index],
+                confidence=scores[index],
+                box=boxes[index],
+                scale=scale,
+            )
+            detections.append(detection)
+            draw_bounding_box(frame, detection)
 
     # TODO: very hacky. Remove global vars and use class to encapsulate state instead. This is just for testing purposes.
     if len(detections) > 0:
@@ -121,6 +122,8 @@ def run(onnx_model: str, video_input: int) -> None:
     # Load the ONNX model
     print("Reading ONNX model...")
     model: cv2.dnn.Net = cv2.dnn.readNetFromONNX(onnx_model)
+    model.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
+    model.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
     print("ONNX model loaded successfully.")
 
     # Start video capture

@@ -31,35 +31,38 @@ def draw_bounding_box(img: np.ndarray, detection: Detection) -> None:
     cv2.rectangle(img, corner_nw, corner_se, color, BOUNDING_BOX_THICKNESS)
     cv2.putText(img, label, (x + LABEL_OFFSET_X, y + LABEL_OFFSET_Y), LABEL_FONT, LABEL_FONT_SCALE, color, LABEL_THICKNESS)
 
-def collect_bounding_boxes(rows: int, outputs: np.ndarray) -> tuple[list, list, list]:
+def collect_bounding_boxes(outputs: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Collect bounding boxes, confidence scores, and class IDs from the model output.
-    These are combined into a single function to because they are all performed in the same loop.
+    Vectorized with NumPy for performance instead of a row-by-row Python loop.
+
+    Returns:
+        boxes (np.ndarray): Array of shape (N, 4) with [x, y, w, h] bounding boxes.
+        scores (np.ndarray): Array of shape (N,) with confidence scores.
+        class_ids (np.ndarray): Array of shape (N,) with class IDs.
     """
-    boxes = []
-    scores = []
-    class_ids = []
-    for i in range(rows):
-        classes_scores = outputs[0][i][4:]
-        (_minScore, maxScore, _minClassLoc, (_x, maxClassIndex)) = cv2.minMaxLoc(classes_scores)
-        if maxScore >= SCORE_THRESHOLD:
-            # extract the bounding box information from the output
-            x_center = outputs[0][i][0]
-            y_center = outputs[0][i][1]
-            width = outputs[0][i][2]
-            height = outputs[0][i][3]
+    data = outputs[0]  # shape: (num_detections, 4 + num_classes)
+    classes_scores = data[:, 4:]
 
-            # construct box in format [x, y, width, height] where x and y are the top-left corner of the box
-            box = [
-                x_center - (width/2), # left x
-                y_center - (height/2), # top y
-                width,
-                height,
-            ]
+    # Get max score and corresponding class ID for each detection
+    max_scores = np.max(classes_scores, axis=1)
+    max_class_ids = np.argmax(classes_scores, axis=1)
 
-            # append the box, confidence score, and class ID to their respective lists
-            boxes.append(box)
-            scores.append(maxScore)
-            class_ids.append(maxClassIndex)
+    # Filter detections by score threshold
+    mask = max_scores >= SCORE_THRESHOLD
+    filtered = data[mask]
+    scores = max_scores[mask]
+    class_ids = max_class_ids[mask]
+
+    # Convert from center format (cx, cy, w, h) to corner format (x, y, w, h)
+    x_center, y_center = filtered[:, 0], filtered[:, 1]
+    widths, heights = filtered[:, 2], filtered[:, 3]
+
+    boxes = np.column_stack([
+        x_center - widths / 2,
+        y_center - heights / 2,
+        widths,
+        heights,
+    ])
 
     return boxes, scores, class_ids
