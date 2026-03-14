@@ -652,6 +652,7 @@ class _DualScreenHomeState extends State<DualScreenHome> {
       ),
       'Settings': const SettingsApp(),
     };
+
     _currentApp = IdleApp(maintenanceController: _maintenanceController);
 
     // Fullscreen on the primary display in single-window mode.
