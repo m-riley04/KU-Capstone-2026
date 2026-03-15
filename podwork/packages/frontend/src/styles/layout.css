@@ -1,8 +1,22 @@
+/*
+This file contains the css for the background and how the website "moves"
+Handles the sliding animation and dealing wiht smaller screens
+*/
+
 .app-container {
-  width: 100%;               
-  max-width: 600px;          
-  padding: 1rem;
+  width: 100vw;               
+  max-width: 100vw;      
+  min-height: 100vh;
   overflow: hidden;
+  background:
+    linear-gradient(rgba(28, 27, 27, 0.55), rgba(90,65,52,0.65)),
+    url("/mainscreenbackground.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed; 
+  padding: 0 30%; 
+  box-sizing: border-box; /* ensure padding doesn't accidentally make the screen wider than 100vw */
 }
 
 .slider-viewport {
@@ -35,4 +49,33 @@
 
 .slider-track.level-3 {
   transform: translateX(-66.666%);
+}
+
+/* FOR SMALL SCREENS */ 
+
+@media (max-width: 768px) {
+  
+  /* make main text bigger */
+  p, span, button {
+    font-size: 1.1rem; 
+  }
+
+  /* make category cards/buttons easier to tap */
+  .category-card, .save-btn {
+    padding: 16px 20px; /* bigger padding for thumbs */
+    width: 90%; 
+    margin: 10px auto; 
+  }
+
+  /* give modal/containers more breathing room */
+  .modal-content, .app-container {
+    width: 100%; /* Use almost the whole screen width */
+    height: 100%;
+    padding: 15px; /* Reduce massive desktop padding */
+  }
+
+  /* increase gap in preference lists  */
+  li {
+    padding: 15px 0 !important; /* forces the list items to space out vertically */
+  }
 }
