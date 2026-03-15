@@ -152,6 +152,29 @@ req.params.userId
 status 200 
 { "message": "User deleted successfully" }
 
+# Interest Services 
+## get interests
+### Required 
+nothing 
+### Success message  
+[
+    {
+        "id": 1,
+        "name": "Atlanta Hawks",
+        "category": "NBA"
+    },
+    {
+        "id": 2,
+        "name": "Boston Celtics",
+        "category": "NBA"
+    },
+    {
+        "id": 3,
+        "name": "Chicago Bulls",
+        "category": "NBA"
+    },
+    ..... 
+]
 
 ## File Structure 
 There are a lot of folders here is a break down going top to bottom 

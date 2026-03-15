@@ -279,12 +279,6 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
         case 'polypod/timerReset':
           _timerController.reset();
           return null;
-        case 'polypod/childReady':
-          // The child window has set its title and is ready to be shown.
-          if (_childReadyCompleter != null &&
-              !_childReadyCompleter!.isCompleted) {
-            _childReadyCompleter!.complete();
-          }
         case 'polypod/feed':
           _polypodController.triggerFeed();
           _maintenanceController.feed();
@@ -296,6 +290,13 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
         case 'polypod/pet':
           _polypodController.triggerPet();
           _maintenanceController.pet();
+          return null;
+        case 'polypod/childReady':
+          // The child window has set its title and is ready to be shown.
+          if (_childReadyCompleter != null &&
+              !_childReadyCompleter!.isCompleted) {
+            _childReadyCompleter!.complete();
+          }
           return null;
       }
       return null;

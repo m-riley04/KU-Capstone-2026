@@ -58,7 +58,7 @@ export const getUserIdWithInterestFromDatabase = async (connection: connectionTy
     return users;
 }
 
-export const getInterests = async (connection: connectionType, interest: UserInterests) => {
+export const getInterestsByName = async (connection: connectionType, interest: UserInterests) => {
     const db = await createDbConnect(connection);
     if (!db) {
         throw new Error('Failed to connect to database');
@@ -82,6 +82,15 @@ export const getInterestIDFromName = async (connection: connectionType, interest
     }
     await db.close();
     return interestId;
+}
+export const getInterestsFromDatabase = async (connection: connectionType) => {
+    const db = await createDbConnect(connection);
+    if (!db) {
+        throw new Error('Failed to connect to database');
+    }
+    const interests = await db.all(`SELECT * FROM interests`);
+    await db.close();
+    return interests;
 }
 
 const addInterestToDatabase = async (connection: connectionType, name: string, category: string) => {
