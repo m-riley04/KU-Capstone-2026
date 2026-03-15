@@ -1,3 +1,18 @@
+/*
+This file contains all the css for any button, component, or container
+that has its own functionality
+- save button
+- summary box
+- search bar
+- interest list
+- menu 
+- category card
+- back button
+- logout
+- remove preference
+- toast notification
+*/
+
 .save-btn {
   position: absolute;
   top: 18px;
@@ -25,6 +40,7 @@
 
 .summary-box {
   margin-top: 2rem;
+  margin-bottom: 200px;
   padding: 1rem;
   background: #2c522f;
   border-radius: 8px;
@@ -53,6 +69,7 @@
 }
 
 .summary-modal-content {
+  display: grid;
   background: #3a3129;
   padding: 2rem;
   border-radius: 16px;
@@ -185,4 +202,127 @@
 .logout:hover {
   color: gray;
   transform: scale(1.04);
+}
+
+.remove-preference {
+  background: none;
+  border: none;
+  color: #2c522f;
+  cursor: pointer;
+  padding: 0;
+  width: 110px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.remove-preference:hover{
+  transform: scale(1.05);
+  color: gray
+}
+
+.preference-list {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  margin-left: 15%;
+  width: 100%;
+  max-width: 300px;
+}
+
+/* toast notification styles */
+.toast-notification {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  border-radius: 50px;
+  color: white;
+  font-weight: 500;
+  font-size: 0.9rem;
+  z-index: 9999;
+  animation: slideUp 0.3s ease-out;
+}
+
+.toast-notification.success {
+  background-color: #2c522f;
+}
+
+.toast-notification.error {
+  background-color: #ef4444;
+}
+
+/* animation to make it pop up */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    bottom: 10px;
+  }
+  to {
+    opacity: .2;
+    bottom: 30px;
+  }
+}
+
+.profile-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #3a3129;
+  padding: 8px 16px 8px 8px;
+  border-radius: 50px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: absolute; 
+  top: 20px;
+  right: 20px;
+  
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  background-color: #f9e4bc;
+  color: #2c522f;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.username {
+  font-weight: 600;
+  color: #f9e4bc;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.user-id {
+  font-size: 0.75rem;
+  color: #f9e4bc;
+}
+
+
+.badge-logout-btn {
+  background: none;
+  border: none;
+  color: #f9e4bc; 
+  cursor: pointer;
+  padding: 6px;
+  margin-left: 8px; 
+  border-left: 1px solid #e2e8f0; 
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease-in-out;
+}
+
+.badge-logout-btn:hover {
+  color: #ef4444; 
 }
