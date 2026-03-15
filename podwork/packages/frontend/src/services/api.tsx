@@ -35,7 +35,7 @@ export const savePreferencesToDatabase = async (userId: string, selectedIds: str
         }
     };
 
-    const response = await fetch(`http://localhost:3000/user/${userId}`, {
+    const response = await fetch(`${SERVER}/user/${userId}`, {
         method: 'PUT',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(payload),
@@ -45,17 +45,11 @@ export const savePreferencesToDatabase = async (userId: string, selectedIds: str
 };
 
 export const getAvailableInterests = async () => {
-  try {
-    // Make sure this matches your teammate's actual route path!
-    const response = await fetch(`${SERVER}/api/interests`); 
-    
+    const response = await fetch(`${SERVER}/interests`); 
+
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
-    
-    return await response.json();
-  } catch (error) {
-    console.error("Failed to fetch interests:", error);
-    return null;
-  }
+
+    return response.json();
 };

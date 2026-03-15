@@ -14,7 +14,7 @@ import './styles/layout.css';
 import './styles/components.css';
 import LoginPage from './LoginPage';
 import { fetchAndParseInterestsXML } from './utilities/helpers';
-import { savePreferencesToDatabase } from './services/api';
+import { getAvailableInterests, savePreferencesToDatabase } from './services/api';
 import ToastNotification from './components/ToastNotification';
 import ProfileBadge from './components/ProfileBadge';
 import SummaryModal from './components/SummaryModal';
@@ -33,24 +33,15 @@ function App() {
   const [savedIds, setSavedIds] = useState<string[]>([])
   // state for toast notification
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  // state to hold if the user selected preference summary 
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  // state to hold the current user info
+  const [user, setUser] = useState<{id: string | number; username: string} | null>(null);
 
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     // check if token exists so a logged in user can stay logged in
     return localStorage.getItem('polypod_userId') !== null;
   });
-
-  // state to hold if the user selected preference summary 
-  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
-
-  const [user, setUser] = useState<{id: string | number; username: string} | null>(null);
-  
-  useEffect(() => {
-    const loadXMLData = async () => {
-      const parsedData = await fetchAndParseInterestsXML();
-      setDataSource(parsedData);
-    };
-    loadXMLData();
-  }, []);
 
   useEffect(() => {
     // grab the data from localStorage when the page loads
@@ -66,36 +57,33 @@ function App() {
   }, []);
 
 // grab available interests from backend 
-  /* 
   useEffect(() => {
     const loadDatabaseInterests = async () => {
       const rawData = await getAvailableInterests();
       
       if (rawData) {
-        // Create an empty object to hold our sorted buckets
         const groupedData: Record<string, { id: string }[]> = {};
 
-        // Loop through every item the backend sent us
+        // loop through every item the backend sent us
         rawData.forEach((interest: { id: number, name: string, category: string }) => {
           
-          // If the category bucket doesn't exist yet, create it
+          // if category doesn't exist yet, create it
           if (!groupedData[interest.category]) {
             groupedData[interest.category] = [];
           }
           
-          // Push the item into the correct category bucket
-          // We set 'id' to the name string so your existing UI checkboxes don't break
+          // push item into the correct category
+          // set 'id' to the name string
           groupedData[interest.category].push({ id: interest.name });
         });
 
-        // Feed the sorted buckets to your app!
         setDataSource(groupedData);
       }
     };
 
     loadDatabaseInterests();
   }, []);
-  */
+  
 
   // when user logs in pull up their saved preferences
   useEffect(() => {
