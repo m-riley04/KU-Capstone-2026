@@ -1,4 +1,3 @@
-import { createDbConnect } from "../db";
 import {addEventToDatabase} from "../repositories/event_quaries";
 import { eventData } from "../models/notifications";
 
