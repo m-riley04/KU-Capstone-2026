@@ -60,6 +60,33 @@ export const getLatestEventByInterestName = async (connection: connectionType, i
     };
 }
 
+export const getLatestEventByInterestId = async (connection: connectionType, interestId: number): Promise<eventData | null> => {
+    const db = await createDbConnect(connection);
+    if (!db) {
+        throw new Error('Failed to connect to database');
+    }
+
+    const latestEvent = await db.get(
+        `SELECT * FROM polypod_events WHERE interest_id = ? ORDER BY created_at DESC LIMIT 1`,
+        interestId
+    );
+
+    await db.close();
+
+    if (!latestEvent) {
+        return null;
+    }
+
+    return {
+        from_source: latestEvent.from_source,
+        headline: latestEvent.headline,
+        info: latestEvent.info,
+        timestamp: latestEvent.created_at,
+        media: latestEvent.media,
+        seemore: latestEvent.seemore
+    };
+}
+
 export const getEventsFromInterests = async (connection: connectionType, interestIds: number[]) => {
     const db = await createDbConnect(connection);
     if (!db) {

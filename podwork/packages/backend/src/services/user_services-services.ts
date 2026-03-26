@@ -3,6 +3,9 @@ import { User, UserInterests } from '../models/user';
 import { addUserToDatabase, deleteUserFromDatabase, getUserForAuth, getUserWithID, updateUserInDatabase } from '../repositories/user_queries';
 import dotenv from 'dotenv';
 import { deleteAllUserInterestsFromDatabase, addUserInterestToDatabase, getInterests, getUserInterestsFromDatabase } from '../repositories/interests_queries';
+import { getLatestEventByInterestId } from '../repositories/event_quaries';
+import { addNotificationsToDatabase } from '../repositories/notifications_quaries';
+import { databaseNotification } from '../models/notifications';
 
 dotenv.config();
 const SALT_ROUNDS = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) : 10;
@@ -52,10 +55,28 @@ export const updateUserService = async (userId: number, updatedUserData: Partial
         await deleteAllUserInterestsFromDatabase(1, userId);
 
         let interests : UserInterests[] = [];
+        const starterNotifications: databaseNotification[] = [];
         for (const interest of updatedUserData.interests) {
             const interestData = await getInterests(1, interest);
             await addUserInterestToDatabase(1, userId, interestData.id);
             interests.push(interestData);
+
+            // Seed one notification with the latest known event for newly selected interests.
+            const latestEvent = await getLatestEventByInterestId(1, interestData.id);
+            if (latestEvent) {
+                starterNotifications.push({
+                    user_id: userId,
+                    notifType: 'base',
+                    from_source: latestEvent.from_source,
+                    notification_data: latestEvent,
+                    is_read: false,
+                    created_at: new Date(),
+                });
+            }
+        }
+
+        if (starterNotifications.length > 0) {
+            await addNotificationsToDatabase(1, starterNotifications);
         }
         
     }
