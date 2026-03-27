@@ -13,7 +13,6 @@ import './styles/base.css';
 import './styles/layout.css';
 import './styles/components.css';
 import LoginPage from './LoginPage';
-import { fetchAndParseInterestsXML } from './utilities/helpers';
 import { getAvailableInterests, savePreferencesToDatabase } from './services/api';
 import ToastNotification from './components/ToastNotification';
 import ProfileBadge from './components/ProfileBadge';
@@ -54,7 +53,7 @@ function App() {
         username: storedName || "User",
       });
     }
-  }, []);
+  }, [isLoggedIn]);
 
 // grab available interests from backend 
   useEffect(() => {
