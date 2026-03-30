@@ -802,8 +802,8 @@ paths:
   #   source: rtsp://my_camera
   cam:
     source: rpiCamera
-    width: 640
-    height: 480
+    rpiCameraWidth: 640
+    rpiCameraHeight: 480
 
   # Settings under path "all_others" are applied to all paths that
   # do not match another entry.
