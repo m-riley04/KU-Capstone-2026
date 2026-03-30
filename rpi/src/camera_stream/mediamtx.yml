@@ -802,8 +802,13 @@ paths:
   #   source: rtsp://my_camera
   cam:
     source: rpiCamera
-    rpiCameraWidth: 640
-    rpiCameraHeight: 480
+    rpiCameraWidth: 1280
+    rpiCameraHeight: 720
+    rpiCameraFPS: 30
+    rpiCameraBitrate: 3000000
+    rpiCameraIDRPeriod: 30
+    rpiCameraCodec: hardwareH264
+    rpiCameraDenoise: "off"
 
   # Settings under path "all_others" are applied to all paths that
   # do not match another entry.
