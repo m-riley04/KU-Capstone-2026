@@ -802,8 +802,8 @@ paths:
   #   source: rtsp://my_camera
   cam:
     source: rpiCamera
-    rpiCameraWidth: 1280
-    rpiCameraHeight: 720
+    rpiCameraWidth: 640
+    rpiCameraHeight: 480
     rpiCameraFPS: 30
     rpiCameraBitrate: 3000000
     rpiCameraIDRPeriod: 30
