@@ -1,0 +1,5 @@
+paths:
+  cam:
+    source: rpiCamera
+    rpiCameraWidth: 640
+    rpiCameraHeight: 480
