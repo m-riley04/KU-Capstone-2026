@@ -40,6 +40,16 @@ The camera stream is pushed to multiple endpoints, but the best we've found is t
 https://<rpi-ip>:8889/cam/
 ```
 
+#### MeidaMTX Setup
+
+You need to ensure that the binary is executable. From the repo's root directory, run the following commands to quickstart:
+
+```bash
+cd rpi/src/camera_stream
+chmod +x mediamtx
+./mediamtx
+```
+
 ### Python Flask Webpage
 
 Mainly used for testing. Probably to be deleted later.
