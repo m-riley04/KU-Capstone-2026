@@ -4,7 +4,7 @@ import '../config/theme_config.dart';
 import '../controllers/clock_timer_controller.dart';
 
 class ClockApp extends BaseApp {
-  ClockApp({super.key, required this.controller});
+  const ClockApp({super.key, required this.controller});
 
   final ClockTimerController controller;
 
@@ -72,16 +72,16 @@ class _HorizontalWheelListState extends State<HorizontalWheelList> {
             Text(
               label,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: EarthyTheme.textPrimary,
               ),
             ),
             const SizedBox(height: 4),
             IconButton(
-              iconSize: 32,
+              iconSize: 58,
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 40),
               icon: Icon(Icons.keyboard_arrow_up_rounded,
                   color: EarthyTheme.wheat),
               onPressed: () {
@@ -89,7 +89,7 @@ class _HorizontalWheelListState extends State<HorizontalWheelList> {
               },
             ),
             Container(
-              width: 54,
+              width: 50,
               height: 42,
               alignment: Alignment.center,
               decoration: BoxDecoration(
@@ -106,7 +106,7 @@ class _HorizontalWheelListState extends State<HorizontalWheelList> {
               ),
             ),
             IconButton(
-              iconSize: 32,
+              iconSize: 58,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               icon: Icon(Icons.keyboard_arrow_down_rounded,
@@ -121,9 +121,10 @@ class _HorizontalWheelListState extends State<HorizontalWheelList> {
     }
 
     return Scaffold(
-      body: Center(
+      body: Align(
+        alignment: const Alignment(0, -0.5),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
           child: Row(
             children: [
               buildPicker('Hour', _hours, 12, (v) {
@@ -139,7 +140,7 @@ class _HorizontalWheelListState extends State<HorizontalWheelList> {
                 _notifySelection();
               }),
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 2),
                 decoration: BoxDecoration(
                   color: EarthyTheme.forestGreen,
                   borderRadius: BorderRadius.circular(14),
@@ -155,17 +156,26 @@ class _HorizontalWheelListState extends State<HorizontalWheelList> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.play_arrow_rounded),
+                      icon: const Icon(
+                        Icons.play_arrow_rounded,
+                        size: 40,
+                        ),
                       onPressed: widget.onStart,
                       color: EarthyTheme.wheat,
                     ),
                     IconButton(
-                      icon: const Icon(Icons.pause_circle_filled_rounded),
+                      icon: const Icon(
+                        Icons.pause_circle_filled_rounded,
+                        size: 40,
+                        ),
                       onPressed: widget.onPause,
                       color: EarthyTheme.wheat,
                     ),
                     IconButton(
-                      icon: const Icon(Icons.restore),
+                      icon: const Icon(
+                        Icons.restore,
+                        size: 40,
+                        ),
                       onPressed: widget.onReset,
                       color: EarthyTheme.wheat,
                     ),
