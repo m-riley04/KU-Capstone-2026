@@ -28,21 +28,21 @@ class _SettingsAppState extends State<SettingsApp> {
             children: [
               Icon(
                 Icons.settings_rounded,
-                size: 40,
+                size: 30,
                 color: EarthyTheme.clay,
               ),
               const SizedBox(width: 15),
               Text(
                 'Settings',
                 style: TextStyle(
-                  fontSize: 32,
+                  fontSize: 26,
                   fontWeight: FontWeight.bold,
                   color: EarthyTheme.textPrimary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 20),
           _buildSettingItem('Display Brightness', Icons.brightness_6_rounded),
           _buildSettingItem('Volume', Icons.volume_up_rounded),
           _buildSettingItem('Network', Icons.wifi_rounded),
@@ -83,7 +83,7 @@ class _SettingsAppState extends State<SettingsApp> {
 
   Widget _buildSettingItem(String label, IconData icon) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Container(
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
@@ -93,7 +93,7 @@ class _SettingsAppState extends State<SettingsApp> {
         child: Row(
           children: [
             Icon(icon, color: EarthyTheme.textSecondary),
-            const SizedBox(width: 15),
+            const SizedBox(width: 16),
             Text(
               label,
               style: TextStyle(
