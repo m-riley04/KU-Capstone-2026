@@ -9,12 +9,15 @@ class MediaApp extends BaseApp {
   String get appName => 'Media';
 
   @override
+  Widget? buildBottomScreenContent(BuildContext context) {
+    return const MediaBottomControls();
+  }
+
+  @override
   State<MediaApp> createState() => _MediaAppState();
 }
 
 class _MediaAppState extends State<MediaApp> {
-  bool _isPlaying = false;
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -53,35 +56,57 @@ class _MediaAppState extends State<MediaApp> {
                 color: EarthyTheme.textPrimary,
               ),
             ),
-            const SizedBox(height: 30),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.skip_previous_rounded, size: 40),
-                  color: EarthyTheme.textSecondary,
-                  onPressed: () {},
-                ),
-                const SizedBox(width: 20),
-                IconButton(
-                  icon: Icon(
-                    _isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded,
-                    size: 60,
-                  ),
-                  color: EarthyTheme.sage,
-                  onPressed: () {
-                    setState(() {
-                      _isPlaying = !_isPlaying;
-                    });
-                  },
-                ),
-                const SizedBox(width: 20),
-                IconButton(
-                  icon: Icon(Icons.skip_next_rounded, size: 40),
-                  color: EarthyTheme.textSecondary,
-                  onPressed: () {},
-                ),
-              ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class MediaBottomControls extends StatefulWidget {
+  const MediaBottomControls({super.key});
+
+  @override
+  State<MediaBottomControls> createState() => _MediaBottomControlsState();
+}
+
+class _MediaBottomControlsState extends State<MediaBottomControls> {
+  bool _isPlaying = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: EarthyTheme.surface,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 72),
+      child: Center(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.skip_previous_rounded, size: 80),
+              color: EarthyTheme.textSecondary,
+              onPressed: () {},
+            ),
+            const SizedBox(width: 20),
+            IconButton(
+              icon: Icon(
+                _isPlaying
+                    ? Icons.pause_circle_filled_rounded
+                    : Icons.play_circle_filled_rounded,
+                size: 100,
+              ),
+              color: EarthyTheme.sage,
+              onPressed: () {
+                setState(() {
+                  _isPlaying = !_isPlaying;
+                });
+              },
+            ),
+            const SizedBox(width: 20),
+            IconButton(
+              icon: const Icon(Icons.skip_next_rounded, size: 80),
+              color: EarthyTheme.textSecondary,
+              onPressed: () {},
             ),
           ],
         ),
