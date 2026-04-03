@@ -13,7 +13,7 @@ Run the following to install all global dependencies:
 
 ```bash
 sudo apt update
-sudp apt install -y libcap-dev python3-libcamera python3-kms++ rpicam-apps
+sudo apt install -y libcap-dev python3-libcamera python3-kms++ rpicam-apps
 ```
 
 To test whether the camera is detected and working, you can run the following:
