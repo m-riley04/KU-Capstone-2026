@@ -39,38 +39,40 @@ class _SettingsAppState extends State<SettingsApp> {
     return Container(
       color: EarthyTheme.background,
       padding: const EdgeInsets.all(40),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.settings_rounded,
-                size: 40,
-                color: EarthyTheme.clay,
-              ),
-              const SizedBox(width: 15),
-              Text(
-                'Settings',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: EarthyTheme.textPrimary,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.settings_rounded,
+                  size: 40,
+                  color: EarthyTheme.clay,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 30),
-          _buildUserIdSetting(),
-          _buildSettingItem('Display Brightness', Icons.brightness_6_rounded),
-          _buildSettingItem('Volume', Icons.volume_up_rounded),
-          _buildSettingItem('Network', Icons.wifi_rounded),
-          _buildSettingItem('About Device', Icons.info_outline_rounded),
-          GestureDetector(
-            onTap: () => _confirmQuit(context),
-            child: _buildSettingItem('Quit Polypod', Icons.exit_to_app_rounded),
-          ),
-        ],
+                const SizedBox(width: 15),
+                Text(
+                  'Settings',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: EarthyTheme.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 30),
+            _buildUserIdSetting(),
+            _buildSettingItem('Display Brightness', Icons.brightness_6_rounded),
+            _buildSettingItem('Volume', Icons.volume_up_rounded),
+            _buildSettingItem('Network', Icons.wifi_rounded),
+            _buildSettingItem('About Device', Icons.info_outline_rounded),
+            GestureDetector(
+              onTap: () => _confirmQuit(context),
+              child: _buildSettingItem('Quit Polypod', Icons.exit_to_app_rounded),
+            ),
+          ],
+        ),
       ),
     );
   }
