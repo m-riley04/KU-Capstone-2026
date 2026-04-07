@@ -6,6 +6,33 @@ import 'package:flutter/services.dart';
 import 'base_app.dart';
 import '../config/theme_config.dart';
 
+class SettingsAppBridge {
+  void Function(String action, Map<String, dynamic> payload)? _actionHandler;
+  void Function(Map<String, dynamic> state)? onStateChanged;
+  Map<String, dynamic> _latestState = const {};
+
+  Map<String, dynamic> get latestState => _latestState;
+
+  void bindActionHandler(
+    void Function(String action, Map<String, dynamic> payload) handler,
+  ) {
+    _actionHandler = handler;
+  }
+
+  void unbindActionHandler() {
+    _actionHandler = null;
+  }
+
+  void sendAction(String action, [Map<String, dynamic> payload = const {}]) {
+    _actionHandler?.call(action, payload);
+  }
+
+  void publishState(Map<String, dynamic> state) {
+    _latestState = Map<String, dynamic>.from(state);
+    onStateChanged?.call(_latestState);
+  }
+}
+
 enum _BottomInputMode { idle, keyboard, numberPad, slider, network, confirm }
 
 enum _SettingsPanel { none, brightness, volume, network, about, quit }
@@ -181,10 +208,11 @@ class _BottomInputController extends ChangeNotifier {
 }
 
 class SettingsApp extends BaseApp {
-  SettingsApp({super.key});
+  SettingsApp({super.key, this.bridge});
 
   final _BottomInputController _bottomInputController =
       _BottomInputController();
+  final SettingsAppBridge? bridge;
 
   @override
   String get appName => 'Settings';
@@ -226,10 +254,12 @@ class _SettingsAppState extends State<SettingsApp> {
   TextEditingController? _activeBottomInput;
   VoidCallback? _activeBottomInputOnChange;
   VoidCallback? _activeBottomInputOnDone;
+  String _lastBridgeStateHash = '';
 
   @override
   void initState() {
     super.initState();
+    widget.bridge?.bindActionHandler(_handleBridgeAction);
     _loadUserId();
     _loadBrightness();
     _loadVolume();
@@ -239,6 +269,7 @@ class _SettingsAppState extends State<SettingsApp> {
 
   @override
   void dispose() {
+    widget.bridge?.unbindActionHandler();
     widget._bottomInputController.deactivate();
     _userIdController.dispose();
     _wifiPasswordController.dispose();
@@ -247,6 +278,11 @@ class _SettingsAppState extends State<SettingsApp> {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _emitBridgeState();
+      }
+    });
     return LayoutBuilder(
       builder: (context, constraints) {
         return Container(
@@ -326,6 +362,133 @@ class _SettingsAppState extends State<SettingsApp> {
         );
       },
     );
+  }
+
+  void _emitBridgeState() {
+    final bridge = widget.bridge;
+    if (bridge == null) {
+      return;
+    }
+
+    final state = <String, dynamic>{
+      'activePanel': _activePanel.name,
+      'bottomMode': widget._bottomInputController.mode.name,
+      'bottomTitle': widget._bottomInputController.title,
+      'bottomHelper': widget._bottomInputController.helper,
+      'bottomPrimaryActionLabel':
+          widget._bottomInputController.primaryActionLabel,
+      'brightnessPercent': _brightnessPercent,
+      'brightnessDraft': _brightnessDraft,
+      'brightnessStatus': _brightnessStatus,
+      'volumePercent': _volumePercent,
+      'volumeDraft': _volumeDraft,
+      'volumeStatus': _volumeStatus,
+      'sliderValue': widget._bottomInputController.sliderValue,
+      'sliderMin': widget._bottomInputController.sliderMin,
+      'sliderMax': widget._bottomInputController.sliderMax,
+      'sliderUnit': widget._bottomInputController.sliderUnit,
+      'networkIpAddress': _networkIpAddress,
+      'networkStatus': _networkStatus,
+      'wifiNetworks': _wifiNetworks,
+      'selectedSsid': _selectedSsid,
+      'passwordMasked': _wifiPasswordController.text.isEmpty
+          ? '(not set)'
+          : '*' * _wifiPasswordController.text.length,
+      'deviceHostname': _deviceHostname,
+      'deviceOsName': _deviceOsName,
+    };
+
+    final hash = jsonEncode(state);
+    if (hash == _lastBridgeStateHash) {
+      return;
+    }
+
+    _lastBridgeStateHash = hash;
+    bridge.publishState(state);
+  }
+
+  void _handleBridgeAction(String action, Map<String, dynamic> payload) {
+    switch (action) {
+      case 'selectPanel':
+        final panel = payload['panel']?.toString() ?? '';
+        if (panel == 'brightness') {
+          _showBrightnessPanel();
+        } else if (panel == 'volume') {
+          _showVolumePanel();
+        } else if (panel == 'network') {
+          _showNetworkPanel();
+        } else if (panel == 'about') {
+          _showAboutPanel();
+        } else if (panel == 'quit') {
+          _showQuitPanel();
+        }
+        return;
+      case 'closePanel':
+        _clearSelectionPanel();
+        return;
+      case 'sliderChanged':
+        final value = (payload['value'] as num?)?.toDouble();
+        if (value == null) {
+          return;
+        }
+        if (_activePanel == _SettingsPanel.brightness) {
+          setState(() {
+            _brightnessDraft = value;
+          });
+        } else if (_activePanel == _SettingsPanel.volume) {
+          setState(() {
+            _volumeDraft = value;
+          });
+        }
+        return;
+      case 'saveSlider':
+        if (_activePanel == _SettingsPanel.brightness) {
+          _saveBrightnessFromBottom();
+        } else if (_activePanel == _SettingsPanel.volume) {
+          _saveVolumeFromBottom();
+        }
+        return;
+      case 'networkSelect':
+        final ssid = payload['ssid']?.toString();
+        if (ssid != null && ssid.isNotEmpty) {
+          setState(() {
+            _selectedSsid = ssid;
+          });
+          _activateNetworkControls();
+        }
+        return;
+      case 'networkScan':
+        _refreshNetworkFromBottom();
+        return;
+      case 'networkConnect':
+        _connectNetworkFromBottom();
+        return;
+      case 'networkPassword':
+        _openWifiPasswordKeyboard();
+        return;
+      case 'inputKey':
+        final value = payload['value']?.toString() ?? '';
+        if (value.isNotEmpty) {
+          _handleBottomInputKey(value);
+        }
+        return;
+      case 'inputBackspace':
+        _handleBottomInputBackspace();
+        return;
+      case 'inputClear':
+        _handleBottomInputClear();
+        return;
+      case 'inputDone':
+        _deactivateBottomInput();
+        return;
+      case 'quitConfirm':
+        SystemNavigator.pop();
+        exit(0);
+        return;
+      case 'quitCancel':
+        _clearSelectionPanel();
+        return;
+    }
   }
 
   Widget _buildUserIdSetting() {
@@ -1320,8 +1483,7 @@ class _SettingsBottomInputPanelState extends State<_SettingsBottomInputPanel> {
   }
 
   Widget _buildIdlePanel() {
-    return Container(
-    );
+    return Container();
   }
 
   Widget _buildNumberPad() {

@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'config/theme_config.dart';
 import 'screens/top_screen.dart';
 import 'screens/bottom_screen.dart';
+import 'screens/settings_bottom_proxy_panel.dart';
 import 'apps/base_app.dart';
 import 'apps/idle_app.dart';
 import 'apps/clock_app.dart';
@@ -208,6 +209,8 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
   String _currentAppKey = 'Home';
 
   late final Map<String, BaseApp> _apps;
+  late final SettingsAppBridge _settingsBridge;
+  late final SettingsApp _settingsApp;
 
   final PolypodMultiWindow _multiWindow = createMultiWindow();
   PolypodWindowController? _topWindowController;
@@ -230,6 +233,8 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     _notificationPollerService.start();
     _polypodController = PolypodAnimationController();
     _maintenanceController = PolypodMaintenanceController();
+    _settingsBridge = SettingsAppBridge();
+    _settingsApp = SettingsApp(bridge: _settingsBridge);
     _apps = {
       'Home': IdleApp(maintenanceController: _maintenanceController),
       'Timer': ClockApp(controller: _timerController),
@@ -241,9 +246,13 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
         onWater: _maintenanceController.water,
         onPet: _maintenanceController.pet,
       ),
-      'Settings': SettingsApp(),
+      'Settings': _settingsApp,
     };
     _currentApp = IdleApp(maintenanceController: _maintenanceController);
+
+    _settingsBridge.onStateChanged = (state) {
+      _bottomWindowController?.invokeMethod('polypod/settingsState', state);
+    };
 
     _initWindowing();
   }
@@ -269,6 +278,18 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
           return null;
         case 'polypod/interaction':
           _idleController.resetIdleTimer();
+          return null;
+        case 'polypod/settingsAction':
+          if (arguments is Map) {
+            final action = arguments['action']?.toString();
+            final payloadRaw = arguments['payload'];
+            final payload = payloadRaw is Map
+                ? Map<String, dynamic>.from(payloadRaw)
+                : <String, dynamic>{};
+            if (action != null && action.isNotEmpty) {
+              _settingsBridge.sendAction(action, payload);
+            }
+          }
           return null;
         case 'polypod/timerSelection':
           if (arguments is Map) {
@@ -385,6 +406,10 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     await _bottomWindowController?.invokeMethod('polypod/appChanged', {
       'currentAppKey': _currentAppKey,
     });
+    await _bottomWindowController?.invokeMethod(
+      'polypod/settingsState',
+      _settingsBridge.latestState,
+    );
   }
 
   @override
@@ -465,6 +490,7 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
   PolypodWindowController? _mainWindowController;
 
   String _currentAppKey = 'Home';
+  Map<String, dynamic> _settingsState = const {};
 
   static const List<String> _availableApps = [
     'Timer',
@@ -519,6 +545,13 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
             }
           }
           return null;
+        case 'polypod/settingsState':
+          if (arguments is Map && mounted) {
+            setState(() {
+              _settingsState = Map<String, dynamic>.from(arguments);
+            });
+          }
+          return null;
       }
       return null;
     });
@@ -551,6 +584,13 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
       onFeed: () => _sendToMain('polypod/feed'),
       onWater: () => _sendToMain('polypod/water'),
       onPet: () => _sendToMain('polypod/pet'),
+      settingsState: _settingsState,
+      onSettingsAction: (action, payload) {
+        _sendToMain('polypod/settingsAction', {
+          'action': action,
+          'payload': payload,
+        });
+      },
     );
   }
 
@@ -584,6 +624,8 @@ class _BottomProxyApp extends BaseApp {
     required this.onFeed,
     required this.onWater,
     required this.onPet,
+    required this.settingsState,
+    required this.onSettingsAction,
   });
 
   final String currentAppKey;
@@ -594,6 +636,9 @@ class _BottomProxyApp extends BaseApp {
   final VoidCallback onFeed;
   final VoidCallback onWater;
   final VoidCallback onPet;
+  final Map<String, dynamic> settingsState;
+  final void Function(String action, Map<String, dynamic> payload)
+  onSettingsAction;
 
   @override
   String get appName => currentAppKey;
@@ -613,6 +658,12 @@ class _BottomProxyApp extends BaseApp {
         onFeedPressed: onFeed,
         onWaterPressed: onWater,
         onPetPressed: onPet,
+      );
+    }
+    if (currentAppKey == 'Settings') {
+      return SettingsBottomProxyPanel(
+        state: settingsState,
+        onAction: onSettingsAction,
       );
     }
     return null;
