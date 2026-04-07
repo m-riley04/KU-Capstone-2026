@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +17,23 @@ class SettingsApp extends BaseApp {
 }
 
 class _SettingsAppState extends State<SettingsApp> {
+  final TextEditingController _userIdController = TextEditingController();
+  bool _isLoadingUserId = true;
+  bool _isSavingUserId = false;
+  String _userIdStatus = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserId();
+  }
+
+  @override
+  void dispose() {
+    _userIdController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -43,6 +61,7 @@ class _SettingsAppState extends State<SettingsApp> {
             ],
           ),
           const SizedBox(height: 30),
+          _buildUserIdSetting(),
           _buildSettingItem('Display Brightness', Icons.brightness_6_rounded),
           _buildSettingItem('Volume', Icons.volume_up_rounded),
           _buildSettingItem('Network', Icons.wifi_rounded),
@@ -54,6 +73,171 @@ class _SettingsAppState extends State<SettingsApp> {
         ],
       ),
     );
+  }
+
+  Widget _buildUserIdSetting() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: EarthyTheme.surface,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.person_outline_rounded, color: EarthyTheme.textSecondary),
+                const SizedBox(width: 15),
+                Text(
+                  'Notification User ID',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: EarthyTheme.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _userIdController,
+              enabled: !_isLoadingUserId && !_isSavingUserId,
+              style: TextStyle(color: EarthyTheme.textPrimary),
+              decoration: InputDecoration(
+                hintText: _isLoadingUserId ? 'Loading...' : 'Enter user id',
+                hintStyle: TextStyle(color: EarthyTheme.textSecondary),
+                filled: true,
+                fillColor: EarthyTheme.background,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: EarthyTheme.textSecondary.withValues(alpha: 0.3)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: EarthyTheme.textSecondary.withValues(alpha: 0.3)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: EarthyTheme.clay),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: (_isLoadingUserId || _isSavingUserId) ? null : _saveUserId,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: EarthyTheme.clay,
+                    foregroundColor: Colors.white,
+                  ),
+                  icon: _isSavingUserId
+                      ? SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.save_rounded),
+                  label: Text(_isSavingUserId ? 'Saving...' : 'Save User ID'),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _userIdStatus,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: EarthyTheme.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadUserId() async {
+    try {
+      final settingsFile = File(_notificationSettingsPath());
+      if (await settingsFile.exists()) {
+        final raw = await settingsFile.readAsString();
+        final decoded = jsonDecode(raw);
+        if (decoded is Map<String, dynamic>) {
+          final savedUserId = decoded['user_id']?.toString() ?? '';
+          if (mounted) {
+            _userIdController.text = savedUserId;
+          }
+        }
+      }
+      if (mounted) {
+        setState(() {
+          _isLoadingUserId = false;
+          _userIdStatus = 'Loaded from notification settings file.';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingUserId = false;
+          _userIdStatus = 'Could not load user id.';
+        });
+      }
+    }
+  }
+
+  Future<void> _saveUserId() async {
+    final userId = _userIdController.text.trim();
+
+    setState(() {
+      _isSavingUserId = true;
+      _userIdStatus = '';
+    });
+
+    try {
+      final settingsFile = File(_notificationSettingsPath());
+      await settingsFile.parent.create(recursive: true);
+
+      final payload = <String, dynamic>{
+        'user_id': userId,
+      };
+
+      await settingsFile.writeAsString(
+        const JsonEncoder.withIndent('  ').convert(payload),
+      );
+
+      if (mounted) {
+        setState(() {
+          _userIdStatus = 'User ID saved.';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _userIdStatus = 'Failed to save user id.';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingUserId = false;
+        });
+      }
+    }
+  }
+
+  String _notificationSettingsPath() {
+    final currentDir = Directory.current.path;
+    final settingsPath = '$currentDir${Platform.pathSeparator}..${Platform.pathSeparator}notif${Platform.pathSeparator}notification_settings.json';
+    return File(settingsPath).absolute.path;
   }
 
   Future<void> _confirmQuit(BuildContext context) async {
