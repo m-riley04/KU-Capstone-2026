@@ -32,7 +32,10 @@ Future<void> main(List<String> args) async {
   // Defaults come from compile-time defines (e.g. `--dart-define=FULLSCREEN=true`).
   // CLI args can override these at runtime on desktop/embedded platforms.
   const defaultConfig = RuntimeConfig(
-    fullscreen: bool.fromEnvironment('FULLSCREEN', defaultValue: true), // default to true for embedded pod device
+    fullscreen: bool.fromEnvironment(
+      'FULLSCREEN',
+      defaultValue: true,
+    ), // default to true for embedded pod device
     topDisplayIndex: int.fromEnvironment('TOP_DISPLAY_INDEX', defaultValue: 0),
     bottomDisplayIndex: int.fromEnvironment(
       'BOTTOM_DISPLAY_INDEX',
@@ -238,7 +241,7 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
         onWater: _maintenanceController.water,
         onPet: _maintenanceController.pet,
       ),
-      'Settings': const SettingsApp(),
+      'Settings': SettingsApp(),
     };
     _currentApp = IdleApp(maintenanceController: _maintenanceController);
 
@@ -263,6 +266,9 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
           return null;
         case 'polypod/home':
           _returnToHome();
+          return null;
+        case 'polypod/interaction':
+          _idleController.resetIdleTimer();
           return null;
         case 'polypod/timerSelection':
           if (arguments is Map) {
@@ -425,10 +431,14 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     return Scaffold(
       backgroundColor: EarthyTheme.background,
       body: Center(
-        child: TopScreen(
-          currentApp: _currentApp,
-          timerController: _timerController,
-          notificationController: _notificationController,
+        child: Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) => _idleController.resetIdleTimer(),
+          child: TopScreen(
+            currentApp: _currentApp,
+            timerController: _timerController,
+            notificationController: _notificationController,
+          ),
         ),
       ),
     );
@@ -548,12 +558,16 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: EarthyTheme.background,
-      body: Center(
-        child: BottomScreen(
-          onAppSelected: (name) => _sendToMain('polypod/selectApp', name),
-          onHomePressed: () => _sendToMain('polypod/home'),
-          availableApps: _availableApps,
-          currentApp: _bottomProxyApp(),
+      body: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (_) => _sendToMain('polypod/interaction'),
+        child: Center(
+          child: BottomScreen(
+            onAppSelected: (name) => _sendToMain('polypod/selectApp', name),
+            onHomePressed: () => _sendToMain('polypod/home'),
+            availableApps: _availableApps,
+            currentApp: _bottomProxyApp(),
+          ),
         ),
       ),
     );
@@ -658,7 +672,7 @@ class _DualScreenHomeState extends State<DualScreenHome> {
         onWater: _maintenanceController.water,
         onPet: _maintenanceController.pet,
       ),
-      'Settings': const SettingsApp(),
+      'Settings': SettingsApp(),
     };
 
     _currentApp = IdleApp(maintenanceController: _maintenanceController);
@@ -718,19 +732,27 @@ class _DualScreenHomeState extends State<DualScreenHome> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Top Screen (640x480)
-              TopScreen(
-                currentApp: _currentApp,
-                timerController: _timerController,
-                notificationController: _notificationController,
+              Listener(
+                behavior: HitTestBehavior.translucent,
+                onPointerDown: (_) => _idleController.resetIdleTimer(),
+                child: TopScreen(
+                  currentApp: _currentApp,
+                  timerController: _timerController,
+                  notificationController: _notificationController,
+                ),
               ),
               // Bottom Screen (480x320)
-              BottomScreen(
-                onAppSelected: _openApp,
-                onHomePressed: _returnToHome,
-                availableApps: _apps.keys
-                    .where((name) => name != 'Home')
-                    .toList(),
-                currentApp: _currentApp,
+              Listener(
+                behavior: HitTestBehavior.translucent,
+                onPointerDown: (_) => _idleController.resetIdleTimer(),
+                child: BottomScreen(
+                  onAppSelected: _openApp,
+                  onHomePressed: _returnToHome,
+                  availableApps: _apps.keys
+                      .where((name) => name != 'Home')
+                      .toList(),
+                  currentApp: _currentApp,
+                ),
               ),
             ],
           ),
