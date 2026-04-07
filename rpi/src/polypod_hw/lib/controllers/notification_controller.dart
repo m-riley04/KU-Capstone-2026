@@ -42,6 +42,11 @@ class NotificationController extends ChangeNotifier {
       final file = File(_resolveFilePath());
 
       if (!await file.exists()) {
+        if (_currentNotification != null) {
+          _currentNotification = null;
+          _lastFileContent = null;
+          notifyListeners();
+        }
         return;
       }
 
@@ -54,6 +59,9 @@ class NotificationController extends ChangeNotifier {
 
         if (notification != null) {
           _currentNotification = notification;
+          notifyListeners();
+        } else if (_currentNotification != null) {
+          _currentNotification = null;
           notifyListeners();
         }
       }

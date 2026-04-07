@@ -27,6 +27,7 @@ from notify import notify
 API_BASE = "http://172.232.9.56:3000/notifications"
 SETTINGS_PATH = os.path.join(os.path.dirname(__file__), "notification_settings.json")
 STATE_PATH = os.path.join(os.path.dirname(__file__), ".notification_poll_state.json")
+CURRENT_NOTIFICATION_PATH = os.path.join(os.path.dirname(__file__), "current_notification.json")
 
 
 def _utc_now_iso() -> str:
@@ -66,6 +67,13 @@ def _save_seen_tokens(tokens: deque[str]) -> None:
     payload = {"seen_tokens": list(tokens)}
     with open(STATE_PATH, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2)
+
+
+def _clear_current_notification_file() -> None:
+    # Writing an invalid/empty payload forces the Flutter controller to clear
+    # any previously displayed notification.
+    with open(CURRENT_NOTIFICATION_PATH, "w", encoding="utf-8") as f:
+        json.dump({}, f)
 
 
 def _build_url(user_id: str) -> str:
@@ -162,14 +170,27 @@ def _token_for_notification(notification: dict[str, Any]) -> str:
 
 def run_poller(interval_seconds: float, timeout_seconds: float) -> None:
     seen_tokens = _load_seen_tokens()
+    active_user_id = ""
     print(f"Notification API poller started. Interval: {interval_seconds}s")
 
     while True:
         user_id = _load_user_id()
         if not user_id:
+            if active_user_id:
+                active_user_id = ""
+                seen_tokens.clear()
+                _save_seen_tokens(seen_tokens)
+                _clear_current_notification_file()
             print("No user_id found in notification_settings.json. Waiting for settings update...")
             time.sleep(interval_seconds)
             continue
+
+        if user_id != active_user_id:
+            active_user_id = user_id
+            seen_tokens.clear()
+            _save_seen_tokens(seen_tokens)
+            _clear_current_notification_file()
+            print(f"Detected user_id change. Reset notification state for user_id={user_id}")
 
         url = _build_url(user_id)
 
