@@ -99,3 +99,20 @@ export const deleteUserFromDatabase = async (connection: connectionType, userId:
     await db.close();
     return userToDelete;
 };
+
+export const updateUserLocationInDatabase = async (connection: connectionType, userId: number, zipCode: string): Promise<boolean> => {
+    const db = await createDbConnect(connection); 
+
+    if (!db) {
+        throw new Error('Failed to connect to database');
+    }
+
+    const result = await db.run(
+        `UPDATE users SET zip_code = ? WHERE id = ?`,
+        [zipCode, userId]
+    );
+
+    await db.close()
+    
+    return (result.changes ?? 0) > 0; 
+};

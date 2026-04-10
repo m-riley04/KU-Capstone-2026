@@ -1,11 +1,12 @@
 import bcrypt from 'bcrypt';
 import { User, UserInterests } from '../models/user';
-import { addUserToDatabase, deleteUserFromDatabase, getUserForAuth, getUserWithID, updateUserInDatabase } from '../repositories/user_queries';
+import { addUserToDatabase, deleteUserFromDatabase, getUserForAuth, getUserWithID, updateUserInDatabase, updateUserLocationInDatabase } from '../repositories/user_queries';
 import dotenv from 'dotenv';
 import { deleteAllUserInterestsFromDatabase, addUserInterestToDatabase, getUserInterestsFromDatabase, getInterestsByName } from '../repositories/interests_queries';
 import { getLatestEventByInterestId } from '../repositories/event_quaries';
 import { addNotificationsToDatabase } from '../repositories/notifications_quaries';
 import { databaseNotification } from '../models/notifications';
+import { createDbConnect } from '../db';
 
 dotenv.config();
 const SALT_ROUNDS = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) : 10;
@@ -88,4 +89,9 @@ export const updateUserService = async (userId: number, updatedUserData: Partial
 export const deleteUserService = async (userId: number) => {
     const user = await deleteUserFromDatabase(1, userId);
     return user;
+}
+
+export const updateUserLocationService = async (userId: number, zipCode: string): Promise<boolean> => {
+    const location = await updateUserLocationInDatabase(1, userId, zipCode);
+    return location;
 }

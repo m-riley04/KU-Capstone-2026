@@ -1,3 +1,4 @@
+import { createDbConnect } from "../db";
 import { databaseNotification, eventData, polypodNotification } from "../models/notifications";
 import { getEventsFromInterests } from "../repositories/event_quaries";
 import { getInterestIDFromName, getUserIdWithInterestFromDatabase } from "../repositories/interests_queries";
@@ -61,4 +62,44 @@ export const generateNotifications = async (interestName: string) : Promise<void
         console.error('Error generating notifications:', error);
         throw error;
     }
+}
+
+export const generateTargetedWeatherNotifications = async (connection: any, zipCode: string, weatherEvent: eventData): Promise<void> => {
+    const db = await createDbConnect(connection);
+
+    if (!db) {
+        throw new Error('Failed to connect to database');
+    }
+    
+    // find only the users who checked the weather box and live in this zip code
+    const usersInZip = await db.all(
+        `SELECT users.id 
+         FROM users 
+         JOIN user_interests ON users.id = user_interests.user_id 
+         JOIN interests ON user_interests.interest_id = interests.id
+         WHERE interests.name = 'weather_alerts' 
+         AND users.zip_code = ?`,
+        [zipCode]
+    );
+    if (!usersInZip || usersInZip.length === 0) {
+        console.log(`No users found for weather in ${zipCode}`);
+        return;
+    }
+
+    const notifications: databaseNotification[] = [];
+    for (const user of usersInZip) {
+        notifications.push({
+            user_id: user.id,
+            notifType: 'base', 
+            from_source: weatherEvent.from_source, 
+            notification_data: weatherEvent,
+            is_read: false,
+            created_at: new Date(),
+        });
+    }
+
+    await addNotificationsToDatabase(connection, notifications);
+    console.log(`Successfully sent weather alerts to users in ${zipCode}!`);
+
+    await db.close();
 }

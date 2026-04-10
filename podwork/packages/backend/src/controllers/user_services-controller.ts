@@ -1,6 +1,7 @@
 
 import { Request, Response } from 'express';
-import { addUserService, deleteUserService, getUserService, updateUserService } from '../services/user_services-services';
+import { addUserService, deleteUserService, getUserService, updateUserLocationService, updateUserService } from '../services/user_services-services';
+import { createDbConnect } from '../db';
 
 export const getUserRequest = async (req: Request, res: Response) => {
     const { username } = req.params as { username: string };
@@ -66,4 +67,33 @@ export const deleteUserRequest = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 }
+
+
+export const updateUserLocationRequest = async (req: Request, res: Response) => {
+    const userIdString = req.params.userId as string; 
+    const userId = parseInt(userIdString, 10);
+
+    const { zip_code } = req.body;
+
+    if (!zip_code) {
+        return res.status(400).json({ error: "zip_code is required" });
+    }
+
+    try {
+        const isUpdated = await updateUserLocationService(userId, zip_code);
+
+        if (!isUpdated) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        return res.status(200).json({ 
+            message: "Location successfully updated", 
+            zip_code: zip_code 
+        });
+
+    } catch (error) {
+        console.error("Error in updateUserLocationRequest:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+};
     

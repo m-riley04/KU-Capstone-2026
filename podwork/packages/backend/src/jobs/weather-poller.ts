@@ -1,28 +1,44 @@
-import { fetchWeatherData } from "../clients/weather-client";
+import { fetchWeatherData, getActiveWeatherZipCodes } from "../clients/weather-client";
 import { setEventServices } from "../services/event-services";
 import { getPreviousWeatherData, weatherDataHasChanged } from "../services/weather-services";
-import { generateNotifications } from "../services/notification_services-services";
+import { generateNotifications, generateTargetedWeatherNotifications } from "../services/notification_services-services";
+import { eventData } from "../models/notifications";
+import { addEventToDatabase } from "../repositories/event_quaries";
 
-const LOCATION = '66044'; 
 
-export const getWeatherUpdates: () => Promise<void> = async () => {
+
+export const getWeatherUpdates = async () => {
     try {
-        const weatherInterestId = `weather_${LOCATION}`;
-        
-        const currentWeatherData = await fetchWeatherData(LOCATION);
-        const oldWeatherData = await getPreviousWeatherData(LOCATION);
+        const activeZipCodes = await getActiveWeatherZipCodes();
 
-        // only trigger a notification if
-        // 1. new sever weather alert was issued
-        // 2. user explicitly requested a daily morning summary
-        if (!weatherDataHasChanged(currentWeatherData, oldWeatherData)) {
-            console.log(`No significant weather changes for ${LOCATION}. Skipping.`);
-            return;
+        // loop through each zipcode
+        for (const zipCode of activeZipCodes) {
+            
+            // We pass the clean zip code directly to the API
+            const currentWeatherData = await fetchWeatherData(zipCode);
+            const oldWeatherData = await getPreviousWeatherData(zipCode);
+
+            if (!weatherDataHasChanged(currentWeatherData, oldWeatherData)) {
+                console.log(`No significant weather changes for ${zipCode}. Skipping.`);
+                continue; 
+            }
+
+            const newWeatherEvent: eventData = {
+                from_source: `weather_${zipCode}`, 
+                headline: `Weather Update for ${zipCode}`,
+                info: `Whatever string you use for the description...`, 
+                timestamp: new Date(),
+                media: "", 
+                seemore: ""
+            };
+
+            await addEventToDatabase(1, newWeatherEvent, 'weather_alerts');
+
+            await generateTargetedWeatherNotifications(1, zipCode, newWeatherEvent);
+            
+            console.log(`Weather event successfully processed for ${zipCode}`);
         }
-
-        await setEventServices(currentWeatherData, weatherInterestId);
-        await generateNotifications(weatherInterestId);
-        console.log(`Significant weather event in ${LOCATION}! Event saved and notifications generated.`);
+        
     } catch (error) {
         console.error('Error fetching Weather data:', error);
         throw error;
