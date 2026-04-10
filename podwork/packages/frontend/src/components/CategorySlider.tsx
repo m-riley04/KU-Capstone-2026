@@ -5,6 +5,7 @@
 // Level 3 - items within a selected subcategory
 
 import { getSlideClass } from '../utilities/helpers';
+import { saveUserLocation } from '../services/api';
 
 
 interface CategorySliderProps {
@@ -18,6 +19,9 @@ interface CategorySliderProps {
   onSummaryOpen: () => void;                    // open summary modal 
   searchQuery: string;                          // search bar input value
   setSearchQuery: (q: string) => void;          // update search input
+  zipCode: string;
+  setZipCode: (cat: string) => void;
+  userId: number;
 }
 
 function CategorySlider({
@@ -31,6 +35,9 @@ function CategorySlider({
   onSummaryOpen,
   searchQuery,
   setSearchQuery,
+  zipCode, 
+  setZipCode,
+  userId
 }: CategorySliderProps) {
   return (
     <div className='slider-viewport'>
@@ -69,6 +76,64 @@ function CategorySlider({
           </button>
 
           <h2>{activeCategory} Options</h2>
+
+          {activeCategory === 'Weather' && (
+            <div className="zip-code-container" style={{ marginBottom: '20px', textAlign: 'center' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                Alert Location (Zip Code):
+              </label>
+              
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+                <input 
+                  type="text" 
+                  placeholder="e.g. 66045"
+                  maxLength={5}
+                  value={zipCode}
+                  onChange={(e) => {
+                  
+                    setZipCode(e.target.value.replace(/\D/g, ''));
+                  }}
+                  style={{
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: '1px solid #ccc',
+                    width: '120px',
+                    textAlign: 'center',
+                    fontSize: '1.1rem'
+                  }}
+                />
+                
+                {/* The New Confirmation Button */}
+                <button
+                  onClick={async () => {
+                    if (zipCode.length === 5) {
+                      try{
+                        await saveUserLocation(userId, zipCode);
+
+                        alert('Location saved! You can now select your weather alerts below.'); 
+                      } catch (error) {
+                        console.error("Failed to save location", error)
+                        alert('Error saving location to database');
+                    }
+                  } else {
+                    alert('Please enter a valid 5-digit zip code')
+                  }
+                  }}
+                  style={{
+                    padding: '10px 15px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          )}
 
           <input
             type="text"
