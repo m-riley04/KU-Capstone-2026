@@ -41,6 +41,11 @@ function CategorySlider({
 }: CategorySliderProps) {
   return (
     <div className='slider-viewport'>
+      <div className='summary-box' onClick={onSummaryOpen}>
+        <h3>Currently Active</h3>
+        <p>{selectedIds.length} preferences selected</p>
+        <small>(Click to view selected preferences)</small>
+      </div>
       <div className={`slider-track ${getSlideClass(activeCategory, activeSubCategory)}`}>
 
         {/* level 1 — main category grid */}
@@ -57,12 +62,6 @@ function CategorySlider({
                 <span className='arrow'>→</span>
               </button>
             ))}
-          </div>
-
-          <div className='summary-box' onClick={onSummaryOpen}>
-            <h3>Currently Active</h3>
-            <p>{selectedIds.length} preferences selected</p>
-            <small>(Click to view selected preferences)</small>
           </div>
         </div>
 
