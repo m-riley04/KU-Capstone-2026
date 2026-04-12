@@ -64,7 +64,7 @@ export const getActiveWeatherZipCodes = async (): Promise<string[]> => {
             FROM users 
             JOIN user_interests ON users.id = user_interests.user_id
             JOIN interests ON user_interests.interest_id = interests.id
-            WHERE interests.name = 'weather_alerts'
+            WHERE interests.name = 'Weather Alerts'
             AND users.zip_code IS NOT NULL
         `;
 

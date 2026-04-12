@@ -22,10 +22,10 @@ export const getWeatherUpdates = async () => {
 
             if (!weatherDataHasChanged(currentWeatherData, oldWeatherData)) {
                 console.log(`No significant weather changes for ${zipCode}. Skipping.`);
-                continue; 
+                continue;
             }
 
-            await addEventToDatabase(1, currentWeatherData, 'weather_alerts');
+            await addEventToDatabase(1, currentWeatherData, 'Weather Alerts');
 
             if (currentWeatherData.headline.includes('WEATHER ALERT')) {
                 await generateTargetedWeatherNotifications(1, zipCode, currentWeatherData);
