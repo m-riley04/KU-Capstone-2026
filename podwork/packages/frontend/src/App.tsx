@@ -205,7 +205,7 @@ function App() {
         setSearchQuery={setSearchQuery}
         zipCode={zipCode}
         setZipCode={setZipCode}
-        userId={user?.id ? String(user.id) : localStorage.getItem('polypod_userId') || ''}
+        userId={user?.id ? Number(user.id) : Number(localStorage.getItem('polypod_userId') || 0)}
       />
       
       {isSummaryOpen && (

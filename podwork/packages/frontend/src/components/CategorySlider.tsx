@@ -79,7 +79,7 @@ function CategorySlider({
 
           {activeCategory === 'Weather' && (
             <div className="zip-code-container" style={{ marginBottom: '20px', textAlign: 'center' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#f9e4bc' }}>
                 Alert Location (Zip Code):
               </label>
               
@@ -110,7 +110,7 @@ function CategorySlider({
                       try{
                         await saveUserLocation(userId, zipCode);
 
-                        alert('Location saved! You can now select your weather alerts below.'); 
+                        alert('Location saved!'); 
                       } catch (error) {
                         console.error("Failed to save location", error)
                         alert('Error saving location to database');
@@ -119,15 +119,7 @@ function CategorySlider({
                     alert('Please enter a valid 5-digit zip code')
                   }
                   }}
-                  style={{
-                    padding: '10px 15px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    backgroundColor: '#3b82f6',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    cursor: 'pointer'
-                  }}
+                  className='save-btn-location'
                 >
                   Save
                 </button>

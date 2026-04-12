@@ -13,6 +13,26 @@ that has its own functionality
 - toast notification
 */
 
+.save-btn-location {
+  padding: .5rem 1rem;
+  white-space: nowrap;
+
+  background-color: var(--primary);
+  color: #f9e4bc;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 1rem;
+  text-align: center;
+  display: block;
+}
+
+.save-btn-location:hover {
+  transform: scale(1.04);
+  color: gray;
+}
+
 .save-btn {
   position: absolute;
   top: 18px;
