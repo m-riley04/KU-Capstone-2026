@@ -39,8 +39,10 @@ that has its own functionality
 }
 
 .summary-box {
+  width: calc(100% / 1.1);
+  margin: 0 auto;
   margin-top: 2rem;
-  margin-bottom: 200px;
+  margin-bottom: 10px;
   padding: 1rem;
   background: #2c522f;
   border-radius: 8px;
@@ -50,7 +52,7 @@ that has its own functionality
 }
 
 .summary-box:hover {
-  transform: scale(1.01);
+  transform: scale(1.02);
   color: gray
 }
 
