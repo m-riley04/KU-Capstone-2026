@@ -14,27 +14,23 @@ export const getWeatherUpdates = async () => {
         // loop through each zipcode
         for (const zipCode of activeZipCodes) {
             
-            // We pass the clean zip code directly to the API
+            // pass the clean zip code directly to the API
             const currentWeatherData = await fetchWeatherData(zipCode);
             const oldWeatherData = await getPreviousWeatherData(zipCode);
+
+            currentWeatherData.from_source = `weather_${zipCode}`;
 
             if (!weatherDataHasChanged(currentWeatherData, oldWeatherData)) {
                 console.log(`No significant weather changes for ${zipCode}. Skipping.`);
                 continue; 
             }
 
-            const newWeatherEvent: eventData = {
-                from_source: `weather_${zipCode}`, 
-                headline: `Weather Update for ${zipCode}`,
-                info: `Whatever string you use for the description...`, 
-                timestamp: new Date(),
-                media: "", 
-                seemore: ""
-            };
+            await addEventToDatabase(1, currentWeatherData, 'weather_alerts');
 
-            await addEventToDatabase(1, newWeatherEvent, 'weather_alerts');
-
-            await generateTargetedWeatherNotifications(1, zipCode, newWeatherEvent);
+            if (currentWeatherData.headline.includes('WEATHER ALERT')) {
+                await generateTargetedWeatherNotifications(1, zipCode, currentWeatherData);
+                console.log(`🚨 Severe notification sent for ${zipCode}`);
+            }
             
             console.log(`Weather event successfully processed for ${zipCode}`);
         }
