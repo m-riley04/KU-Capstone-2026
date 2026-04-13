@@ -1,5 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import  https  from 'https';
+import fs from 'fs';
 import user_services from './routes/users_services-routes';
 import dotenv from 'dotenv';
 import { runMigrations } from './db/run_migrations';
@@ -9,6 +11,7 @@ import * as cron from 'node-cron';
 import { getNasaApod } from './jobs/NASA-poller';
 import { getEspnMensCollegeBasketballScoreboard } from './jobs/ESPN-poller';
 import interests_services from './routes/interests_services-routes';
+import path from 'path';
 
 dotenv.config();
 
@@ -24,7 +27,13 @@ const frequentPollers = async () => {
     
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
+
+const options = {
+    key: fs.readFileSync(path.join(__dirname, '../../../SSLCertificateFile/etc/letsencrypt/live/polypod.net/privkey.pem')),
+    cert: fs.readFileSync(path.join(__dirname, '../../../SSLCertificateFile/etc/letsencrypt/live/polypod.net/fullchain.pem')),
+};
+
 
 enum Routes {
     userServices = '/user',
@@ -44,7 +53,7 @@ app.use(Routes.userServices, user_services)
 app.use(Routes.notificationServices, notification_services)
 app.use(Routes.interestsServices, interests_services)
 
-app.listen(PORT, async () => {
+https.createServer(options, app,).listen(PORT, async () => {
     await runMigrations(1);
     await seedInterests(1);
 
@@ -65,5 +74,5 @@ app.listen(PORT, async () => {
     });
 
     console.log('The application is listening '
-    + 'on port http://localhost:'+ PORT +'/');
+    + 'on port https://localhost:'+ PORT +'/');
 })
