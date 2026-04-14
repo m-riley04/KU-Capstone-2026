@@ -28,7 +28,7 @@ npm run build:backend
 
 echo "restarting backend"
 # stop any previous backend
-pkill -f "node ./packages/backend/dist/server.js" || true
+sudo pkill -f "node ./packages/backend/dist/server.js" || true
 
 nohup npm run start:backend > "$BACKEND_LOG" 2>&1 &
 
