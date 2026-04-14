@@ -13,6 +13,10 @@ class WeatherApp extends BaseApp {
 }
 
 class _WeatherAppState extends State<WeatherApp> {
+  static const String _indoorTemp = '70°F';
+  static const String _indoorHumidity = '46%';
+  static const String _indoorPressure = '.998 atm';
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -43,9 +47,90 @@ class _WeatherAppState extends State<WeatherApp> {
                 color: EarthyTheme.textSecondary,
               ),
             ),
+            const SizedBox(height: 28),
+            Container(
+              width: 420,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              decoration: BoxDecoration(
+                color: EarthyTheme.bark,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Interior Environment',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: EarthyTheme.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      _MetricItem(
+                        icon: Icons.thermostat_rounded,
+                        label: 'Temp',
+                        value: _indoorTemp,
+                      ),
+                      _MetricItem(
+                        icon: Icons.water_drop_rounded,
+                        label: 'Humidity',
+                        value: _indoorHumidity,
+                      ),
+                      _MetricItem(
+                        icon: Icons.speed_rounded,
+                        label: 'Pressure',
+                        value: _indoorPressure,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _MetricItem extends StatelessWidget {
+  const _MetricItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(icon, size: 24, color: EarthyTheme.wheat),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: EarthyTheme.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            color: EarthyTheme.textSecondary,
+          ),
+        ),
+      ],
     );
   }
 }
