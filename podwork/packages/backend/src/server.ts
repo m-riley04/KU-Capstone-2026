@@ -30,8 +30,8 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
 const options = {
-    key: fs.readFileSync(path.join(__dirname, '../../../SSLCertificateFile/etc/letsencrypt/live/polypod.net/privkey.pem')),
-    cert: fs.readFileSync(path.join(__dirname, '../../../SSLCertificateFile/etc/letsencrypt/live/polypod.net/fullchain.pem')),
+    key: fs.readFileSync(path.join(__dirname, '../../../../../../../etc/letsencrypt/live/polypod.net/privkey.pem')),
+    cert: fs.readFileSync(path.join(__dirname, '../../../../../../../../etc/letsencrypt/live/polypod.net/fullchain.pem')),
 };
 
 
@@ -74,5 +74,5 @@ https.createServer(options, app,).listen(PORT, async () => {
     });
 
     console.log('The application is listening '
-    + 'on port https://localhost:'+ PORT +'/');
+    + 'on port https://www.polypod.net:'+ PORT +'/');
 })

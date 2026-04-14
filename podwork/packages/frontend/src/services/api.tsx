@@ -6,7 +6,7 @@ This file contains calls to the server that are needed for the frontend
 - Sign up 
 - Save selected preferences
 */
-const SERVER = 'http://localhost:3000';
+const SERVER = 'https://www.polypod.net:3000';
 
 export const registerUser = async (payload: any) => {
     const response = await fetch(`${SERVER}/user/add`, {
