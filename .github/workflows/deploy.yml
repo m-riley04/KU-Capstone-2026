@@ -39,5 +39,5 @@ jobs:
             git checkout server-build
             git pull --ff-only origin server-build
             chmod +x ./deploy.sh
-            ./deploy.sh
+            sudo ./deploy.sh
           '
