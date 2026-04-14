@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-REPO_DIR="${REPO_DIR:-$HOME/KU-Capstone-2026}"
+REPO_DIR="${REPO_DIR:-/home/riley/KU-Capstone-2026}"
 PODWORK_DIR="$REPO_DIR/podwork"
 WEB_ROOT="${WEB_ROOT:-/var/www/html}"
 LOG_DIR="${LOG_DIR:-$REPO_DIR/logs}"
