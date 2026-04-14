@@ -12,6 +12,7 @@ import { getNasaApod } from './jobs/NASA-poller';
 import { getEspnMensCollegeBasketballScoreboard } from './jobs/ESPN-poller';
 import interests_services from './routes/interests_services-routes';
 import { getWeatherUpdates } from './jobs/weather-poller';
+import path from 'path';
 
 dotenv.config();
 
