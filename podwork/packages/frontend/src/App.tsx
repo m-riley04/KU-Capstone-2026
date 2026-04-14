@@ -41,6 +41,9 @@ function App() {
     // check if token exists so a logged in user can stay logged in
     return localStorage.getItem('polypod_userId') !== null;
   });
+  const [zipCode, setZipCode] = useState<string>(() => {
+    return localStorage.getItem('polypod_zip') || "";
+  });
 
   useEffect(() => {
     // grab the data from localStorage when the page loads
@@ -200,6 +203,9 @@ function App() {
         onSummaryOpen={() => setIsSummaryOpen(true)}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        zipCode={zipCode}
+        setZipCode={setZipCode}
+        userId={user?.id ? Number(user.id) : Number(localStorage.getItem('polypod_userId') || 0)}
       />
       
       {isSummaryOpen && (

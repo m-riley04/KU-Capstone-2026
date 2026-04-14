@@ -5,6 +5,7 @@
 // Level 3 - items within a selected subcategory
 
 import { getSlideClass } from '../utilities/helpers';
+import { saveUserLocation } from '../services/api';
 
 
 interface CategorySliderProps {
@@ -18,6 +19,9 @@ interface CategorySliderProps {
   onSummaryOpen: () => void;                    // open summary modal 
   searchQuery: string;                          // search bar input value
   setSearchQuery: (q: string) => void;          // update search input
+  zipCode: string;
+  setZipCode: (cat: string) => void;
+  userId: number;
 }
 
 function CategorySlider({
@@ -31,9 +35,17 @@ function CategorySlider({
   onSummaryOpen,
   searchQuery,
   setSearchQuery,
+  zipCode, 
+  setZipCode,
+  userId
 }: CategorySliderProps) {
   return (
     <div className='slider-viewport'>
+      <div className='summary-box' onClick={onSummaryOpen}>
+        <h3>Currently Active</h3>
+        <p>{selectedIds.length} preferences selected</p>
+        <small>(Click to view selected preferences)</small>
+      </div>
       <div className={`slider-track ${getSlideClass(activeCategory, activeSubCategory)}`}>
 
         {/* level 1 — main category grid */}
@@ -51,12 +63,6 @@ function CategorySlider({
               </button>
             ))}
           </div>
-
-          <div className='summary-box' onClick={onSummaryOpen}>
-            <h3>Currently Active</h3>
-            <p>{selectedIds.length} preferences selected</p>
-            <small>(Click to view selected preferences)</small>
-          </div>
         </div>
 
         {/* level 2 — items within a category */}
@@ -69,6 +75,56 @@ function CategorySlider({
           </button>
 
           <h2>{activeCategory} Options</h2>
+
+          {activeCategory === 'Weather' && (
+            <div className="zip-code-container" style={{ marginBottom: '20px', textAlign: 'center' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#f9e4bc' }}>
+                Alert Location (Zip Code):
+              </label>
+              
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+                <input 
+                  type="text" 
+                  placeholder="e.g. 66045"
+                  maxLength={5}
+                  value={zipCode}
+                  onChange={(e) => {
+                  
+                    setZipCode(e.target.value.replace(/\D/g, ''));
+                  }}
+                  style={{
+                    padding: '10px',
+                    borderRadius: '8px',
+                    border: '1px solid #ccc',
+                    width: '120px',
+                    textAlign: 'center',
+                    fontSize: '1.1rem'
+                  }}
+                />
+                
+                {/* The New Confirmation Button */}
+                <button
+                  onClick={async () => {
+                    if (zipCode.length === 5) {
+                      try{
+                        await saveUserLocation(userId, zipCode);
+
+                        alert('Location saved!'); 
+                      } catch (error) {
+                        console.error("Failed to save location", error)
+                        alert('Error saving location to database');
+                    }
+                  } else {
+                    alert('Please enter a valid 5-digit zip code')
+                  }
+                  }}
+                  className='save-btn-location'
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          )}
 
           <input
             type="text"

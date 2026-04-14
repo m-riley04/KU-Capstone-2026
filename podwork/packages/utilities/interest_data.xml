@@ -197,5 +197,9 @@
     <item><id>apod</id></item>
     <item><id>espn_mens_college_basketball_scoreboard</id></item>
   </category>
+  <category name = "Weather">
+    <item><id>Weather Alerts</id></item>
+  </category>
+
 
 </interestData>

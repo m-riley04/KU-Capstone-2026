@@ -1,12 +1,13 @@
 
 import express from 'express';
-import { addUserRequest, deleteUserRequest, getUserRequest, updateUserRequest } from '../controllers/user_services-controller';
+import { addUserRequest, deleteUserRequest, getUserRequest, updateUserRequest, updateUserLocationRequest } from '../controllers/user_services-controller';
 
 enum path {
     GetUser  = '/:username',
     AddUser = '/add',
     UpdateUser = '/:userId',
-    DeleteUser = '/:userId'
+    DeleteUser = '/:userId',
+    UpdateUserLocation = '/:userId/location'
 }
 
 const user_services = express.Router()
@@ -15,6 +16,7 @@ const user_services = express.Router()
 user_services.get(path.GetUser, getUserRequest);
 user_services.post(path.AddUser, addUserRequest);
 user_services.put(path.UpdateUser, updateUserRequest);
+user_services.put(path.UpdateUserLocation, updateUserLocationRequest)
 user_services.delete(path.DeleteUser, deleteUserRequest);
 
 //export the user services router

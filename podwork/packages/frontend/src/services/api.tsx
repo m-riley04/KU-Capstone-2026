@@ -53,3 +53,22 @@ export const getAvailableInterests = async () => {
 
     return response.json();
 };
+
+export const saveUserLocation = async (userId: number, zipCode: string) => {
+    try {
+        const response = await fetch(`${SERVER}/user/${userId}/location`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ zip_code: zipCode })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Error saving user location:", error);
+        throw error;
+    }
+};

@@ -11,7 +11,7 @@ import * as cron from 'node-cron';
 import { getNasaApod } from './jobs/NASA-poller';
 import { getEspnMensCollegeBasketballScoreboard } from './jobs/ESPN-poller';
 import interests_services from './routes/interests_services-routes';
-import path from 'path';
+import { getWeatherUpdates } from './jobs/weather-poller';
 
 dotenv.config();
 
@@ -23,6 +23,7 @@ const dailyPollers = async () => {
 // interests that update frequently
 const frequentPollers = async () => {
     await getEspnMensCollegeBasketballScoreboard();
+    await getWeatherUpdates();
 }
     
 
