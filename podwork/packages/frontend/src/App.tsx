@@ -18,6 +18,7 @@ import ToastNotification from './components/ToastNotification';
 import ProfileBadge from './components/ProfileBadge';
 import SummaryModal from './components/SummaryModal';
 import CategorySlider from './components/CategorySlider';
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 
 function App() {
 // useStates to keep track of categories being displayed on the screen
@@ -41,6 +42,7 @@ function App() {
     // check if token exists so a logged in user can stay logged in
     return localStorage.getItem('polypod_userId') !== null;
   });
+  const navigate = useNavigate();
 
   useEffect(() => {
     // grab the data from localStorage when the page loads
@@ -174,13 +176,17 @@ function App() {
     }
   }
 
-  // show login page if not logged in
-  if (!isLoggedIn) {
-    return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+    navigate("/home");
   }
 
-  return (
-    <div className='app-container'>
+  // // show login page if not logged in
+  // if (!isLoggedIn) {
+  //   return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
+  // }
+
+  const header = (<div className='app-container'>
 
       <header className='hero'>
         <h1>Podwork</h1>
@@ -208,10 +214,18 @@ function App() {
           onToggle={toggleSelection}
           onClose={() => setIsSummaryOpen(false)}
         />
-       )}
+      )}
 
       <ToastNotification toast={toast}/>
-    </div>
+    </div>)
+
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage mode="login" onLogin={handleLogin} />} />
+      <Route path="/create-account" element={<LoginPage mode="signup" onLogin={handleLogin} />} />
+      <Route path="/home" element={isLoggedIn ? header : <Navigate to="/login" replace />} />
+      <Route path="/" element={isLoggedIn ? header : <Navigate to="/login" replace />} />
+    </Routes>
     )}
 
 
