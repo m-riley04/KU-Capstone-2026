@@ -1,10 +1,8 @@
-import 'dart:io';
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'base_app.dart';
 import '../config/theme_config.dart';
+import '../services/notification_settings_store.dart';
 
 class SettingsApp extends BaseApp {
   const SettingsApp({super.key});
@@ -169,21 +167,14 @@ class _SettingsAppState extends State<SettingsApp> {
 
   Future<void> _loadUserId() async {
     try {
-      final settingsFile = File(_notificationSettingsPath());
-      if (await settingsFile.exists()) {
-        final raw = await settingsFile.readAsString();
-        final decoded = jsonDecode(raw);
-        if (decoded is Map<String, dynamic>) {
-          final savedUserId = decoded['user_id']?.toString() ?? '';
-          if (mounted) {
-            _userIdController.text = savedUserId;
-          }
-        }
+      final savedUserId = await loadNotificationUserId();
+      if (mounted) {
+        _userIdController.text = savedUserId;
       }
       if (mounted) {
         setState(() {
           _isLoadingUserId = false;
-          _userIdStatus = 'Loaded from notification settings file.';
+          _userIdStatus = 'Loaded saved user ID.';
         });
       }
     } catch (e) {
@@ -205,37 +196,14 @@ class _SettingsAppState extends State<SettingsApp> {
     });
 
     try {
-      final settingsFile = File(_notificationSettingsPath());
-      await settingsFile.parent.create(recursive: true);
-
-      String previousUserId = '';
-      if (await settingsFile.exists()) {
-        try {
-          final existingRaw = await settingsFile.readAsString();
-          final existingDecoded = jsonDecode(existingRaw);
-          if (existingDecoded is Map<String, dynamic>) {
-            previousUserId = existingDecoded['user_id']?.toString().trim() ?? '';
-          }
-        } catch (_) {
-          previousUserId = '';
-        }
-      }
+      final previousUserId = (await loadNotificationUserId()).trim();
 
       final hasChanged = previousUserId != userId;
       if (hasChanged) {
-        await settingsFile.writeAsString(
-          const JsonEncoder.withIndent('  ').convert({'user_id': ''}),
-        );
-        await _clearNotificationStateFiles();
+        await clearNotificationState();
       }
 
-      final payload = <String, dynamic>{
-        'user_id': userId,
-      };
-
-      await settingsFile.writeAsString(
-        const JsonEncoder.withIndent('  ').convert(payload),
-      );
+      await saveNotificationUserId(userId);
 
       if (mounted) {
         setState(() {
@@ -259,35 +227,6 @@ class _SettingsAppState extends State<SettingsApp> {
     }
   }
 
-  Future<void> _clearNotificationStateFiles() async {
-    final currentNotificationFile = File(_currentNotificationPath());
-    await currentNotificationFile.parent.create(recursive: true);
-    await currentNotificationFile.writeAsString('{}');
-
-    final pollerStateFile = File(_notificationPollStatePath());
-    if (await pollerStateFile.exists()) {
-      await pollerStateFile.delete();
-    }
-  }
-
-  String _notificationSettingsPath() {
-    final currentDir = Directory.current.path;
-    final settingsPath = '$currentDir${Platform.pathSeparator}..${Platform.pathSeparator}notif${Platform.pathSeparator}notification_settings.json';
-    return File(settingsPath).absolute.path;
-  }
-
-  String _currentNotificationPath() {
-    final currentDir = Directory.current.path;
-    final notifPath = '$currentDir${Platform.pathSeparator}..${Platform.pathSeparator}notif${Platform.pathSeparator}current_notification.json';
-    return File(notifPath).absolute.path;
-  }
-
-  String _notificationPollStatePath() {
-    final currentDir = Directory.current.path;
-    final statePath = '$currentDir${Platform.pathSeparator}..${Platform.pathSeparator}notif${Platform.pathSeparator}.notification_poll_state.json';
-    return File(statePath).absolute.path;
-  }
-
   Future<void> _confirmQuit(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -309,7 +248,6 @@ class _SettingsAppState extends State<SettingsApp> {
     );
     if (confirmed == true) {
       SystemNavigator.pop();
-      exit(0);
     }
   }
 

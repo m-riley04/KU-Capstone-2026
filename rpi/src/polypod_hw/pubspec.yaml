@@ -40,6 +40,8 @@ dependencies:
   screen_retriever: ^0.2.0
   lottie: ^3.3.1
   just_audio: ^0.9.34
+  http: ^1.2.2
+  shared_preferences: ^2.3.2
 
 dev_dependencies:
   flutter_test:

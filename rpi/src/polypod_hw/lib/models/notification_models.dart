@@ -3,11 +3,10 @@
 // this file contains the functions for how each api and local notification shall be displayed
 // also has a function for interpreting new configs sent by polywork api
 
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import '../config/theme_config.dart';
 import '../config/screen_config.dart';
+import '../services/notification_media_widget.dart';
 
 /// Configuration for notification display
 class NotificationConfig {
@@ -32,6 +31,28 @@ class NotificationConfig {
       infoSize: (json['info_size'] as num).toDouble(),
     );
   }
+
+  factory NotificationConfig.defaultConfig() {
+    return NotificationConfig(
+      mediaSize: const Size(128.0, 96.0),
+      headlineSize: 36.0,
+      infoSize: 24.0,
+    );
+  }
+
+  factory NotificationConfig.forSource(String source) {
+    switch (source.toUpperCase()) {
+      case 'NASA':
+        return NotificationConfig(
+          mediaSize: const Size(640.0, 480.0),
+          headlineSize: 36.0,
+          infoSize: 12.0,
+        );
+      case 'NFL':
+      default:
+        return NotificationConfig.defaultConfig();
+    }
+  }
 }
 
 /// Notification data model
@@ -55,36 +76,39 @@ class NotificationData {
   });
 
   factory NotificationData.fromJson(Map<String, dynamic> json) {
-    final notificationData = json['notification'] as Map<String, dynamic>;
-    final configData = json['config'] as Map<String, dynamic>;
+    if (json['notification'] is Map<String, dynamic>) {
+      final notificationData = json['notification'] as Map<String, dynamic>;
+      final configData = json['config'];
 
-    return NotificationData(
-      timestamp: notificationData['timestamp'] ?? '',
-      media: notificationData['media'] ?? '',
-      headline: notificationData['headline'] ?? '',
-      info: notificationData['info'] ?? '',
-      seemore: notificationData['seemore'] ?? '',
-      fromSource: json['from_source'] ?? '',
-      config: NotificationConfig.fromJson(configData),
-    );
-  }
-}
-
-/// Parse notification from JSON file
-Future<NotificationData?> parseNotificationFromFile(String filePath) async {
-  try {
-    final file = File(filePath);
-    if (!await file.exists()) {
-      return null;
+      return NotificationData(
+        timestamp: notificationData['timestamp']?.toString() ?? '',
+        media: notificationData['media']?.toString() ?? '',
+        headline: notificationData['headline']?.toString() ?? '',
+        info: notificationData['info']?.toString() ?? '',
+        seemore: notificationData['seemore']?.toString() ?? '',
+        fromSource: json['from_source']?.toString() ?? '',
+        config: configData is Map<String, dynamic>
+            ? NotificationConfig.fromJson(configData)
+            : NotificationConfig.forSource(json['from_source']?.toString() ?? ''),
+      );
     }
 
-    final contents = await file.readAsString();
-    final json = jsonDecode(contents) as Map<String, dynamic>;
-    
-    return NotificationData.fromJson(json);
-  } catch (e) {
-    print('Error parsing notification: $e');
-    return null;
+    if (json['data'] is Map<String, dynamic>) {
+      final notificationData = json['data'] as Map<String, dynamic>;
+      final fromSource = json['from_source']?.toString() ?? json['fromSource']?.toString() ?? '';
+
+      return NotificationData(
+        timestamp: notificationData['timestamp']?.toString() ?? '',
+        media: notificationData['media']?.toString() ?? '',
+        headline: notificationData['headline']?.toString() ?? '',
+        info: notificationData['info']?.toString() ?? '',
+        seemore: notificationData['seemore']?.toString() ?? '',
+        fromSource: fromSource,
+        config: NotificationConfig.forSource(fromSource),
+      );
+    }
+
+    throw const FormatException('Unsupported notification payload shape');
   }
 }
 
@@ -199,29 +223,6 @@ class NotificationWidget extends StatelessWidget {
   }
 
   Widget _buildMediaWidget() {
-    // Check if media is a URL or local path
-    if (notification.media.startsWith('http://') ||
-        notification.media.startsWith('https://')) {
-      return Image.network(
-        notification.media,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return const Center(
-            child: Icon(Icons.error, color: Colors.red),
-          );
-        },
-      );
-    } else if (notification.media.isNotEmpty) {
-      return Image.file(
-        File(notification.media),
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return const Center(
-            child: Icon(Icons.error, color: Colors.red),
-          );
-        },
-      );
-    }
-    return Container();
+    return buildNotificationMediaWidget(notification.media);
   }
 }
