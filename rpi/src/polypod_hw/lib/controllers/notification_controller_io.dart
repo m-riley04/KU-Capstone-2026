@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../models/notification_models.dart';
+import '../services/device_identity_store.dart';
 
 /// Controller that monitors notification file and manages notification state.
 class NotificationController extends ChangeNotifier {
@@ -55,6 +56,9 @@ class NotificationController extends ChangeNotifier {
           if (decoded is Map<String, dynamic>) {
             final notification = NotificationData.fromJson(decoded);
             _currentNotification = notification;
+            if (notification.notifType == 'welcome') {
+              markFirstTimeSetupComplete();
+            }
             notifyListeners();
           } else {
             throw const FormatException('Notification payload was not a map');
