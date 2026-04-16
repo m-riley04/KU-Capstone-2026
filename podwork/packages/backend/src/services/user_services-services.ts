@@ -1,6 +1,14 @@
 import bcrypt from 'bcrypt';
 import { User, UserInterests } from '../models/user';
-import { addUserToDatabase, deleteUserFromDatabase, getUserForAuth, getUserWithID, updateUserInDatabase, updateUserLocationInDatabase } from '../repositories/user_queries';
+import {
+    addUserToDatabase,
+    deleteUserFromDatabase,
+    getUserForAuth,
+    getUserWithID,
+    updateUserDeviceIdInDatabase,
+    updateUserInDatabase,
+    updateUserLocationInDatabase
+} from '../repositories/user_queries';
 import dotenv from 'dotenv';
 import { deleteAllUserInterestsFromDatabase, addUserInterestToDatabase, getUserInterestsFromDatabase, getInterestsByName } from '../repositories/interests_queries';
 import { getLatestEventByInterestId } from '../repositories/event_quaries';
@@ -13,7 +21,7 @@ const SALT_ROUNDS = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) 
 
 export const getUserService = async (username: string, password: string) => {
     const database_user = await getUserForAuth(1, username);
-    if (!database_user) {
+    if (!database_user) { 
         console.log(`User "${username}" not found in database.`);
         return null;
     }
@@ -31,10 +39,46 @@ export const getUserService = async (username: string, password: string) => {
     }
 }
 
+const normalizeDeviceId = (value?: string | null): string => {
+    return (value ?? '').trim();
+}
+
+export const linkDeviceToUserService = async (userId: number, deviceId: string): Promise<void> => {
+    const normalizedDeviceId = normalizeDeviceId(deviceId);
+    if (!normalizedDeviceId) {
+        return;
+    }
+
+    await updateUserDeviceIdInDatabase(1, userId, normalizedDeviceId);
+}
+
+export const getUserAndLinkDeviceService = async (
+    username: string,
+    password: string,
+    deviceId?: string | null
+) => {
+    const user = await getUserService(username, password);
+    if (!user) {
+        return null;
+    }
+
+    if (deviceId) {
+        await linkDeviceToUserService(user.id, deviceId);
+    }
+
+    return user;
+}
+
 //should never add user with interests
-export const addUserService = async (username: string, email: string | null, password: string) => {
+export const addUserService = async (
+    username: string,
+    email: string | null,
+    password: string,
+    deviceId?: string | null
+) => {
+    const normalizedDeviceId = normalizeDeviceId(deviceId);
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-    const newUser = await addUserToDatabase(1, username, email, hashedPassword);
+    const newUser = await addUserToDatabase(1, username, email, hashedPassword, normalizedDeviceId || null);
     if (!newUser) {
         throw new Error('Failed to create user');
     }

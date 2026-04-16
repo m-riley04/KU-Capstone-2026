@@ -4,9 +4,29 @@ import { getEventsFromInterests } from "../repositories/event_quaries";
 import { getInterestIDFromName, getUserIdWithInterestFromDatabase } from "../repositories/interests_queries";
 import { addNotificationsToDatabase, getNotificationsFromDatabase } from "../repositories/notifications_quaries";
 import notification_services from "../routes/notification_services-routes";
+import { getUserWithDeviceId } from "../repositories/user_queries";
 
-export const getNotificationsService = async (userId: number): Promise<polypodNotification[] | null> => {
+const resolveUserIdForNotificationRecipient = async (recipientId: string): Promise<number | null> => {
+    const user = await getUserWithDeviceId(1, recipientId);
+    if (user) {
+        return user.id;
+    }
+
+    const numericUserId = Number.parseInt(recipientId, 10);
+    if (Number.isNaN(numericUserId) || numericUserId <= 0) {
+        return null;
+    }
+
+    return numericUserId;
+}
+
+export const getNotificationsService = async (deviceOrUserId: string): Promise<polypodNotification[] | null> => {
     try {
+        const userId = await resolveUserIdForNotificationRecipient(deviceOrUserId);
+        if (!userId) {
+            return null;
+        }
+
         const notifications = await getNotificationsFromDatabase(1, userId);
         if (!notifications || notifications.length === 0) {
             return null; 

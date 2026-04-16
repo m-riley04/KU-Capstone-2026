@@ -17,6 +17,7 @@ import 'apps/polypod_app.dart';
 import 'controllers/clock_timer_controller.dart';
 import 'controllers/idle_state_controller.dart';
 import 'controllers/notification_controller.dart';
+import 'controllers/notification_poller_service.dart';
 import 'controllers/polypod_animation_controller.dart';
 import 'controllers/polypod_maintenance_controller.dart';
 
@@ -197,6 +198,7 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
   late IdleStateController _idleController;
   late ClockTimerController _timerController;
   late NotificationController _notificationController;
+  late NotificationPollerService _notificationPollerService;
   late PolypodAnimationController _polypodController;
   late PolypodMaintenanceController _maintenanceController;
   late BaseApp _currentApp;
@@ -221,6 +223,8 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     _idleController.setIdleCallback(_returnToIdle);
     _timerController = ClockTimerController();
     _notificationController = NotificationController();
+    _notificationPollerService = NotificationPollerService();
+    _notificationPollerService.start();
     _polypodController = PolypodAnimationController();
     _maintenanceController = PolypodMaintenanceController();
     _apps = {
@@ -382,6 +386,7 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     _idleController.dispose();
     _timerController.dispose();
     _notificationController.dispose();
+    _notificationPollerService.stop();
     _polypodController.dispose();
     _maintenanceController.dispose();
     super.dispose();
@@ -624,6 +629,7 @@ class _DualScreenHomeState extends State<DualScreenHome> {
   late IdleStateController _idleController;
   late ClockTimerController _timerController;
   late NotificationController _notificationController;
+  late NotificationPollerService _notificationPollerService;
   late PolypodAnimationController _polypodController;
   late PolypodMaintenanceController _maintenanceController;
   late BaseApp _currentApp;
@@ -637,6 +643,8 @@ class _DualScreenHomeState extends State<DualScreenHome> {
     _idleController.setIdleCallback(_returnToIdle);
     _timerController = ClockTimerController();
     _notificationController = NotificationController();
+    _notificationPollerService = NotificationPollerService();
+    _notificationPollerService.start();
     _polypodController = PolypodAnimationController();
     _maintenanceController = PolypodMaintenanceController();
     _apps = {
@@ -672,6 +680,7 @@ class _DualScreenHomeState extends State<DualScreenHome> {
     _idleController.dispose();
     _timerController.dispose();
     _notificationController.dispose();
+    _notificationPollerService.stop();
     _polypodController.dispose();
     _maintenanceController.dispose();
     super.dispose();
