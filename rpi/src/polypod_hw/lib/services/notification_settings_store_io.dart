@@ -1,23 +1,28 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'device_identity_store.dart';
+
 Future<String> loadNotificationUserId() async {
   final settingsFile = File(_notificationSettingsPath());
   if (!await settingsFile.exists()) {
-    return '';
+    return loadOrCreateDeviceId();
   }
 
   try {
     final raw = await settingsFile.readAsString();
     final decoded = jsonDecode(raw);
     if (decoded is Map<String, dynamic>) {
-      return decoded['user_id']?.toString().trim() ?? '';
+      final saved = decoded['user_id']?.toString().trim() ?? '';
+      if (saved.isNotEmpty) {
+        return saved;
+      }
     }
   } catch (_) {
-    return '';
+    return loadOrCreateDeviceId();
   }
 
-  return '';
+  return loadOrCreateDeviceId();
 }
 
 Future<void> saveNotificationUserId(String userId) async {
@@ -41,18 +46,21 @@ Future<void> clearNotificationState() async {
 
 String _notificationSettingsPath() {
   final currentDir = Directory.current.path;
-  final settingsPath = '$currentDir${Platform.pathSeparator}..${Platform.pathSeparator}notif${Platform.pathSeparator}notification_settings.json';
+  final settingsPath =
+      '$currentDir${Platform.pathSeparator}..${Platform.pathSeparator}notif${Platform.pathSeparator}notification_settings.json';
   return File(settingsPath).absolute.path;
 }
 
 String _currentNotificationPath() {
   final currentDir = Directory.current.path;
-  final notifPath = '$currentDir${Platform.pathSeparator}..${Platform.pathSeparator}notif${Platform.pathSeparator}current_notification.json';
+  final notifPath =
+      '$currentDir${Platform.pathSeparator}..${Platform.pathSeparator}notif${Platform.pathSeparator}current_notification.json';
   return File(notifPath).absolute.path;
 }
 
 String _notificationPollStatePath() {
   final currentDir = Directory.current.path;
-  final statePath = '$currentDir${Platform.pathSeparator}..${Platform.pathSeparator}notif${Platform.pathSeparator}.notification_poll_state.json';
+  final statePath =
+      '$currentDir${Platform.pathSeparator}..${Platform.pathSeparator}notif${Platform.pathSeparator}.notification_poll_state.json';
   return File(statePath).absolute.path;
 }

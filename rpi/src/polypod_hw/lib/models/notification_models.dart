@@ -57,6 +57,7 @@ class NotificationConfig {
 
 /// Notification data model
 class NotificationData {
+  final String notifType;
   final String timestamp;
   final String media;
   final String headline;
@@ -66,6 +67,7 @@ class NotificationData {
   final NotificationConfig config;
 
   NotificationData({
+    required this.notifType,
     required this.timestamp,
     required this.media,
     required this.headline,
@@ -81,6 +83,11 @@ class NotificationData {
       final configData = json['config'];
 
       return NotificationData(
+        notifType:
+            json['notifType']?.toString() ??
+            json['notif_type']?.toString() ??
+            json['notification_type']?.toString() ??
+            '',
         timestamp: notificationData['timestamp']?.toString() ?? '',
         media: notificationData['media']?.toString() ?? '',
         headline: notificationData['headline']?.toString() ?? '',
@@ -89,15 +96,25 @@ class NotificationData {
         fromSource: json['from_source']?.toString() ?? '',
         config: configData is Map<String, dynamic>
             ? NotificationConfig.fromJson(configData)
-            : NotificationConfig.forSource(json['from_source']?.toString() ?? ''),
+            : NotificationConfig.forSource(
+                json['from_source']?.toString() ?? '',
+              ),
       );
     }
 
     if (json['data'] is Map<String, dynamic>) {
       final notificationData = json['data'] as Map<String, dynamic>;
-      final fromSource = json['from_source']?.toString() ?? json['fromSource']?.toString() ?? '';
+      final fromSource =
+          json['from_source']?.toString() ??
+          json['fromSource']?.toString() ??
+          '';
 
       return NotificationData(
+        notifType:
+            json['notifType']?.toString() ??
+            json['notif_type']?.toString() ??
+            json['notification_type']?.toString() ??
+            '',
         timestamp: notificationData['timestamp']?.toString() ?? '',
         media: notificationData['media']?.toString() ?? '',
         headline: notificationData['headline']?.toString() ?? '',
@@ -118,10 +135,10 @@ class NotificationWidget extends StatelessWidget {
   final VoidCallback? onSeeMore;
 
   const NotificationWidget({
-    Key? key,
+    super.key,
     required this.notification,
     this.onSeeMore,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +168,7 @@ class NotificationWidget extends StatelessWidget {
                 ),
               ),
             ),
-          
+
           // Media (if present)
           if (notification.media.isNotEmpty &&
               notification.config.mediaSize.width > 0)
@@ -212,9 +229,15 @@ class NotificationWidget extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: EarthyTheme.terracotta,
                   foregroundColor: EarthyTheme.textPrimary,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
                 ),
-                child: const Text('See More', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'See More',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
         ],
