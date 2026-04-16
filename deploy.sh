@@ -4,6 +4,7 @@ set -euo pipefail
 
 REPO_DIR="${REPO_DIR:-/home/riley/KU-Capstone-2026}"
 PODWORK_DIR="$REPO_DIR/podwork"
+POLYPOD_HW_DIR="$REPO_DIR/rpi/src/polypod_hw"
 WEB_ROOT="${WEB_ROOT:-/var/www/html}"
 LOG_DIR="${LOG_DIR:-$REPO_DIR/logs}"
 BACKEND_LOG="$LOG_DIR/backend.log"
@@ -31,5 +32,11 @@ echo "restarting backend"
 sudo pkill -f "node ./packages/backend/dist/server.js" || true
 
 nohup npm run start:backend > "$BACKEND_LOG" 2>&1 &
+
+echo "starting demo of hw"
+
+cd "$POLYPOD_HW_DIR"
+sudo flutter build web
+sudo rsync -a --delete ./build/web/ "$WEB_ROOT/demo/"
 
 echo "deployed"
