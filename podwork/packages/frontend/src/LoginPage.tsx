@@ -5,10 +5,10 @@ Key functionality
 - user can create an account if they don't have one already
 - makes call to the api.tsx file 
 */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { registerUser, loginUser } from './services/api';
 import './styles/login.css';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface LoginProps {
   onLogin: () => void;
@@ -22,6 +22,17 @@ export default function LoginPage({ onLogin, mode }: LoginProps) {
   const [error, setError] = useState('');
   const isSignUp = mode === 'signup';
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const deviceId = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return (
+      params.get('userid')?.trim() ||
+      params.get('deviceId')?.trim() ||
+      params.get('deviceid')?.trim() ||
+      ''
+    );
+  }, [location.search]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +45,7 @@ export default function LoginPage({ onLogin, mode }: LoginProps) {
                 password: password,
             };
 
-            const response = await registerUser(payload);
+          const response = await registerUser(payload, deviceId || undefined);
 
             if (response.ok) {
                 const data = await response.json();
@@ -48,7 +59,7 @@ export default function LoginPage({ onLogin, mode }: LoginProps) {
             }
         }else{
             console.log('attempting login with', username, password);
-            const response = await loginUser(username, password);
+            const response = await loginUser(username, password, deviceId || undefined);
             
             if (response.ok) {
                 console.log('login successful');
@@ -112,7 +123,10 @@ export default function LoginPage({ onLogin, mode }: LoginProps) {
             setError('');
             setUsername('');
             setPassword('');
-            navigate(isSignUp ? '/login' : '/create-account');
+            navigate({
+              pathname: isSignUp ? '/login' : '/create-account',
+              search: location.search,
+            });
         }}
         style={{marginTop: '1rem', background: 'none', border: 'none', color: '#4f46e5', cursor: 'pointer', textDecoration: 'underline'}}>
         {isSignUp ? "Already have an account? Log in here!" : "Don't have an account? Sign up here!"}</button>

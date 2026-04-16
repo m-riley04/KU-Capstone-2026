@@ -8,22 +8,29 @@ This file contains calls to the server that are needed for the frontend
 */
 const SERVER = 'https://www.polypod.net:3000';
 
-export const registerUser = async (payload: any) => {
+export const registerUser = async (payload: any, deviceId?: string) => {
+    const requestBody = deviceId ? { ...payload, deviceId } : payload;
     const response = await fetch(`${SERVER}/user/add`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload),
+        body: JSON.stringify(requestBody),
     });
     return response;
 };
 
-export const loginUser = async (username: string, password: string) => {
+export const loginUser = async (username: string, password: string, deviceId?: string) => {
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-password': password,
+    };
+
+    if (deviceId) {
+        headers['x-device-id'] = deviceId;
+    }
+
     const response = await fetch(`${SERVER}/user/${username}`, {
         method: 'GET',
-        headers: { 
-            'Content-Type': 'application/json',
-            'x-password': password
-        },
+        headers,
     });
     return response;
 };
