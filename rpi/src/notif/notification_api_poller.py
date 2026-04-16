@@ -3,7 +3,7 @@
 Periodically fetch notifications from the backend API and forward them to notify.py.
 
 API endpoint format:
-http://172.232.9.56:3000/notifications/<USER_ID>
+https://www.polypod.net:3000/notifications/<USER_ID>
 
 USER_ID is loaded from notification_settings.json, which is written by the
 Flutter settings page.
@@ -24,7 +24,7 @@ from urllib.request import urlopen
 
 from notify import notify
 
-API_BASE = "http://172.232.9.56:3000/notifications"
+API_BASE = "https://www.polypod.net:3000/notifications"
 SETTINGS_PATH = os.path.join(os.path.dirname(__file__), "notification_settings.json")
 STATE_PATH = os.path.join(os.path.dirname(__file__), ".notification_poll_state.json")
 CURRENT_NOTIFICATION_PATH = os.path.join(os.path.dirname(__file__), "current_notification.json")
@@ -102,6 +102,34 @@ def _fetch_notifications(url: str, timeout: float) -> list[dict[str, Any]]:
 
 
 def _normalize_notification(raw_notif: dict[str, Any]) -> dict[str, Any] | None:
+    if raw_notif.get("notifType") == "welcome" and isinstance(raw_notif.get("data"), dict):
+        source = str(
+            raw_notif.get("fromSource")
+            or raw_notif.get("from_source")
+            or raw_notif["data"].get("fromSource")
+            or raw_notif["data"].get("from_source")
+            or raw_notif.get("source")
+            or "podwork"
+        )
+        data = raw_notif["data"]
+        return {
+            "notifType": "welcome",
+            "fromSource": source,
+            "data": {
+                "timestamp": str(data.get("timestamp") or _utc_now_iso()),
+                "media": str(data.get("media") or ""),
+                "headline": str(data.get("headline") or "Welcome to Polypod!"),
+                "info": str(data.get("info") or "Your account is linked and ready."),
+                "seemore": str(
+                    data.get("seemore")
+                    or data.get("seeMore")
+                    or data.get("see_more")
+                    or data.get("url")
+                    or ""
+                ),
+            },
+        }
+
     if raw_notif.get("notifType") == "base" and isinstance(raw_notif.get("data"), dict):
         source = str(
             raw_notif.get("fromSource")
@@ -132,6 +160,8 @@ def _normalize_notification(raw_notif: dict[str, Any]) -> dict[str, Any] | None:
 
     if isinstance(raw_notif.get("notification"), dict):
         nested = raw_notif["notification"]
+        if nested.get("notifType") == "welcome" and isinstance(nested.get("data"), dict):
+            return _normalize_notification(nested)
         if nested.get("notifType") == "base" and isinstance(nested.get("data"), dict):
             return _normalize_notification(nested)
 

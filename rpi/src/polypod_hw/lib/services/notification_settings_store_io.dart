@@ -5,8 +5,14 @@ import 'device_identity_store.dart';
 
 Future<String> loadNotificationUserId() async {
   final settingsFile = File(_notificationSettingsPath());
+  Future<String> persistFallbackDeviceId() async {
+    final fallbackDeviceId = await loadOrCreateDeviceId();
+    await saveNotificationUserId(fallbackDeviceId);
+    return fallbackDeviceId;
+  }
+
   if (!await settingsFile.exists()) {
-    return loadOrCreateDeviceId();
+    return persistFallbackDeviceId();
   }
 
   try {
@@ -19,10 +25,10 @@ Future<String> loadNotificationUserId() async {
       }
     }
   } catch (_) {
-    return loadOrCreateDeviceId();
+    return persistFallbackDeviceId();
   }
 
-  return loadOrCreateDeviceId();
+  return persistFallbackDeviceId();
 }
 
 Future<void> saveNotificationUserId(String userId) async {

@@ -57,8 +57,9 @@ def notify(notification_json):
             print("Notification is not a dictionary")
             return False
             
-        if data.get('notifType') != 'base':
-            print(f"Unsupported notification type: {data.get('notifType')}")
+        notif_type = data.get('notifType')
+        if notif_type not in ('base', 'welcome'):
+            print(f"Unsupported notification type: {notif_type}")
             return False
         
         # Get the source and apply appropriate config
@@ -67,6 +68,7 @@ def notify(notification_json):
         
         # Prepare the notification payload with config
         notification_payload = {
+            'notifType': notif_type,
             'notification': data.get('data', {}),
             'config': {
                 'media_size': config.media_size,

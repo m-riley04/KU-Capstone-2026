@@ -82,6 +82,27 @@ export const addUserService = async (
     if (!newUser) {
         throw new Error('Failed to create user');
     }
+
+    if (normalizedDeviceId) {
+        const welcomeNotification: databaseNotification = {
+            user_id: newUser.id,
+            notifType: 'welcome',
+            from_source: 'podwork',
+            notification_data: {
+                timestamp: new Date(),
+                from_source: 'podwork',
+                media: '',
+                headline: `Welcome, ${username}!`,
+                info: 'your pod is now linked. keep the website open to configure and customize your polypod!',
+                seemore: '',
+            },
+            is_read: false,
+            created_at: new Date(),
+        };
+
+        await addNotificationsToDatabase(1, [welcomeNotification]);
+    }
+
     return newUser;
 }
 
