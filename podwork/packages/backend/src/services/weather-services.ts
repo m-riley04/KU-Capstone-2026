@@ -29,7 +29,7 @@ export const weatherDataHasChanged = (currentData: eventData, oldData: eventData
     const isOldAlert = oldData.headline.includes('ALERT');
 
     // new alert or alert changed
-    if (isCurrentAlert && currentData.info !== oldData.info) {
+    if (isCurrentAlert && ( currentData.info !== oldData.info ) ) {
         return true;
     }
 

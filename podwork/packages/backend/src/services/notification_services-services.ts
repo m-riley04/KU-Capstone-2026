@@ -56,6 +56,7 @@ export const generateNotifications = async (interestName: string) : Promise<void
         const interstid = interestId?.id;
         const event_data: eventData[] = await getEventsFromInterests(1, [interstid]);
         const userIds = await getUserIdWithInterestFromDatabase(1, interstid);
+        let this_notifType = 'base';
         if (!userIds || userIds.length === 0) {
             console.log('No users found with interest:', interestName);
             return;
@@ -66,9 +67,12 @@ export const generateNotifications = async (interestName: string) : Promise<void
             if (!firstEvent) {
                 continue;
             }
+            if (firstEvent.from_source === 'WeatherAPI') {
+                this_notifType = 'weather';
+            }
             const notification: databaseNotification = {
                 user_id: user.id,
-                notifType: 'base',
+                notifType: this_notifType,
                 from_source: firstEvent.from_source, //TODO: This is a bit hacky, but for now we can just use the title of the event as the from_source. We can always add more fields to the databaseNotification model later if we want to include more information about the event in the notification.
                 notification_data: firstEvent,
                 is_read: false,
@@ -110,7 +114,7 @@ export const generateTargetedWeatherNotifications = async (connection: any, zipC
     for (const user of usersInZip) {
         notifications.push({
             user_id: user.id,
-            notifType: 'base', 
+            notifType: 'base',
             from_source: weatherEvent.from_source, 
             notification_data: weatherEvent,
             is_read: false,

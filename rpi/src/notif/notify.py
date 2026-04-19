@@ -58,7 +58,7 @@ def notify(notification_json):
             return False
             
         notif_type = data.get('notifType')
-        if notif_type not in ('base', 'welcome'):
+        if notif_type not in ('base', 'welcome', 'weather'):
             print(f"Unsupported notification type: {notif_type}")
             return False
         

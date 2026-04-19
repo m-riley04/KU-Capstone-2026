@@ -29,13 +29,22 @@ export const fetchWeatherData = async (location: string): Promise<eventData> => 
 
         // Default layout for a normal weather day
         let headline = `Weather Update: ${locationName}`;
-        let info = `Currently ${temp}°F and ${condition}.`;
+        let info = `${temp}°F, ${condition}.`;
 
         if (hasSevereAlert) {
             // grab the headline of the first active alert
             const alertHeadline = alerts[0].headline; 
             headline = `🚨 WEATHER ALERT: ${locationName}`;
-            info = `${alertHeadline} | Currently ${temp}°F.`;
+            info = `${alertHeadline}`;
+
+            return {
+            timestamp: new Date(),
+            media: `https:${data.current.condition.icon}`, 
+            headline: headline,
+            info: info,
+            from_source: 'WeatherAPI',
+            seemore: `https://weather.com/weather/today/l/${location}`
+        }
         }
 
         return {

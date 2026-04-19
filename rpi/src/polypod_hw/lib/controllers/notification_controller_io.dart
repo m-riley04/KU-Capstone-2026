@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../models/notification_models.dart';
 import '../services/device_identity_store.dart';
+import '../services/weather_data_store.dart';
 
 /// Controller that monitors notification file and manages notification state.
 class NotificationController extends ChangeNotifier {
@@ -55,6 +56,10 @@ class NotificationController extends ChangeNotifier {
           final decoded = jsonDecode(contents);
           if (decoded is Map<String, dynamic>) {
             final notification = NotificationData.fromJson(decoded);
+            if (notification.notifType.toLowerCase().trim() == 'weather') {
+              WeatherDataStore.instance.updateFromNotification(notification);
+              return;
+            }
             _currentNotification = notification;
             if (notification.notifType == 'welcome') {
               markFirstTimeSetupComplete();

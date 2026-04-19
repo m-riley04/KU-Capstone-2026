@@ -35,8 +35,8 @@ nohup npm run start:backend > "$BACKEND_LOG" 2>&1 &
 
 echo "starting demo of hw"
 
-cd "$POLYPOD_HW_DIR"
-sudo flutter build web
-sudo rsync -a --delete ./build/web/ "$WEB_ROOT/demo/"
+# cd "$POLYPOD_HW_DIR"
+# sudo flutter build web
+# sudo rsync -a --delete ./build/web/ "$WEB_ROOT/demo/"
 
 echo "deployed"

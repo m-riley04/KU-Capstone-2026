@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/notification_models.dart';
 import '../services/notification_settings_store.dart';
+import '../services/weather_data_store.dart';
 
 /// Controller that polls the backend notifications endpoint on web.
 class NotificationController extends ChangeNotifier {
@@ -103,6 +104,10 @@ class NotificationController extends ChangeNotifier {
       }
 
       final notification = NotificationData.fromJson(notificationJson);
+      if (notification.notifType.toLowerCase().trim() == 'weather') {
+        WeatherDataStore.instance.updateFromNotification(notification);
+        return;
+      }
       _currentNotification = notification;
       notifyListeners();
     } catch (e) {
