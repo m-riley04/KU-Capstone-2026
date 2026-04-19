@@ -102,7 +102,9 @@ def _fetch_notifications(url: str, timeout: float) -> list[dict[str, Any]]:
 
 
 def _normalize_notification(raw_notif: dict[str, Any]) -> dict[str, Any] | None:
-    if raw_notif.get("notifType") == "welcome" and isinstance(raw_notif.get("data"), dict):
+    notif_type = str(raw_notif.get("notifType") or "").strip().lower()
+
+    if notif_type == "welcome" and isinstance(raw_notif.get("data"), dict):
         source = str(
             raw_notif.get("fromSource")
             or raw_notif.get("from_source")
@@ -130,7 +132,7 @@ def _normalize_notification(raw_notif: dict[str, Any]) -> dict[str, Any] | None:
             },
         }
 
-    if raw_notif.get("notifType") == "base" and isinstance(raw_notif.get("data"), dict):
+    if notif_type in ("base", "weather") and isinstance(raw_notif.get("data"), dict):
         source = str(
             raw_notif.get("fromSource")
             or raw_notif.get("from_source")
@@ -141,7 +143,7 @@ def _normalize_notification(raw_notif: dict[str, Any]) -> dict[str, Any] | None:
         )
         data = raw_notif["data"]
         return {
-            "notifType": "base",
+            "notifType": "weather" if notif_type == "weather" else "base",
             "fromSource": source,
             "data": {
                 "timestamp": str(data.get("timestamp") or _utc_now_iso()),
@@ -162,7 +164,7 @@ def _normalize_notification(raw_notif: dict[str, Any]) -> dict[str, Any] | None:
         nested = raw_notif["notification"]
         if nested.get("notifType") == "welcome" and isinstance(nested.get("data"), dict):
             return _normalize_notification(nested)
-        if nested.get("notifType") == "base" and isinstance(nested.get("data"), dict):
+        if nested.get("notifType") in ("base", "weather") and isinstance(nested.get("data"), dict):
             return _normalize_notification(nested)
 
     source = str(

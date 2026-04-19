@@ -43,6 +43,20 @@ const normalizeDeviceId = (value?: string | null): string => {
     return (value ?? '').trim();
 }
 
+const resolveStarterNotificationType = (fromSource: string, headline: string): string => {
+    const normalizedSource = fromSource.toLowerCase().trim();
+    const normalizedHeadline = headline.toLowerCase().trim();
+    const looksLikeWeatherSource = normalizedSource === 'weatherapi' || normalizedSource.startsWith('weather_');
+    const isWeatherUpdateHeadline = normalizedHeadline.startsWith('weather update:');
+    const isAlertHeadline = normalizedHeadline.includes('alert');
+
+    if (looksLikeWeatherSource && isWeatherUpdateHeadline && !isAlertHeadline) {
+        return 'weather';
+    }
+
+    return 'base';
+}
+
 export const linkDeviceToUserService = async (userId: number, deviceId: string): Promise<void> => {
     const normalizedDeviceId = normalizeDeviceId(deviceId);
     if (!normalizedDeviceId) {
@@ -132,7 +146,7 @@ export const updateUserService = async (userId: number, updatedUserData: Partial
             if (latestEvent) {
                 starterNotifications.push({
                     user_id: userId,
-                    notifType: 'base',
+                    notifType: resolveStarterNotificationType(latestEvent.from_source, latestEvent.headline),
                     from_source: latestEvent.from_source,
                     notification_data: latestEvent,
                     is_read: false,

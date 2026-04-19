@@ -6,6 +6,27 @@ import { addNotificationsToDatabase, getNotificationsFromDatabase } from "../rep
 import notification_services from "../routes/notification_services-routes";
 import { getUserWithDeviceId } from "../repositories/user_queries";
 
+const isPersistentWeatherUpdate = (fromSource: string, headline: string): boolean => {
+    const normalizedSource = fromSource.toLowerCase().trim();
+    const normalizedHeadline = headline.toLowerCase().trim();
+    const looksLikeWeatherSource = normalizedSource === 'weatherapi' || normalizedSource.startsWith('weather_');
+    const isWeatherUpdateHeadline = normalizedHeadline.startsWith('weather update:');
+    const isAlertHeadline = normalizedHeadline.includes('alert');
+    return looksLikeWeatherSource && isWeatherUpdateHeadline && !isAlertHeadline;
+}
+
+const resolveNotificationType = (fromSource: string, headline: string, existingType?: string): string => {
+    if ((existingType ?? '').toLowerCase().trim() === 'welcome') {
+        return 'welcome';
+    }
+
+    if (isPersistentWeatherUpdate(fromSource, headline)) {
+        return 'weather';
+    }
+
+    return (existingType ?? 'base').toLowerCase().trim() || 'base';
+}
+
 const resolveUserIdForNotificationRecipient = async (recipientId: string): Promise<number | null> => {
     const user = await getUserWithDeviceId(1, recipientId);
     if (user) {
@@ -35,10 +56,15 @@ export const getNotificationsService = async (deviceOrUserId: string): Promise<p
         // that it's ready to send to devices without needing to do any additional formatting
         let formattedNotifications : polypodNotification[] = [];
         notifications.forEach(notification => {
+            const data = JSON.parse(notification.notification_data);
             const formattedNotification  : polypodNotification =  {
-                notifType: notification.notifType,
+                notifType: resolveNotificationType(
+                    String(notification.from_source ?? ''),
+                    String(data?.headline ?? ''),
+                    String(notification.notifType ?? 'base'),
+                ),
                 from_source: notification.from_source,
-                data: JSON.parse(notification.notification_data),
+                data,
             }
             formattedNotifications.push(formattedNotification);
         });
@@ -56,7 +82,6 @@ export const generateNotifications = async (interestName: string) : Promise<void
         const interstid = interestId?.id;
         const event_data: eventData[] = await getEventsFromInterests(1, [interstid]);
         const userIds = await getUserIdWithInterestFromDatabase(1, interstid);
-        let this_notifType = 'base';
         if (!userIds || userIds.length === 0) {
             console.log('No users found with interest:', interestName);
             return;
@@ -67,12 +92,9 @@ export const generateNotifications = async (interestName: string) : Promise<void
             if (!firstEvent) {
                 continue;
             }
-            if (firstEvent.from_source === 'WeatherAPI') {
-                this_notifType = 'weather';
-            }
             const notification: databaseNotification = {
                 user_id: user.id,
-                notifType: this_notifType,
+                notifType: resolveNotificationType(firstEvent.from_source, firstEvent.headline, 'base'),
                 from_source: firstEvent.from_source, //TODO: This is a bit hacky, but for now we can just use the title of the event as the from_source. We can always add more fields to the databaseNotification model later if we want to include more information about the event in the notification.
                 notification_data: firstEvent,
                 is_read: false,
