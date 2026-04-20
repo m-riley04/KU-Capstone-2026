@@ -1,11 +1,10 @@
 import { eventData } from "../models/notifications";
-import { getLatestEventByInterestName } from "../repositories/event_quaries";
+import { getLatestWeatherEventbyZip } from "../repositories/event_quaries";
 
 export const getPreviousWeatherData = async (location: string): Promise<eventData | null> => {
     try {
-        const interestName = `weather_${location}`;
 
-        const previousData = await getLatestEventByInterestName(1, interestName);
+        const previousData = await getLatestWeatherEventbyZip(1, location);
         
         if (!previousData) {
             console.log(`No previous weather data found in the database for ${location}.`);
