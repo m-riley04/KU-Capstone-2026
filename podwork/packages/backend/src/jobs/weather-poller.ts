@@ -17,15 +17,6 @@ export const getWeatherUpdates = async () => {
             
             // pass the clean zip code directly to the API
             const currentWeatherData = await fetchWeatherData(zipCode);
-            const oldWeatherData = await getPreviousWeatherData(zipCode);
-
-            // set the source as the zipcode
-            currentWeatherData.from_source = `weather_${zipCode}`;
-
-            if (!weatherDataHasChanged(currentWeatherData, oldWeatherData)) {
-                console.log(`No significant weather changes for ${zipCode}. Skipping.`);
-                continue;
-            }
             
             generateTargetedWeatherNotifications(1, zipCode, currentWeatherData);
             
