@@ -69,7 +69,7 @@ https.createServer(options, app,).listen(PORT, async () => {
             timezone: "America/Chicago" //might change this 
     });
 
-    cron.schedule('*/10 * * * *', () => {
+    cron.schedule('*/10 * * * * *', () => {
         void frequentPollers();
         }, {
             timezone: "America/Chicago"
