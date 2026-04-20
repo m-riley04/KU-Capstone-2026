@@ -3,6 +3,9 @@ import { eventData } from "../models/notifications";
 const ESPN_MCB_SCOREBOARD_URL =
     'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard';
 
+const ESPN_MLB_SCOREBOARD_URL =
+    'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard';
+
 const summarizeGames = (events: any[]): string => {
     if (!events || events.length === 0) {
         return 'No games currently on the mens college basketball scoreboard.';
@@ -38,10 +41,30 @@ export const fetchEspnMensCollegeBasketballScoreboardData = async () : Promise<e
 
     return {
         timestamp: new Date(),
-        media: 'https://www.espn.com/mens-college-basketball/scoreboard',
+        media: 'https://a.espncdn.com/redesign/assets/img/icons/ESPN-icon-basketball.png',
         headline: `NCAA Mens College Basketball Scoreboard (${events.length} games)`,
         info: summarizeGames(events),
         from_source: 'ESPN',
-        seemore: 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard'
+        seemore: '' //'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard'
+    }
+}
+
+export const fetchEspnMLBScoreboardData = async () : Promise<eventData> => {
+    const response = await fetch(ESPN_MLB_SCOREBOARD_URL);
+
+    if (!response.ok) {
+        throw new Error(`Error fetching ESPN scoreboard data: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const events = Array.isArray(data?.events) ? data.events : [];
+
+    return {
+        timestamp: new Date(),
+        media: 'https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png',
+        headline: `MLB Scoreboard (${events.length} games)`,
+        info: summarizeGames(events),
+        from_source: 'ESPN',
+        seemore: '' //https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard'
     }
 }

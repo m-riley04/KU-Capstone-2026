@@ -1,11 +1,9 @@
 import { eventData } from "../models/notifications";
 import { getLatestEventByInterestName } from "../repositories/event_quaries";
 
-const ESPN_SCOREBOARD_INTEREST = 'espn_mens_college_basketball_scoreboard';
-
-export const getPreviousEspnScoreboardData: () => Promise<eventData | null> = async () => {
+export const getPreviousEspnScoreboardData: (scoreboard: string) => Promise<eventData | null> = async (scoreboard: string) => {
     try {
-        const previousData = await getLatestEventByInterestName(1, ESPN_SCOREBOARD_INTEREST);
+        const previousData = await getLatestEventByInterestName(1, scoreboard);
         if (!previousData) {
             console.log('No previous ESPN scoreboard data found in the database.');
             return null;

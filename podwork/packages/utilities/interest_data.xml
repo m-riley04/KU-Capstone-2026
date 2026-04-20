@@ -68,8 +68,11 @@
     <item><id>Tennessee Titans</id></item>
     <item><id>Washington Commanders</id></item>
   </category>
-
-  <category name="Big 12 CBB">
+  <category name="MLB">
+    <item><id>MLB Scoreboard</id></item>
+  </category>
+  <category name="Men's College Basketball">
+    <item><id>Men's College Basketball Scoreboard</id></item>
     <item><id>Arizona Wildcats</id></item>
     <item><id>Arizona State Sun Devils</id></item>
     <item><id>Baylor Bears</id></item>
@@ -195,7 +198,6 @@
   </category>
   <category name = "Other">
     <item><id>apod</id></item>
-    <item><id>espn_mens_college_basketball_scoreboard</id></item>
   </category>
   <category name = "Weather">
     <item><id>Weather Alerts</id></item>
