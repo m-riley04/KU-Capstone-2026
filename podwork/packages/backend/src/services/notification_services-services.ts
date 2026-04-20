@@ -131,17 +131,30 @@ export const generateTargetedWeatherNotifications = async (connection: any, zipC
         console.log(`No users found for weather in ${zipCode}`);
         return;
     }
-
+    
     const notifications: databaseNotification[] = [];
-    for (const user of usersInZip) {
-        notifications.push({
-            user_id: user.id,
-            notifType: 'base',
-            from_source: weatherEvent.from_source, 
-            notification_data: weatherEvent,
-            is_read: false,
-            created_at: new Date(),
-        });
+    if (weatherEvent.headline.includes('WEATHER ALERT')) {
+        for (const user of usersInZip) {
+            notifications.push({
+                user_id: user.id,
+                notifType: 'base',
+                from_source: weatherEvent.from_source, 
+                notification_data: weatherEvent,
+                is_read: false,
+                created_at: new Date(),
+            });
+        }
+    } else {
+        for (const user of usersInZip) {
+            notifications.push({
+                user_id: user.id,
+                notifType: 'weather',
+                from_source: weatherEvent.from_source, 
+                notification_data: weatherEvent,
+                is_read: false,
+                created_at: new Date(),
+            });
+        }
     }
 
     await addNotificationsToDatabase(connection, notifications);
