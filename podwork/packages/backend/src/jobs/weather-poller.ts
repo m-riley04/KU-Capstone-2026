@@ -26,16 +26,17 @@ export const getWeatherUpdates = async () => {
                 console.log(`No significant weather changes for ${zipCode}. Skipping.`);
                 continue;
             }
-
-            // add the most recently fetched data to the database (into polypod_events)
-            await addEventToDatabase(1, currentWeatherData, 'Weather Alerts');
-
             // check if the fetched data is an Alert and if it is then generate a targeted 
             // notification to users with that zipcode
             if (currentWeatherData.headline.includes('WEATHER ALERT')) {
                 await generateTargetedWeatherNotifications(1, zipCode, currentWeatherData);
-                console.log(`🚨 Severe notification sent for ${zipCode}`);
+                console.log(`Severe notification sent for ${zipCode}`);
+            } else {
+            // add the most recently fetched data to the database (into polypod_events)
+            await addEventToDatabase(1, currentWeatherData, 'Weather Alerts');
+            console.log(`Weather event added to database for ${zipCode}`);
             }
+            
             
             console.log(`Weather event successfully processed for ${zipCode}`);
         }
