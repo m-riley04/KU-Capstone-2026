@@ -28,6 +28,19 @@ Future<void> markFirstTimeSetupComplete() async {
   await prefs.setBool(_setupCompleteKey, true);
 }
 
+Future<void> markFirstTimeSetupIncomplete() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool(_setupCompleteKey, false);
+}
+
+Future<String> resetDeviceIdentity() async {
+  final prefs = await SharedPreferences.getInstance();
+  final newDeviceId = _generateAlphanumericId();
+  await prefs.setString(_deviceIdKey, newDeviceId);
+  await prefs.setBool(_setupCompleteKey, false);
+  return newDeviceId;
+}
+
 String _generateAlphanumericId() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   final random = Random.secure();

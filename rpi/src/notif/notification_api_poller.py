@@ -118,7 +118,7 @@ def _normalize_notification(raw_notif: dict[str, Any]) -> dict[str, Any] | None:
             "notifType": "welcome",
             "fromSource": source,
             "data": {
-                "timestamp": str(data.get("timestamp") or _utc_now_iso()),
+                "timestamp": str(data.get("timestamp") or ""),
                 "media": str(data.get("media") or ""),
                 "headline": str(data.get("headline") or "Welcome to Polypod!"),
                 "info": str(data.get("info") or "Your account is linked and ready."),
@@ -196,7 +196,21 @@ def _normalize_notification(raw_notif: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def _token_for_notification(notification: dict[str, Any]) -> str:
-    canonical = json.dumps(notification, sort_keys=True, separators=(",", ":"))
+    notif_type = str(notification.get("notifType") or "").strip().lower()
+    if notif_type == "welcome":
+        data = notification.get("data") if isinstance(notification.get("data"), dict) else {}
+        stable_payload = {
+            "notifType": "welcome",
+            "fromSource": str(notification.get("fromSource") or ""),
+            "headline": str(data.get("headline") or ""),
+            "info": str(data.get("info") or ""),
+            "seemore": str(data.get("seemore") or ""),
+            "media": str(data.get("media") or ""),
+        }
+    else:
+        stable_payload = notification
+
+    canonical = json.dumps(stable_payload, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 

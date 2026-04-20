@@ -22,6 +22,7 @@ import 'controllers/notification_poller_service.dart';
 import 'controllers/polypod_animation_controller.dart';
 import 'controllers/polypod_maintenance_controller.dart';
 import 'services/device_identity_store.dart';
+import 'services/notification_settings_store.dart';
 
 import 'multi_window/multi_window.dart';
 import 'config/display_manager.dart';
@@ -208,6 +209,7 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
   late PolypodMaintenanceController _maintenanceController;
   late BaseApp _currentApp;
   bool _isSetupLocked = false;
+  bool _showSettingsResetConfirmation = false;
   String _currentAppKey = 'Home';
 
   late final Map<String, BaseApp> _apps;
@@ -245,7 +247,10 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
         onWater: _maintenanceController.water,
         onPet: _maintenanceController.pet,
       ),
-      'Settings': const SettingsApp(),
+      'Settings': SettingsApp(
+        onRequestResetConfirmation: _requestResetConfirmationFromSettings,
+        onResetToSetup: _resetToSetupFromSettings,
+      ),
     };
     _currentApp = IdleApp(maintenanceController: _maintenanceController);
     _showSetupIfNeeded();
@@ -287,6 +292,33 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
 
   void _handleNotificationChanged() {
     _completeSetupIfWelcome();
+  }
+
+  Future<void> _resetToSetupFromSettings() async {
+    await clearNotificationState();
+    final newDeviceId = await resetDeviceIdentity();
+    await saveNotificationUserId(newDeviceId);
+    _notificationController.clearNotification();
+    if (!mounted) return;
+
+    setState(() {
+      _isSetupLocked = true;
+      _showSettingsResetConfirmation = false;
+      _currentApp = const SetupApp();
+      _currentAppKey = 'Setup';
+    });
+
+    await _notifyBottomAppChanged();
+  }
+
+  Future<void> _requestResetConfirmationFromSettings() async {
+    if (_currentAppKey != 'Settings') return;
+
+    setState(() {
+      _showSettingsResetConfirmation = true;
+    });
+
+    await _notifyBottomAppChanged();
   }
 
   Future<void> _initWindowing() async {
@@ -338,6 +370,9 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
         case 'polypod/pet':
           _polypodController.triggerPet();
           _maintenanceController.pet();
+          return null;
+        case 'polypod/resetToSetup':
+          await _resetToSetupFromSettings();
           return null;
         case 'polypod/childReady':
           // The child window has set its title and is ready to be shown.
@@ -422,6 +457,7 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
   Future<void> _notifyBottomAppChanged() async {
     await _bottomWindowController?.invokeMethod('polypod/appChanged', {
       'currentAppKey': _currentAppKey,
+      'showSettingsResetConfirmation': _showSettingsResetConfirmation,
     });
   }
 
@@ -440,6 +476,7 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
   void _returnToIdle() {
     if (_isSetupLocked) {
       setState(() {
+        _showSettingsResetConfirmation = false;
         _currentApp = const SetupApp();
         _currentAppKey = 'Setup';
       });
@@ -448,6 +485,7 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     }
 
     setState(() {
+      _showSettingsResetConfirmation = false;
       _currentApp = IdleApp(maintenanceController: _maintenanceController);
       _currentAppKey = 'Home';
     });
@@ -461,6 +499,7 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
 
     _idleController.resetIdleTimer();
     setState(() {
+      _showSettingsResetConfirmation = false;
       _currentApp = IdleApp(maintenanceController: _maintenanceController);
       _currentAppKey = 'Home';
     });
@@ -474,6 +513,7 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
 
     _idleController.resetIdleTimer();
     setState(() {
+      _showSettingsResetConfirmation = false;
       _currentAppKey = appName;
       _currentApp =
           _apps[appName] ??
@@ -517,6 +557,7 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
   PolypodWindowController? _mainWindowController;
 
   String _currentAppKey = 'Home';
+  bool _showSettingsResetConfirmation = false;
 
   static const List<String> _availableApps = [
     'Timer',
@@ -564,9 +605,12 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
         case 'polypod/appChanged':
           if (arguments is Map) {
             final next = arguments['currentAppKey']?.toString();
+            final showResetConfirmation =
+                arguments['showSettingsResetConfirmation'] == true;
             if (next != null && mounted) {
               setState(() {
                 _currentAppKey = next;
+                _showSettingsResetConfirmation = showResetConfirmation;
               });
             }
           }
@@ -603,6 +647,8 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
       onFeed: () => _sendToMain('polypod/feed'),
       onWater: () => _sendToMain('polypod/water'),
       onPet: () => _sendToMain('polypod/pet'),
+      onResetToSetupRequested: () => _sendToMain('polypod/resetToSetup'),
+      showSettingsResetConfirmation: _showSettingsResetConfirmation,
     );
   }
 
@@ -632,6 +678,8 @@ class _BottomProxyApp extends BaseApp {
     required this.onFeed,
     required this.onWater,
     required this.onPet,
+    required this.onResetToSetupRequested,
+    required this.showSettingsResetConfirmation,
   });
 
   final String currentAppKey;
@@ -642,6 +690,8 @@ class _BottomProxyApp extends BaseApp {
   final VoidCallback onFeed;
   final VoidCallback onWater;
   final VoidCallback onPet;
+  final Future<void> Function() onResetToSetupRequested;
+  final bool showSettingsResetConfirmation;
 
   @override
   String get appName => currentAppKey;
@@ -667,6 +717,11 @@ class _BottomProxyApp extends BaseApp {
         onFeedPressed: onFeed,
         onWaterPressed: onWater,
         onPetPressed: onPet,
+      );
+    }
+    if (currentAppKey == 'Settings' && showSettingsResetConfirmation) {
+      return SettingsBottomScreenContent(
+        onResetToSetup: onResetToSetupRequested,
       );
     }
     return null;
@@ -728,7 +783,7 @@ class _DualScreenHomeState extends State<DualScreenHome> {
         onWater: _maintenanceController.water,
         onPet: _maintenanceController.pet,
       ),
-      'Settings': const SettingsApp(),
+      'Settings': _buildSettingsApp(showBottomConfirmation: false),
     };
 
     _currentApp = IdleApp(maintenanceController: _maintenanceController);
@@ -766,6 +821,35 @@ class _DualScreenHomeState extends State<DualScreenHome> {
 
   void _handleNotificationChanged() {
     _completeSetupIfWelcome();
+  }
+
+  SettingsApp _buildSettingsApp({required bool showBottomConfirmation}) {
+    return SettingsApp(
+      onRequestResetConfirmation: _requestResetConfirmationFromSettings,
+      onResetToSetup: _resetToSetupFromSettings,
+      showBottomResetConfirmation: showBottomConfirmation,
+    );
+  }
+
+  Future<void> _resetToSetupFromSettings() async {
+    await clearNotificationState();
+    final newDeviceId = await resetDeviceIdentity();
+    await saveNotificationUserId(newDeviceId);
+    _notificationController.clearNotification();
+    if (!mounted) return;
+
+    setState(() {
+      _isSetupLocked = true;
+      _currentApp = const SetupApp();
+    });
+  }
+
+  void _requestResetConfirmationFromSettings() {
+    if (_isSetupLocked) return;
+
+    setState(() {
+      _currentApp = _buildSettingsApp(showBottomConfirmation: true);
+    });
   }
 
   Future<void> _initDisplay() async {
@@ -819,9 +903,13 @@ class _DualScreenHomeState extends State<DualScreenHome> {
 
     _idleController.resetIdleTimer();
     setState(() {
-      _currentApp =
-          _apps[appName] ??
-          IdleApp(maintenanceController: _maintenanceController);
+      if (appName == 'Settings') {
+        _currentApp = _buildSettingsApp(showBottomConfirmation: false);
+      } else {
+        _currentApp =
+            _apps[appName] ??
+            IdleApp(maintenanceController: _maintenanceController);
+      }
     });
   }
 
