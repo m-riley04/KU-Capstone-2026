@@ -102,12 +102,6 @@ export default function LoginPage({ onLogin, mode }: LoginProps) {
             className="login-input"
             style={{marginBottom: '30px'}}
           />
-          {isSignUp && <input 
-            type= 'text'
-            placeholder= 'zip code (for weather updates)'
-            className='login-input'
-            style={{marginBottom: '20px'}}
-          />}
           
           {error && <p style={{color: 'red'}}>{error}</p>}
           
