@@ -9,7 +9,7 @@ import { seedInterests } from './db/seed_interests';
 import notification_services from './routes/notification_services-routes';
 import * as cron from 'node-cron';
 import { getNasaApod } from './jobs/NASA-poller';
-import { getEspnMensCollegeBasketballScoreboard } from './jobs/ESPN-poller';
+import { getEspnMensCollegeBasketballScoreboard, getEspnMLBScoreboard } from './jobs/ESPN-poller';
 import interests_services from './routes/interests_services-routes';
 import { getWeatherUpdates } from './jobs/weather-poller';
 import path from 'path';
@@ -24,6 +24,7 @@ const dailyPollers = async () => {
 // interests that update frequently
 const frequentPollers = async () => {
     await getEspnMensCollegeBasketballScoreboard();
+    await getEspnMLBScoreboard();
     await getWeatherUpdates();
 }
     
