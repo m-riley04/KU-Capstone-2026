@@ -19,6 +19,7 @@ import ProfileBadge from './components/ProfileBadge';
 import SummaryModal from './components/SummaryModal';
 import CategorySlider from './components/CategorySlider';
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import SettingModel from './components/SettingsModel';
 
 function App() {
 // useStates to keep track of categories being displayed on the screen
@@ -35,9 +36,10 @@ function App() {
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   // state to hold if the user selected preference summary 
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  // state to hold if the user settings modal is open
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   // state to hold the current user info
-  const [user, setUser] = useState<{id: string | number; username: string} | null>(null);
-
+  const [user, setUser] = useState<{id: string | number; username: string; deviceIds: string[] } | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     // check if token exists so a logged in user can stay logged in
     return localStorage.getItem('polypod_userId') !== null;
@@ -51,11 +53,13 @@ function App() {
     // grab the data from localStorage when the page loads
     const storedUser = localStorage.getItem('polypod_userId');
     const storedName = localStorage.getItem('polypod_username');
+    const deviceIds = JSON.parse(localStorage.getItem('polypod_deviceIds') || '[]');
 
     if (storedUser) {
       setUser({
         id: storedUser,
         username: storedName || "User",
+        deviceIds
       });
     }
   }, [isLoggedIn]);
@@ -196,7 +200,7 @@ function App() {
       </header>
 
       
-      <ProfileBadge user={user} onLogout={handleLogout} />
+      <ProfileBadge user={user} onLogout={handleLogout} onOpenSetting={() => setIsSettingsOpen(true)} />
 
       <CategorySlider
         dataSource={dataSource}
@@ -221,7 +225,13 @@ function App() {
           onClose={() => setIsSummaryOpen(false)}
         />
       )}
-
+      {isSettingsOpen && (
+        <SettingModel
+          selectedDeviceIds={user?.deviceIds || []}
+          onToggle={toggleSelection}
+          onClose={() => setIsSettingsOpen(false)}
+        />
+      )}
       <ToastNotification toast={toast}/>
     </div>)
 

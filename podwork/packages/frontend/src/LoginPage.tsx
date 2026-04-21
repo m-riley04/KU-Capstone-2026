@@ -28,8 +28,6 @@ export default function LoginPage({ onLogin, mode }: LoginProps) {
     const params = new URLSearchParams(location.search);
     return (
       params.get('userid')?.trim() ||
-      params.get('deviceId')?.trim() ||
-      params.get('deviceid')?.trim() ||
       ''
     );
   }, [location.search]);
@@ -66,6 +64,7 @@ export default function LoginPage({ onLogin, mode }: LoginProps) {
                 const user = await response.json();
                 localStorage.setItem('polypod_userId', user.id)
                 localStorage.setItem('polypod_interests', JSON.stringify(user.interests || []))
+                localStorage.setItem('polypod_deviceIds', JSON.stringify(user.deviceIds || []))
                 localStorage.setItem('polypod_username', user.username || username);
                 onLogin(); 
             } else {

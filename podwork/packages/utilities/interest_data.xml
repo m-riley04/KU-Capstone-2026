@@ -196,11 +196,11 @@
     <item><id>Vodafone (VOD)</id></item>
     <item><id>Walmart (WMT)</id></item>
   </category>
-  <category name = "Other">
-    <item><id>apod</id></item>
-  </category>
   <category name = "Weather">
     <item><id>Weather Alerts</id></item>
+  </category>
+  <category name = "Other">
+    <item><id>apod</id></item>
   </category>
 
 
