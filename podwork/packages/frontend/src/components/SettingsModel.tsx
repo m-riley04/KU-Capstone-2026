@@ -7,10 +7,10 @@ interface SettingModelProps {
   selectedDeviceIds: string[]; // currently selected preference names
   onToggle: (id: string, category: string | null) => void; // removes a prefernce when trash icon clicked
   onClose: () => void; // close modal 
-//   onAdd: (deviceId: string) => void; // add a new polypod
+  onAdd: (deviceId: string) => void; // add a new polypod
 }
 
-function SettingModel({ selectedDeviceIds, onToggle, onClose }: SettingModelProps) {
+function SettingModel({ selectedDeviceIds, onToggle, onClose, onAdd }: SettingModelProps) {
     const [addPod, setAddPod] = useState(false);
     const [newPodName, setNewPodName] = useState(""); 
     return (
@@ -42,28 +42,40 @@ function SettingModel({ selectedDeviceIds, onToggle, onClose }: SettingModelProp
                 </button>
                 </li>
             ))}
-            <button className='save-btn' onClick={() => setAddPod(true)} title="Click here to add a new polypod, it will receive the same preferences as the others!">
-                Add a new polypod, {newPodName ? `e.g. "${newPodName}"` : "e.g. 'Living Room Pod'"}
-            </button>
-            {addPod && (
-                <form onSubmit={(e) => {
-                    e.preventDefault();
-                    
-                    setAddPod(false);
-                }} style={{display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '1rem'}}>
-                    <input type="text" name="newPodName" onChange={(e) => setNewPodName(e.target.value)} placeholder="New polypod device id" className="login-input" style={{marginBottom: '0.5rem'}} />
-                    <button type="submit" className='save-btn'>
-                        Add Polypod
-                    </button>
-                </form>
-            )}
-
             </ul>
         )}
+        {!addPod && (
+            <button
+                className='save-btn add-pod-btn'
+                onClick={() => setAddPod(true)}
+                title="Click here to add a new polypod, it will receive the same preferences as the others!"
+                >
+                {`Add a new polypod `}
+        </button>)}
+        {addPod && (
+            <form
+            onSubmit={(e) => {
+            e.preventDefault();
+            onAdd(newPodName);
+            setAddPod(false);
+            }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '1rem' }}
+            >
+            <input
+                type="text"
+                name="newPodName"
+                onChange={(e) => setNewPodName(e.target.value)}
+                placeholder="New polypod device id"
+                className="login-input"
+                style={{ marginBottom: '0.5rem' }}
+            />
+            <button type="submit" className='save-btn add-pod-btn'>Add Polypod</button>
+            </form>
+        )}
 
-        <button className='save-btn' onClick={onClose}>
-            Close
-        </button>
+        <div className="settings-actions">
+            <button className='save-btn' onClick={onClose}>Close</button>
+        </div>
         </div>
     </div>
     );

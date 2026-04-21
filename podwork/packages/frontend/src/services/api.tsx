@@ -51,6 +51,22 @@ export const savePreferencesToDatabase = async (userId: string, selectedIds: str
     return response;
 };
 
+export const handleSaveDeviceIds = async (userId: string, deviceids: string[]) => {
+    const payload = {
+        updated_user: {
+            deviceids: deviceids
+        }
+    };
+
+    const response = await fetch(`${SERVER}/user/${userId}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload),
+    });
+
+    return response;
+};
+
 export const getAvailableInterests = async () => {
     const response = await fetch(`${SERVER}/interests`); 
 

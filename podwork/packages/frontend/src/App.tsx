@@ -32,6 +32,7 @@ function App() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   // keep track of what is actually sent to database
   const [savedIds, setSavedIds] = useState<string[]>([])
+  const [savedDeviceIds, setSavedDeviceIds] = useState<string[]>([])
   // state for toast notification
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   // state to hold if the user selected preference summary 
@@ -59,7 +60,7 @@ function App() {
       setUser({
         id: storedUser,
         username: storedName || "User",
-        deviceIds
+        deviceIds: deviceIds,
       });
     }
   }, [isLoggedIn]);
@@ -116,9 +117,23 @@ function App() {
     }
   }, [activeCategory, selectedIds, savedIds]);
 
+  useEffect(() => {
+    if (savedDeviceIds.length > 0) {
+      const userId = localStorage.getItem('polypod_userId');
+    }}, [savedDeviceIds])
+
   // toggle item on/off
   const toggleSelection = useCallback((id: string) => {
     setSelectedIds(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(itemId => itemId !== id);
+      } 
+      return [...prev, id];
+    });
+  }, []);
+
+  const toggleDeviceIds = useCallback((id: string) => {
+    setSavedDeviceIds(prev => {
       if (prev.includes(id)) {
         return prev.filter(itemId => itemId !== id);
       } 
@@ -183,15 +198,29 @@ function App() {
     }
   }
 
+  const onAddDevice = (deviceId: string) => {
+    const deviceIds = localStorage.getItem('polypod_deviceIds');
+    if (deviceIds) {
+      const updatedDeviceIds = [...JSON.parse(deviceIds), deviceId];
+      localStorage.setItem('polypod_deviceIds', JSON.stringify(updatedDeviceIds));
+    } else {
+      localStorage.setItem('polypod_deviceIds', JSON.stringify([deviceId]));
+    }
+  };
+  // const handleSaveDeviceIds = async () => {
+  //   const deviceIds = localStorage.getItem('polypod_deviceIds');
+  //   if (!deviceIds) {
+  //     return;
+  //   }
+  //   try {
+
+  //   }
+
+
   const handleLogin = () => {
     setIsLoggedIn(true);
     navigate("/home");
   }
-
-  // // show login page if not logged in
-  // if (!isLoggedIn) {
-  //   return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
-  // }
 
   const header = (<div className='app-container'>
 
@@ -228,8 +257,9 @@ function App() {
       {isSettingsOpen && (
         <SettingModel
           selectedDeviceIds={user?.deviceIds || []}
-          onToggle={toggleSelection}
+          onToggle={toggleDeviceIds}
           onClose={() => setIsSettingsOpen(false)}
+          onAdd={onAddDevice}
         />
       )}
       <ToastNotification toast={toast}/>
