@@ -119,7 +119,7 @@ function App() {
 
   useEffect(() => {
     if (savedDeviceIds.length > 0) {
-      const userId = localStorage.getItem('polypod_userId');
+      localStorage.getItem('polypod_userId');
     }}, [savedDeviceIds])
 
   // toggle item on/off
