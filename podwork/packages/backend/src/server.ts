@@ -9,7 +9,13 @@ import { seedInterests } from './db/seed_interests';
 import notification_services from './routes/notification_services-routes';
 import * as cron from 'node-cron';
 import { getNasaApod } from './jobs/NASA-poller';
-import { getEspnMensCollegeBasketballScoreboard, getEspnMLBScoreboard } from './jobs/ESPN-poller';
+import {
+    getEspnMensCollegeBasketballScoreboard,
+    getEspnMLBScoreboard,
+    getEspnNBAScoreboard,
+    getEspnNFLScoreboard,
+    getEspnNHLScoreboard,
+} from './jobs/ESPN-poller';
 import interests_services from './routes/interests_services-routes';
 import { getWeatherUpdates } from './jobs/weather-poller';
 import path from 'path';
@@ -25,6 +31,9 @@ const dailyPollers = async () => {
 const frequentPollers = async () => {
     await getEspnMensCollegeBasketballScoreboard();
     await getEspnMLBScoreboard();
+    await getEspnNBAScoreboard();
+    await getEspnNFLScoreboard();
+    await getEspnNHLScoreboard();
     await getWeatherUpdates();
 }
     
@@ -70,7 +79,7 @@ https.createServer(options, app,).listen(PORT, async () => {
             timezone: "America/Chicago" //might change this 
     });
 
-    cron.schedule('*/10 * * * * *', () => {
+    cron.schedule('*/30 * * * * *', () => {
         void frequentPollers();
         }, {
             timezone: "America/Chicago"

@@ -43,6 +43,7 @@ dependencies:
   http: ^1.2.2
   shared_preferences: ^2.3.2
   qr: ^3.0.2
+  weather_animation: ^1.2.0
 
 dev_dependencies:
   flutter_test:
