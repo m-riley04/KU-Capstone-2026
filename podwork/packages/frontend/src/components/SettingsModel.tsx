@@ -43,12 +43,12 @@ function SettingModel({ selectedDeviceIds, onToggle, onClose }: SettingModelProp
                 </li>
             ))}
             <button className='save-btn' onClick={() => setAddPod(true)} title="Click here to add a new polypod, it will receive the same preferences as the others!">
-                Add a new polypod
+                Add a new polypod, {newPodName ? `e.g. "${newPodName}"` : "e.g. 'Living Room Pod'"}
             </button>
             {addPod && (
                 <form onSubmit={(e) => {
                     e.preventDefault();
-                    // onAdd(newPodName);
+                    
                     setAddPod(false);
                 }} style={{display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '1rem'}}>
                     <input type="text" name="newPodName" onChange={(e) => setNewPodName(e.target.value)} placeholder="New polypod device id" className="login-input" style={{marginBottom: '0.5rem'}} />
