@@ -50,6 +50,13 @@ export default function LoginPage({ onLogin, mode }: LoginProps) {
                 localStorage.setItem('polypod_userId', data.id)
                 localStorage.setItem('polypod_interests', JSON.stringify([]))
                 localStorage.setItem('polypod_username', username);
+                if (data.deviceid) {
+                    const deviceids = data.deviceid.split(',').map((id: string) => id.trim());
+                    console.log('Received device IDs from server:', deviceids);
+                    localStorage.setItem('polypod_deviceIds', JSON.stringify(deviceids));
+                } else {
+                    localStorage.setItem('polypod_deviceIds', JSON.stringify([]));
+                }
                 alert('Account created! You are now logged in.');
                 onLogin();
             } else {
@@ -64,7 +71,13 @@ export default function LoginPage({ onLogin, mode }: LoginProps) {
                 const user = await response.json();
                 localStorage.setItem('polypod_userId', user.id)
                 localStorage.setItem('polypod_interests', JSON.stringify(user.interests || []))
-                localStorage.setItem('polypod_deviceIds', JSON.stringify(user.deviceIds || []))
+                if (user.deviceid) {
+                    const deviceids = user.deviceid.split(',').map((id: string) => id.trim());
+                    console.log('Received device IDs from server:', deviceids);
+                    localStorage.setItem('polypod_deviceIds', JSON.stringify(deviceids));
+                } else {
+                    localStorage.setItem('polypod_deviceIds', JSON.stringify([]));
+                }
                 localStorage.setItem('polypod_username', user.username || username);
                 onLogin(); 
             } else {

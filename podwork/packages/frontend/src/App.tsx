@@ -201,8 +201,8 @@ function App() {
   const onAddDevice = (deviceId: string) => {
     const deviceIds = localStorage.getItem('polypod_deviceIds');
     if (deviceIds) {
-      const updatedDeviceIds = [...JSON.parse(deviceIds), deviceId];
-      localStorage.setItem('polypod_deviceIds', JSON.stringify(updatedDeviceIds));
+      toggleDeviceIds(deviceId);
+      // HANNAH COME HERE TO DO BACKEND CALL TO SAVE DEVICE IDS
     } else {
       localStorage.setItem('polypod_deviceIds', JSON.stringify([deviceId]));
     }
@@ -256,7 +256,7 @@ function App() {
       )}
       {isSettingsOpen && (
         <SettingModel
-          selectedDeviceIds={user?.deviceIds || []}
+          selectedDeviceIds={savedDeviceIds || []}
           onToggle={toggleDeviceIds}
           onClose={() => setIsSettingsOpen(false)}
           onAdd={onAddDevice}
