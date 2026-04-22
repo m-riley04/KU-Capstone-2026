@@ -51,10 +51,12 @@ export const savePreferencesToDatabase = async (userId: string, selectedIds: str
     return response;
 };
 
+
 export const handleSaveDeviceIds = async (userId: string, deviceids: string[]) => {
+    console.log('Saving device IDs to server:', deviceids);
     const payload = {
         updated_user: {
-            deviceids: deviceids
+            deviceid: deviceids
         }
     };
 

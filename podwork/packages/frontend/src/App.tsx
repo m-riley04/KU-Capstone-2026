@@ -13,7 +13,7 @@ import './styles/base.css';
 import './styles/layout.css';
 import './styles/components.css';
 import LoginPage from './LoginPage';
-import { getAvailableInterests, savePreferencesToDatabase } from './services/api';
+import { getAvailableInterests, handleSaveDeviceIds, savePreferencesToDatabase } from './services/api';
 import ToastNotification from './components/ToastNotification';
 import ProfileBadge from './components/ProfileBadge';
 import SummaryModal from './components/SummaryModal';
@@ -199,10 +199,11 @@ function App() {
   }
 
   const onAddDevice = (deviceId: string) => {
-    const deviceIds = localStorage.getItem('polypod_deviceIds');
-    if (deviceIds) {
+    const deviceIds = savedDeviceIds ? [...savedDeviceIds, deviceId] : [deviceId];
+    const userId = localStorage.getItem('polypod_userId');
+    if (deviceIds && userId) {
       toggleDeviceIds(deviceId);
-      // HANNAH COME HERE TO DO BACKEND CALL TO SAVE DEVICE IDS
+      handleSaveDeviceIds(userId, deviceIds);
     } else {
       localStorage.setItem('polypod_deviceIds', JSON.stringify([deviceId]));
     }

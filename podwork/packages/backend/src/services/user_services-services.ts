@@ -154,10 +154,14 @@ export const updateUserService = async (userId: number, updatedUserData: Partial
                 });
             }
         }
+        if (starterNotifications.length > 0) {
+            await addNotificationsToDatabase(1, starterNotifications);
+        }
+        
+    }
     if (updatedUserData?.deviceid) {
         const normalizedDeviceId = updatedUserData.deviceid.split(',').map(id => id.trim())
-        const newDeviceId = normalizedDeviceId[normalizedDeviceId.length - 1]
-        if (newDeviceId) {
+        updateUserDeviceIdInDatabase(1, userId, normalizedDeviceId[normalizedDeviceId.length - 1]);
         const welcomeNotification: databaseNotification = {
             user_id: existingUser.id,
             notifType: 'welcome',
@@ -173,14 +177,7 @@ export const updateUserService = async (userId: number, updatedUserData: Partial
             is_read: false,
             created_at: new Date(),
         };
-
         await addNotificationsToDatabase(1, [welcomeNotification]);
-    }}
-
-        if (starterNotifications.length > 0) {
-            await addNotificationsToDatabase(1, starterNotifications);
-        }
-        
     }
     const updatedUser: User = await getUserWithID(1, userId) as User;
     updatedUser.interests = await getUserInterestsFromDatabase(1, userId);
