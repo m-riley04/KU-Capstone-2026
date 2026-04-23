@@ -6,16 +6,62 @@ const ESPN_MCB_SCOREBOARD_URL =
 const ESPN_MLB_SCOREBOARD_URL =
     'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard';
 
-const summarizeGames = (events: any[]): string => {
+const ESPN_NBA_SCOREBOARD_URL =
+    'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
+
+const ESPN_NFL_SCOREBOARD_URL =
+    'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard';
+
+const ESPN_NHL_SCOREBOARD_URL =
+    'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard';
+
+interface EspnTeam {
+    displayName?: string;
+    shortDisplayName?: string;
+    abbreviation?: string;
+    name?: string;
+    location?: string;
+    nickname?: string;
+}
+
+interface EspnCompetitor {
+    homeAway?: 'home' | 'away';
+    score?: string;
+    team?: EspnTeam;
+}
+
+interface EspnCompetition {
+    competitors?: EspnCompetitor[];
+    status?: {
+        type?: {
+            shortDetail?: string;
+            description?: string;
+        };
+    };
+}
+
+export interface EspnScoreboardEvent {
+    competitions?: EspnCompetition[];
+}
+
+export interface EspnSportConfig {
+    url: string;
+    media: string;
+    headlinePrefix: string;
+    noGamesMessage: string;
+    seemore: string;
+}
+
+const summarizeGames = (events: EspnScoreboardEvent[], noGamesMessage: string): string => {
     if (!events || events.length === 0) {
-        return 'No games currently on the mens college basketball scoreboard.';
+        return noGamesMessage;
     }
 
-    const summaries = events.slice(0, 10).map((event: any) => {
+    const summaries = events.slice(0, 10).map((event: EspnScoreboardEvent) => {
         const competition = event?.competitions?.[0];
         const competitors = competition?.competitors ?? [];
-        const home = competitors.find((c: any) => c?.homeAway === 'home');
-        const away = competitors.find((c: any) => c?.homeAway === 'away');
+        const home = competitors.find((c: EspnCompetitor) => c?.homeAway === 'home');
+        const away = competitors.find((c: EspnCompetitor) => c?.homeAway === 'away');
         const status = competition?.status?.type?.shortDetail ?? competition?.status?.type?.description ?? 'Status unavailable';
 
         const awayName = away?.team?.abbreviation ?? away?.team?.displayName ?? 'Away';
@@ -29,42 +75,124 @@ const summarizeGames = (events: any[]): string => {
     return summaries.join(' | ');
 }
 
-export const fetchEspnMensCollegeBasketballScoreboardData = async () : Promise<eventData> => {
-    const response = await fetch(ESPN_MCB_SCOREBOARD_URL);
+export const fetchEspnScoreboardEvents = async (url: string): Promise<EspnScoreboardEvent[]> => {
+    const response = await fetch(url);
 
     if (!response.ok) {
         throw new Error(`Error fetching ESPN scoreboard data: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    const events = Array.isArray(data?.events) ? data.events : [];
+    const data: unknown = await response.json();
+    const events = (data as { events?: EspnScoreboardEvent[] } | null)?.events;
+    return Array.isArray(events) ? events : [];
+}
+
+export const createEspnScoreboardEventData = (
+    sportConfig: EspnSportConfig,
+    events: EspnScoreboardEvent[],
+    headlineOverride?: string,
+): eventData => {
+    const headline = headlineOverride ?? `${sportConfig.headlinePrefix} (${events.length} games)`;
 
     return {
         timestamp: new Date(),
-        media: 'https://a.espncdn.com/redesign/assets/img/icons/ESPN-icon-basketball.png',
-        headline: `NCAA Mens College Basketball Scoreboard (${events.length} games)`,
-        info: summarizeGames(events),
+        media: sportConfig.media,
+        headline,
+        info: summarizeGames(events, sportConfig.noGamesMessage),
         from_source: 'ESPN',
-        seemore: '' //'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard'
-    }
+        seemore: sportConfig.seemore,
+    };
+}
+
+const fetchEspnScoreboardData = async (sportConfig: EspnSportConfig): Promise<eventData> => {
+    const events = await fetchEspnScoreboardEvents(sportConfig.url);
+    return createEspnScoreboardEventData(sportConfig, events);
+}
+
+export const fetchEspnMensCollegeBasketballScoreboardData = async () : Promise<eventData> => {
+    return fetchEspnScoreboardData({
+        url: ESPN_MCB_SCOREBOARD_URL,
+        media: 'https://a.espncdn.com/redesign/assets/img/icons/ESPN-icon-basketball.png',
+        headlinePrefix: 'NCAA Mens College Basketball Scoreboard',
+        noGamesMessage: 'No games currently on the men\'s college basketball scoreboard.',
+        seemore: ESPN_MCB_SCOREBOARD_URL,
+    });
 }
 
 export const fetchEspnMLBScoreboardData = async () : Promise<eventData> => {
-    const response = await fetch(ESPN_MLB_SCOREBOARD_URL);
-
-    if (!response.ok) {
-        throw new Error(`Error fetching ESPN scoreboard data: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const events = Array.isArray(data?.events) ? data.events : [];
-
-    return {
-        timestamp: new Date(),
+    return fetchEspnScoreboardData({
+        url: ESPN_MLB_SCOREBOARD_URL,
         media: 'https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png',
-        headline: `MLB Scoreboard (${events.length} games)`,
-        info: summarizeGames(events),
-        from_source: 'ESPN',
-        seemore: '' //https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard'
-    }
+        headlinePrefix: 'MLB Scoreboard',
+        noGamesMessage: 'No games currently on the MLB scoreboard.',
+        seemore: ESPN_MLB_SCOREBOARD_URL,
+    });
 }
+
+export const fetchEspnNBAScoreboardData = async (): Promise<eventData> => {
+    return fetchEspnScoreboardData({
+        url: ESPN_NBA_SCOREBOARD_URL,
+        media: 'https://a.espncdn.com/i/teamlogos/leagues/500/nba.png',
+        headlinePrefix: 'NBA Scoreboard',
+        noGamesMessage: 'No games currently on the NBA scoreboard.',
+        seemore: ESPN_NBA_SCOREBOARD_URL,
+    });
+}
+
+export const fetchEspnNFLScoreboardData = async (): Promise<eventData> => {
+    return fetchEspnScoreboardData({
+        url: ESPN_NFL_SCOREBOARD_URL,
+        media: 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png',
+        headlinePrefix: 'NFL Scoreboard',
+        noGamesMessage: 'No games currently on the NFL scoreboard.',
+        seemore: ESPN_NFL_SCOREBOARD_URL,
+    });
+}
+
+export const fetchEspnNHLScoreboardData = async (): Promise<eventData> => {
+    return fetchEspnScoreboardData({
+        url: ESPN_NHL_SCOREBOARD_URL,
+        media: 'https://a.espncdn.com/i/teamlogos/leagues/500/nhl.png',
+        headlinePrefix: 'NHL Scoreboard',
+        noGamesMessage: 'No games currently on the NHL scoreboard.',
+        seemore: ESPN_NHL_SCOREBOARD_URL,
+    });
+}
+
+export const ESPN_SPORT_CONFIGS = {
+    mensCollegeBasketball: {
+        url: ESPN_MCB_SCOREBOARD_URL,
+        media: 'https://a.espncdn.com/redesign/assets/img/icons/ESPN-icon-basketball.png',
+        headlinePrefix: 'NCAA Mens College Basketball Scoreboard',
+        noGamesMessage: 'No games currently on the men\'s college basketball scoreboard.',
+        seemore: ESPN_MCB_SCOREBOARD_URL,
+    } as EspnSportConfig,
+    mlb: {
+        url: ESPN_MLB_SCOREBOARD_URL,
+        media: 'https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png',
+        headlinePrefix: 'MLB Scoreboard',
+        noGamesMessage: 'No games currently on the MLB scoreboard.',
+        seemore: ESPN_MLB_SCOREBOARD_URL,
+    } as EspnSportConfig,
+    nba: {
+        url: ESPN_NBA_SCOREBOARD_URL,
+        media: 'https://a.espncdn.com/i/teamlogos/leagues/500/nba.png',
+        headlinePrefix: 'NBA Scoreboard',
+        noGamesMessage: 'No games currently on the NBA scoreboard.',
+        seemore: ESPN_NBA_SCOREBOARD_URL,
+    } as EspnSportConfig,
+    nfl: {
+        url: ESPN_NFL_SCOREBOARD_URL,
+        media: 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png',
+        headlinePrefix: 'NFL Scoreboard',
+        noGamesMessage: 'No games currently on the NFL scoreboard.',
+        seemore: ESPN_NFL_SCOREBOARD_URL,
+    } as EspnSportConfig,
+    nhl: {
+        url: ESPN_NHL_SCOREBOARD_URL,
+        media: 'https://a.espncdn.com/i/teamlogos/leagues/500/nhl.png',
+        headlinePrefix: 'NHL Scoreboard',
+        noGamesMessage: 'No games currently on the NHL scoreboard.',
+        seemore: ESPN_NHL_SCOREBOARD_URL,
+    } as EspnSportConfig,
+};

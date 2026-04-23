@@ -112,6 +112,10 @@ export const updateUserInDatabase = async (connection: connectionType, userId: n
         fieldsToUpdate.push('password = ?');
         values.push(updatedUserData.password);
     }
+    if (updatedUserData.deviceid) {
+        fieldsToUpdate.push('deviceid = ?');
+        values.push(updatedUserData.deviceid);
+    }
     if (fieldsToUpdate.length === 0) {
         await db.close();
         return null;

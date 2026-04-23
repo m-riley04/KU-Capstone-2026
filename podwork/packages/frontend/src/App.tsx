@@ -13,12 +13,13 @@ import './styles/base.css';
 import './styles/layout.css';
 import './styles/components.css';
 import LoginPage from './LoginPage';
-import { getAvailableInterests, savePreferencesToDatabase } from './services/api';
+import { getAvailableInterests, handleSaveDeviceIds, savePreferencesToDatabase } from './services/api';
 import ToastNotification from './components/ToastNotification';
 import ProfileBadge from './components/ProfileBadge';
 import SummaryModal from './components/SummaryModal';
 import CategorySlider from './components/CategorySlider';
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import SettingModel from './components/SettingsModel';
 
 function App() {
 // useStates to keep track of categories being displayed on the screen
@@ -31,13 +32,15 @@ function App() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   // keep track of what is actually sent to database
   const [savedIds, setSavedIds] = useState<string[]>([])
+  const [savedDeviceIds, setSavedDeviceIds] = useState<string[]>([])
   // state for toast notification
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   // state to hold if the user selected preference summary 
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  // state to hold if the user settings modal is open
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   // state to hold the current user info
-  const [user, setUser] = useState<{id: string | number; username: string} | null>(null);
-
+  const [user, setUser] = useState<{id: string | number; username: string; deviceIds: string[] } | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     // check if token exists so a logged in user can stay logged in
     return localStorage.getItem('polypod_userId') !== null;
@@ -51,11 +54,13 @@ function App() {
     // grab the data from localStorage when the page loads
     const storedUser = localStorage.getItem('polypod_userId');
     const storedName = localStorage.getItem('polypod_username');
+    const deviceIds = JSON.parse(localStorage.getItem('polypod_deviceIds') || '[]');
 
     if (storedUser) {
       setUser({
         id: storedUser,
         username: storedName || "User",
+        deviceIds: deviceIds,
       });
     }
   }, [isLoggedIn]);
@@ -112,9 +117,23 @@ function App() {
     }
   }, [activeCategory, selectedIds, savedIds]);
 
+  useEffect(() => {
+    if (savedDeviceIds.length > 0) {
+      localStorage.getItem('polypod_userId');
+    }}, [savedDeviceIds])
+
   // toggle item on/off
   const toggleSelection = useCallback((id: string) => {
     setSelectedIds(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(itemId => itemId !== id);
+      } 
+      return [...prev, id];
+    });
+  }, []);
+
+  const toggleDeviceIds = useCallback((id: string) => {
+    setSavedDeviceIds(prev => {
       if (prev.includes(id)) {
         return prev.filter(itemId => itemId !== id);
       } 
@@ -179,15 +198,30 @@ function App() {
     }
   }
 
+  const onAddDevice = (deviceId: string) => {
+    const deviceIds = savedDeviceIds ? [...savedDeviceIds, deviceId] : [deviceId];
+    const userId = localStorage.getItem('polypod_userId');
+    if (deviceIds && userId) {
+      toggleDeviceIds(deviceId);
+      handleSaveDeviceIds(userId, deviceIds);
+    } else {
+      localStorage.setItem('polypod_deviceIds', JSON.stringify([deviceId]));
+    }
+  };
+  // const handleSaveDeviceIds = async () => {
+  //   const deviceIds = localStorage.getItem('polypod_deviceIds');
+  //   if (!deviceIds) {
+  //     return;
+  //   }
+  //   try {
+
+  //   }
+
+
   const handleLogin = () => {
     setIsLoggedIn(true);
     navigate("/home");
   }
-
-  // // show login page if not logged in
-  // if (!isLoggedIn) {
-  //   return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
-  // }
 
   const header = (<div className='app-container'>
 
@@ -196,7 +230,7 @@ function App() {
       </header>
 
       
-      <ProfileBadge user={user} onLogout={handleLogout} />
+      <ProfileBadge user={user} onLogout={handleLogout} onOpenSetting={() => setIsSettingsOpen(true)} />
 
       <CategorySlider
         dataSource={dataSource}
@@ -221,7 +255,14 @@ function App() {
           onClose={() => setIsSummaryOpen(false)}
         />
       )}
-
+      {isSettingsOpen && (
+        <SettingModel
+          selectedDeviceIds={savedDeviceIds || []}
+          onToggle={toggleDeviceIds}
+          onClose={() => setIsSettingsOpen(false)}
+          onAdd={onAddDevice}
+        />
+      )}
       <ToastNotification toast={toast}/>
     </div>)
 

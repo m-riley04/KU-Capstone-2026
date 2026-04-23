@@ -45,9 +45,8 @@ function CategorySlider({
         <h3>Currently Active</h3>
         <p>{selectedIds.length} preferences selected</p>
         <small>(Click to view selected preferences)</small>
-      </div>
-      <div className={`slider-track ${getSlideClass(activeCategory, activeSubCategory)}`}>
-
+    </div>
+    <div className={`slider-track ${getSlideClass(activeCategory, activeSubCategory)}`}>
         {/* level 1 — main category grid */}
         <div className='slide-page'>
           <h2>Select a Category</h2>

@@ -14,7 +14,7 @@ import { deleteAllUserInterestsFromDatabase, addUserInterestToDatabase, getUserI
 import { getLatestEventByInterestId } from '../repositories/event_quaries';
 import { addNotificationsToDatabase } from '../repositories/notifications_quaries';
 import { databaseNotification } from '../models/notifications';
-import { createDbConnect } from '../db';
+
 
 dotenv.config();
 const SALT_ROUNDS = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) : 10;
@@ -62,7 +62,6 @@ export const linkDeviceToUserService = async (userId: number, deviceId: string):
     if (!normalizedDeviceId) {
         return;
     }
-
     await updateUserDeviceIdInDatabase(1, userId, normalizedDeviceId);
 }
 
@@ -75,7 +74,6 @@ export const getUserAndLinkDeviceService = async (
     if (!user) {
         return null;
     }
-
     if (deviceId) {
         await linkDeviceToUserService(user.id, deviceId);
     }
@@ -96,8 +94,10 @@ export const addUserService = async (
     if (!newUser) {
         throw new Error('Failed to create user');
     }
-
+    //Hannah this is the code you are looking for
     if (normalizedDeviceId) {
+        console.log(`Linking new user "${username}" with device ID "${normalizedDeviceId}"`);
+        console.log('New user created with ID:', newUser.id);
         const welcomeNotification: databaseNotification = {
             user_id: newUser.id,
             notifType: 'welcome',
@@ -128,7 +128,7 @@ export const updateUserService = async (userId: number, updatedUserData: Partial
     if (updatedUserData?.password) {
         updatedUserData.password = await bcrypt.hash(updatedUserData.password, SALT_ROUNDS);
     }
-    if (updatedUserData?.username, updatedUserData?.email, updatedUserData?.password) {
+    if (updatedUserData?.username, updatedUserData?.email, updatedUserData?.password, updatedUserData?.deviceid) {
         await updateUserInDatabase(1, userId, updatedUserData);
     } 
     if (updatedUserData?.interests) {
@@ -154,11 +154,30 @@ export const updateUserService = async (userId: number, updatedUserData: Partial
                 });
             }
         }
-
         if (starterNotifications.length > 0) {
             await addNotificationsToDatabase(1, starterNotifications);
         }
         
+    }
+    if (updatedUserData?.deviceid) {
+        const normalizedDeviceId = updatedUserData.deviceid.split(',').map(id => id.trim())
+        updateUserDeviceIdInDatabase(1, userId, normalizedDeviceId[normalizedDeviceId.length - 1]);
+        const welcomeNotification: databaseNotification = {
+            user_id: existingUser.id,
+            notifType: 'welcome',
+            from_source: 'podwork',
+            notification_data: {
+                timestamp: new Date(),
+                from_source: 'podwork',
+                media: '',
+                headline: `Welcome, ${existingUser.username}!`,
+                info: 'your pod is now linked. keep the website open to configure and customize your polypod!',
+                seemore: '',
+            },
+            is_read: false,
+            created_at: new Date(),
+        };
+        await addNotificationsToDatabase(1, [welcomeNotification]);
     }
     const updatedUser: User = await getUserWithID(1, userId) as User;
     updatedUser.interests = await getUserInterestsFromDatabase(1, userId);
