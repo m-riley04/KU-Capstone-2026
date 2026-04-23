@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'config/theme_config.dart';
 import 'screens/top_screen.dart';
 import 'screens/bottom_screen.dart';
@@ -654,12 +655,16 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
 
   @override
   Widget build(BuildContext context) {
+    final audioService = AudioPlayer();
     return Scaffold(
       backgroundColor: EarthyTheme.background,
       body: Center(
         child: BottomScreen(
           onAppSelected: (name) => _sendToMain('polypod/selectApp', name),
-          onHomePressed: () => _sendToMain('polypod/home'),
+          onHomePressed: () => {
+            audioService.play(AssetSource('sounds/click.mp3')),
+            _sendToMain('polypod/home')
+          },
           availableApps: _availableApps,
           currentApp: _bottomProxyApp(),
         ),

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'base_app.dart';
 import '../config/theme_config.dart';
 import '../controllers/polypod_animation_controller.dart';
-import '../services/audio_service.dart';
 import '../widgets/control_button.dart';
+
 
 class PolypodApp extends BaseApp {
   const PolypodApp({
@@ -31,12 +32,13 @@ class PolypodApp extends BaseApp {
   @override
   Widget? buildBottomScreenContent(BuildContext context) {
     print('[PolypodApp] buildBottomScreenContent called');
-    final audioService = AudioService();
+    final audioService = AudioPlayer();
     return PolypodCareControls(
       onFeedPressed: () {
         print('[PolypodApp] Feed button pressed');
         (onFeedAudio ??
-                () => audioService.playSound('assets/sounds/munching.mp3'))
+                () => audioService.play(AssetSource('sounds/munching.mp3')))
+
             .call();
         controller.triggerFeed();
         onFeed();
@@ -44,14 +46,14 @@ class PolypodApp extends BaseApp {
       onWaterPressed: () {
         print('[PolypodApp] Water button pressed');
         (onWaterAudio ??
-                () => audioService.playSound('assets/sounds/slurp.mp3'))
+                () => audioService.play(AssetSource('sounds/slurp.mp3')))
             .call();
         controller.triggerWater();
         onWater();
       },
       onPetPressed: () {
         print('[PolypodApp] Pet button pressed');
-        (onPetAudio ?? () => audioService.playSound('assets/sounds/purr.mp3'))
+        (onPetAudio ?? () => audioService.play(AssetSource('sounds/purr.mp3')))
             .call();
         controller.triggerPet();
         onPet();
