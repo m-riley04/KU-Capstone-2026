@@ -1,18 +1,14 @@
 """
 Name: led_set_color.py
-Description: One-shot script invoked by the Flutter UI to set the RGB LED color.
-    GPIO pins hold their state after being set, so no persistent process is needed.
-    Usage: python3 led_set_color.py <COLOR>
-    where COLOR is one of: OFF, WHITE, RED, GREEN, BLUE, YELLOW, CYAN, MAGENTA
+Description: One-shot script invoked by the Flutter UI to set the RGB LED color. GPIO pins hold their state after being set, so no persistent process is needed.
+Usage: `python3 led_set_color.py <COLOR>` where COLOR is one of: OFF, WHITE, RED, GREEN, BLUE, YELLOW, CYAN, MAGENTA
 Author: Riley Meyerkorth
 Creation Date: 05 March 2026
 """
 
 import sys
-
 from src.controller import LEDController
 from src.enums import LEDColor
-
 
 def main():
     if len(sys.argv) < 2:
