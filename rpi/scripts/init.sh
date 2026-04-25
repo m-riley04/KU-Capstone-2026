@@ -9,6 +9,10 @@
 SCRIPTS_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 INIT_SCRIPTS_DIR="$SCRIPTS_DIR/initializations"
 
+# Run top-level apt-get update and upgrade first
+# This is so we don't have to run it in each script, which speeds up overall setup by a lot.
+sudo apt-get update -y && sudo apt-get upgrade -y
+
 # Iterate through all initialization scripts in the scripts directory and run them
 # TODO: maybe this isn't the best approach. Splitting the `source` calls into their own lines instead of using a loop might be more 
 # readable and easier to debug if something goes wrong. We could also add permanent env variables to indicate which scripts have already been run.

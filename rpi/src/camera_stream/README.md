@@ -1,19 +1,16 @@
 # camera_stream
 
-This folder contains 2 options for streaming the camera feed:
-
-1. [MediaMTX](https://mediamtx.org/)
-2. Python Flask Webpage
+This folder contains a [MediaMTX](https://mediamtx.org/) instance for streaming the camera feed. I would've liked to have MediaMTX downloaded during setup and not stored in the repo, but we found this was the simplest way to do it.
 
 > NOTE: Currently, these are for locally accessable camera streams and are not being streamed to an external network.
 
 ## Setup
 
-Run the following to install all global dependencies:
+If you haven't un the following to install all global dependencies:
 
 ```bash
-sudo apt update
-sudo apt install -y libcap-dev python3-libcamera python3-kms++ rpicam-apps
+sudo apt-get update -y && sudo apt-get upgrade -y
+sudo apt-get install -y libcap-dev python3-libcamera python3-kms++ libcamera-apps rpicam-apps
 ```
 
 To test whether the camera is detected and working, you can run the following:
@@ -28,19 +25,17 @@ To see a list of camera devices:
 rpicam-hello --list-cameras
 ```
 
-## Methods
-
-### MediaMTX
+## MediaMTX
 
 A single binary that is configured using a YAML file ([`mediamtx.yml`](mediamtx.yml)).
 
-The camera stream is pushed to multiple endpoints, but the best we've found is the WebRT stream located at the following URL:
+The camera stream is pushed to multiple endpoints, but the best we've found is the WebRT stream located at the following URL (configurable in the YAML file):
 
 ```url
 https://<rpi-ip>:8889/cam/
 ```
 
-#### MeidaMTX Setup
+### MeidaMTX Setup
 
 You need to ensure that the binary is executable. From the repo's root directory, run the following commands to quickstart:
 
@@ -48,27 +43,4 @@ You need to ensure that the binary is executable. From the repo's root directory
 cd rpi/src/camera_stream
 chmod +x mediamtx
 ./mediamtx
-```
-
-### Python Flask Webpage
-
-Mainly used for testing. Probably to be deleted later.
-
-Accessable at the following URL:
-
-```url
-https://<rpi-ip>:8000/stream/
-```
-
-#### Python Env Setup
-
-The python implementation needs slightly more setup.
-
-From the repo's root directory, run the following:
-
-```bash
-cd rpi/src/camera_stream
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
 ```
