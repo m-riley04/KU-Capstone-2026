@@ -12,7 +12,9 @@ POLYPOD_UI_ROOT=$REPO_DIR/rpi/src/polypod_hw
 CAMERA_STREAM_ROOT=$REPO_DIR/rpi/src/camera_stream
 MEDIAMTX_BIN=$CAMERA_STREAM_ROOT/mediamtx
 MEDIAMTX_CONFIG=$CAMERA_STREAM_ROOT/mediamtx.yml
+DETECT_SCRIPT=$CAMERA_STREAM_ROOT/detect.py
 MEDIAMTX_PID=""
+DETECT_PID=""
 
 # Error handling
 if [ ! -d "$POLYPOD_UI_ROOT" ]; then
@@ -32,6 +34,11 @@ if [ ! -f "$MEDIAMTX_CONFIG" ]; then
 fi
 
 cleanup() {
+    if [ -n "$DETECT_PID" ] && kill -0 "$DETECT_PID" > /dev/null 2>&1; then
+        echo "Stopping object detection (PID: $DETECT_PID)..."
+        kill "$DETECT_PID" > /dev/null 2>&1
+        wait "$DETECT_PID" 2>/dev/null
+    fi
     if [ -n "$MEDIAMTX_PID" ] && kill -0 "$MEDIAMTX_PID" > /dev/null 2>&1; then
         echo "Stopping MediaMTX (PID: $MEDIAMTX_PID)..."
         kill "$MEDIAMTX_PID" > /dev/null 2>&1
@@ -65,6 +72,17 @@ sleep 1
 if ! kill -0 "$MEDIAMTX_PID" > /dev/null 2>&1; then
     echo "Error: MediaMTX failed to start."
     exit 1
+fi
+
+echo "Starting object detection stream..."
+python3 "$DETECT_SCRIPT" &
+DETECT_PID=$!
+
+# Give the detection script time to load the model and start publishing.
+# On first run this may take longer due to model download.
+sleep 5
+if ! kill -0 "$DETECT_PID" > /dev/null 2>&1; then
+    echo "Warning: Object detection script failed to start. Continuing without detection."
 fi
 
 # Launch the Polypod application with flutter

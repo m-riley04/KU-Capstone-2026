@@ -801,14 +801,8 @@ paths:
   # my_camera:
   #   source: rtsp://my_camera
   cam:
-    source: rpiCamera
-    rpiCameraWidth: 640
-    rpiCameraHeight: 480
-    rpiCameraFPS: 30
-    rpiCameraBitrate: 3000000
-    rpiCameraIDRPeriod: 30
-    rpiCameraCodec: hardwareH264
-    rpiCameraDenoise: "off"
+    # Stream is published by detect.py (picamera2 + TFLite object detection → ffmpeg → RTSP)
+    source: publisher
 
   # Settings under path "all_others" are applied to all paths that
   # do not match another entry.
