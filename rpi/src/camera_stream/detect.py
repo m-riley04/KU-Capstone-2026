@@ -2,8 +2,13 @@
 """
 Person detection + dwell-time tracking pipeline for PolypodHW camera stream.
 
-Flow: picamera2 → TFLite (MobileNet SSD COCO) → person filter + centroid
-      tracker → OpenCV annotation → ffmpeg pipe → MediaMTX RTSP
+Flow: MediaMTX rpiCamera (cam) → cv2.VideoCapture RTSP → TFLite (MobileNet SSD COCO)
+      → person filter + centroid tracker → OpenCV annotation
+      → ffmpeg pipe → MediaMTX RTSP (cam_detect)
+
+MediaMTX holds exclusive ownership of the camera hardware via its rpiCamera
+source. detect.py reads already-decoded frames from the cam RTSP stream so
+there is no hardware conflict.
 
 Only "person" detections are kept. Each person is assigned a persistent ID
 and the overlay shows how long they have been continuously in view.
@@ -44,8 +49,6 @@ except ImportError:
     # Newer Raspberry Pi OS (Bookworm) ships ai-edge-litert instead
     from ai_edge_litert.interpreter import Interpreter  # type: ignore
 
-from picamera2 import Picamera2
-
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -53,7 +56,8 @@ WIDTH = 640
 HEIGHT = 480
 FPS = 30
 CONFIDENCE_THRESHOLD = 0.5
-RTSP_URL = "rtsp://localhost:8554/cam_detect"
+RTSP_IN  = "rtsp://localhost:8554/cam"        # source: MediaMTX rpiCamera stream
+RTSP_URL = "rtsp://localhost:8554/cam_detect"  # destination: annotated output
 
 # Maximum pixel distance between a new detection centroid and an existing
 # track centroid to be considered the same person.
@@ -348,15 +352,15 @@ def run() -> None:
     model_h, model_w = int(input_shape[1]), int(input_shape[2])
 
     # ------------------------------------------------------------------
-    # Camera — capture BGR directly to avoid a full-resolution cvtColor.
+    # RTSP input — read decoded frames from MediaMTX's rpiCamera stream.
+    # This avoids competing with MediaMTX for exclusive camera hardware access.
+    # CAP_PROP_BUFFERSIZE=1 keeps latency minimal (drop stale frames).
     # ------------------------------------------------------------------
-    picam2 = Picamera2()
-    cam_config = picam2.create_video_configuration(
-        main={"format": "BGR888", "size": (WIDTH, HEIGHT)},
-        controls={"FrameRate": FPS},
-    )
-    picam2.configure(cam_config)
-    picam2.start()
+    cap = cv2.VideoCapture(RTSP_IN, cv2.CAP_FFMPEG)
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    if not cap.isOpened():
+        print(f"Error: could not connect to {RTSP_IN}. Is MediaMTX running?", flush=True)
+        sys.exit(1)
 
     # ------------------------------------------------------------------
     # ffmpeg pipe → MediaMTX RTSP
@@ -406,7 +410,7 @@ def run() -> None:
             infer_q.put_nowait(None)   # unblock thread if waiting on get()
         except queue.Full:
             pass
-        picam2.stop()
+        cap.release()
         try:
             proc.stdin.close()
         except Exception:
@@ -424,7 +428,14 @@ def run() -> None:
     # Encode loop — runs at full camera FPS regardless of inference speed.
     # ------------------------------------------------------------------
     while True:
-        frame_bgr = picam2.capture_array()   # contiguous BGR array, no copy needed
+        ret, frame_bgr = cap.read()
+        if not ret:
+            # RTSP hiccup — attempt to reconnect and keep going.
+            print("RTSP read failed, reconnecting...", flush=True)
+            cap.release()
+            cap = cv2.VideoCapture(RTSP_IN, cv2.CAP_FFMPEG)
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            continue
 
         # Resize to model input size and queue for inference.
         # Dropping the frame (put_nowait) is intentional — the encoder
@@ -452,7 +463,7 @@ def run() -> None:
             break
 
     stop_event.set()
-    picam2.stop()
+    cap.release()
 
 
 if __name__ == "__main__":
