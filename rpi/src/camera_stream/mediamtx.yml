@@ -807,11 +807,7 @@ paths:
     source: rpiCamera
     rpiCameraWidth: 640
     rpiCameraHeight: 480
-    rpiCameraFPS: 30
-    rpiCameraBitrate: 3000000
-    rpiCameraIDRPeriod: 30
-    rpiCameraCodec: hardwareH264
-    rpiCameraDenoise: "off"
+   
 
   # Person detection + dwell-time stream — published by detect.py.
   # Available at: rtsp://<rpi-ip>:8554/cam_detect  /  webrtc: https://<rpi-ip>:8889/cam_detect
