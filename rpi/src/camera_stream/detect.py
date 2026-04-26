@@ -10,13 +10,26 @@ and the overlay shows how long they have been continuously in view.
 
 The model is auto-downloaded on first run into ./models/.
 
+Performance design
+------------------
+* Camera captures BGR888 directly — no full-resolution colour conversion.
+* TFLite inference runs in a dedicated daemon thread so the encode loop
+  (capture → annotate → pipe) never stalls waiting for inference.
+* The inference queue has capacity 1; frames are dropped when the thread is
+  busy, keeping the output stream at full FPS regardless of inference speed.
+* Person class ID is resolved once at startup instead of per detection.
+* Model input buffer is pre-allocated and reused every inference cycle.
+* Pipe writes use memoryview to avoid a redundant bytes copy.
+
 Contributors: Riley Meyerkorth, some GitHub Copilot suggestions/polish
 """
 
 import os
-import sys
+import queue
 import signal
 import subprocess
+import sys
+import threading
 import time
 import urllib.request
 import zipfile
@@ -40,7 +53,7 @@ WIDTH = 640
 HEIGHT = 480
 FPS = 30
 CONFIDENCE_THRESHOLD = 0.5
-RTSP_URL = "rtsp://localhost:8554/cam"
+RTSP_URL = "rtsp://localhost:8554/cam_detect"
 
 # Maximum pixel distance between a new detection centroid and an existing
 # track centroid to be considered the same person.
@@ -88,17 +101,19 @@ def _load_labels(path: str) -> list[str]:
     return labels
 
 
-def _resolve_label(labels: list[str], raw_class_id: int) -> str:
-    """Map a raw TFLite class ID to its label name.
+def _find_person_class_id(labels: list[str]) -> int:
+    """Return the raw TFLite class ID that corresponds to 'person'.
 
-    Many COCO TFLite labelmaps include a background placeholder ("???") at
-    index 0, so the real class 0 (person) lives at labelmap index 1.
-    This function detects that case and applies the offset automatically.
+    Many COCO TFLite labelmaps include a background placeholder ('???') at
+    index 0, shifting all real class IDs by +1. This function handles both
+    cases and returns the integer ID used by the model's output tensor.
     """
-    _BACKGROUND_TOKENS = {"???", "background", "__background__"}
-    offset = 1 if (labels and labels[0].lower() in _BACKGROUND_TOKENS) else 0
-    idx = raw_class_id + offset
-    return labels[idx] if idx < len(labels) else str(raw_class_id)
+    _BG = {"???", "background", "__background__"}
+    offset = 1 if (labels and labels[0].lower() in _BG) else 0
+    for i, lbl in enumerate(labels):
+        if lbl.lower() == "person":
+            return i - offset
+    return 0  # COCO person is always class 0 when no background row is present
 
 
 # ---------------------------------------------------------------------------
@@ -230,6 +245,90 @@ def _draw_person(
 
 
 # ---------------------------------------------------------------------------
+# Inference worker (runs in a daemon thread)
+# ---------------------------------------------------------------------------
+
+# Shared detection results: list of (box, track_id, first_seen) tuples.
+# The inference thread writes; the encode thread reads. Guarded by a Lock.
+_results: list = []
+_results_lock = threading.Lock()
+
+
+def _inference_worker(
+    stop_event: threading.Event,
+    infer_q: queue.Queue,
+    interpreter,
+    input_details: list,
+    output_details: list,
+    model_h: int,
+    model_w: int,
+    person_class_id: int,
+    tracker: "PersonTracker",
+) -> None:
+    input_idx   = input_details[0]["index"]
+    boxes_idx   = output_details[0]["index"]
+    classes_idx = output_details[1]["index"]
+    scores_idx  = output_details[2]["index"]
+
+    # Pre-allocate model input buffer — reused every inference cycle.
+    input_buf = np.empty((1, model_h, model_w, 3), dtype=np.uint8)
+
+    while not stop_event.is_set():
+        try:
+            small_bgr = infer_q.get(timeout=0.05)
+        except queue.Empty:
+            continue
+
+        if small_bgr is None:
+            break
+
+        # Convert the small BGR frame to RGB in-place into the pre-allocated
+        # buffer. At 300×300 this is ~270 KB — negligible cost.
+        cv2.cvtColor(small_bgr, cv2.COLOR_BGR2RGB, dst=input_buf[0])
+
+        interpreter.set_tensor(input_idx, input_buf)
+        interpreter.invoke()
+
+        boxes   = interpreter.get_tensor(boxes_idx)[0]    # [N, 4] ymin,xmin,ymax,xmax (normalised)
+        classes = interpreter.get_tensor(classes_idx)[0]  # [N]
+        scores  = interpreter.get_tensor(scores_idx)[0]   # [N]
+
+        person_centroids: list[tuple[int, int]] = []
+        person_boxes: list[tuple[int, int, int, int]] = []
+
+        for i in range(len(scores)):
+            if scores[i] < CONFIDENCE_THRESHOLD:
+                continue
+            if int(classes[i]) != person_class_id:
+                continue
+
+            ymin, xmin, ymax, xmax = boxes[i]
+            x1 = max(0, int(xmin * WIDTH))
+            y1 = max(0, int(ymin * HEIGHT))
+            x2 = min(WIDTH,  int(xmax * WIDTH))
+            y2 = min(HEIGHT, int(ymax * HEIGHT))
+
+            person_boxes.append((x1, y1, x2, y2))
+            person_centroids.append(((x1 + x2) // 2, (y1 + y2) // 2))
+
+        tracks = tracker.update(person_centroids)
+        centroid_to_id: dict[tuple[int, int], int] = {
+            tuple(v["centroid"]): tid for tid, v in tracks.items()
+        }
+
+        new_results = []
+        for box, centroid in zip(person_boxes, person_centroids):
+            tid = centroid_to_id.get(centroid)
+            if tid is None:
+                continue
+            # Store first_seen so the encode thread can compute a live duration.
+            new_results.append((box, tid, tracks[tid]["first_seen"]))
+
+        with _results_lock:
+            _results[:] = new_results
+
+
+# ---------------------------------------------------------------------------
 # Main loop
 # ---------------------------------------------------------------------------
 
@@ -237,23 +336,23 @@ def run() -> None:
     _download_model()
 
     labels = _load_labels(LABELS_PATH)
+    person_class_id = _find_person_class_id(labels)
     tracker = PersonTracker()
 
     interpreter = Interpreter(model_path=MODEL_PATH, num_threads=4)
     interpreter.allocate_tensors()
-    input_details = interpreter.get_input_details()
+    input_details  = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
 
-    # Model input dimensions (usually 300×300 for MobileNet SSD)
     input_shape = input_details[0]["shape"]   # [1, H, W, 3]
     model_h, model_w = int(input_shape[1]), int(input_shape[2])
 
     # ------------------------------------------------------------------
-    # Camera
+    # Camera — capture BGR directly to avoid a full-resolution cvtColor.
     # ------------------------------------------------------------------
     picam2 = Picamera2()
     cam_config = picam2.create_video_configuration(
-        main={"format": "RGB888", "size": (WIDTH, HEIGHT)},
+        main={"format": "BGR888", "size": (WIDTH, HEIGHT)},
         controls={"FrameRate": FPS},
     )
     picam2.configure(cam_config)
@@ -278,16 +377,42 @@ def run() -> None:
     proc = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)
 
     # ------------------------------------------------------------------
+    # Inference thread — decouples TFLite from the encode loop.
+    # Queue capacity 1: if inference is busy the latest frame is dropped
+    # rather than blocking, keeping the output stream at full FPS.
+    # ------------------------------------------------------------------
+    infer_q: queue.Queue = queue.Queue(maxsize=1)
+    stop_event = threading.Event()
+
+    infer_thread = threading.Thread(
+        target=_inference_worker,
+        args=(
+            stop_event, infer_q, interpreter,
+            input_details, output_details,
+            model_h, model_w, person_class_id, tracker,
+        ),
+        daemon=True,
+        name="inference",
+    )
+    infer_thread.start()
+
+    # ------------------------------------------------------------------
     # Graceful shutdown
     # ------------------------------------------------------------------
     def _shutdown(sig, frame):
         print("Shutting down detection stream...", flush=True)
+        stop_event.set()
+        try:
+            infer_q.put_nowait(None)   # unblock thread if waiting on get()
+        except queue.Full:
+            pass
         picam2.stop()
         try:
             proc.stdin.close()
         except Exception:
             pass
         proc.wait()
+        infer_thread.join(timeout=2)
         sys.exit(0)
 
     signal.signal(signal.SIGINT, _shutdown)
@@ -296,67 +421,37 @@ def run() -> None:
     print(f"Person detection + tracking active — publishing to {RTSP_URL}", flush=True)
 
     # ------------------------------------------------------------------
-    # Detection loop
+    # Encode loop — runs at full camera FPS regardless of inference speed.
     # ------------------------------------------------------------------
-    now = time.monotonic
-
     while True:
-        frame_rgb = picam2.capture_array()   # shape: (HEIGHT, WIDTH, 3), RGB
+        frame_bgr = picam2.capture_array()   # contiguous BGR array, no copy needed
 
-        resized = cv2.resize(frame_rgb, (model_w, model_h))
-        input_data = np.expand_dims(resized, axis=0)   # [1, H, W, 3]
+        # Resize to model input size and queue for inference.
+        # Dropping the frame (put_nowait) is intentional — the encoder
+        # must never block waiting for inference to complete.
+        small = cv2.resize(frame_bgr, (model_w, model_h))
+        try:
+            infer_q.put_nowait(small)
+        except queue.Full:
+            pass
 
-        interpreter.set_tensor(input_details[0]["index"], input_data)
-        interpreter.invoke()
+        # Annotate with the latest available detections (may be a few frames
+        # old if inference is slow — that's acceptable and far better than
+        # stalling the stream).
+        with _results_lock:
+            current_results = list(_results)
 
-        # Output tensors (standard SSD order)
-        boxes   = interpreter.get_tensor(output_details[0]["index"])[0]   # [N, 4] ymin,xmin,ymax,xmax (normalised)
-        classes = interpreter.get_tensor(output_details[1]["index"])[0]   # [N]
-        scores  = interpreter.get_tensor(output_details[2]["index"])[0]   # [N]
-
-        # Convert to BGR for OpenCV / ffmpeg
-        frame_bgr = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR)
-
-        # Collect person detections for this frame
-        person_boxes: list[tuple[int, int, int, int]] = []
-        person_centroids: list[tuple[int, int]] = []
-
-        for i in range(len(scores)):
-            if scores[i] < CONFIDENCE_THRESHOLD:
-                continue
-            if _resolve_label(labels, int(classes[i])).lower() != "person":
-                continue
-
-            ymin, xmin, ymax, xmax = boxes[i]
-            x1 = int(xmin * WIDTH)
-            y1 = int(ymin * HEIGHT)
-            x2 = int(xmax * WIDTH)
-            y2 = int(ymax * HEIGHT)
-
-            person_boxes.append((x1, y1, x2, y2))
-            person_centroids.append(((x1 + x2) // 2, (y1 + y2) // 2))
-
-        # Update tracker and match track IDs back to bounding boxes
-        tracks = tracker.update(person_centroids)
-
-        # Build a centroid → track_id map for annotation
-        centroid_to_id: dict[tuple[int, int], int] = {
-            tuple(v["centroid"]): tid for tid, v in tracks.items()
-        }
-
-        t_now = now()
-        for (x1, y1, x2, y2), centroid in zip(person_boxes, person_centroids):
-            tid = centroid_to_id.get(centroid)
-            if tid is None:
-                continue
-            duration = t_now - tracks[tid]["first_seen"]
-            _draw_person(frame_bgr, x1, y1, x2, y2, tid, duration)
+        t_now = time.monotonic()
+        for (x1, y1, x2, y2), tid, first_seen in current_results:
+            _draw_person(frame_bgr, x1, y1, x2, y2, tid, t_now - first_seen)
 
         try:
-            proc.stdin.write(frame_bgr.tobytes())
-        except BrokenPipeError:
+            # memoryview avoids allocating a redundant bytes copy per frame.
+            proc.stdin.write(memoryview(frame_bgr))
+        except (BrokenPipeError, OSError):
             break
 
+    stop_event.set()
     picam2.stop()
 
 

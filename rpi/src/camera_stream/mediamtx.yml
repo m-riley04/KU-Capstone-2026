@@ -800,8 +800,22 @@ paths:
   # example:
   # my_camera:
   #   source: rtsp://my_camera
+
+  # Raw camera stream — grabbed directly by MediaMTX.
+  # Available at: rtsp://<rpi-ip>:8554/cam  /  webrtc: https://<rpi-ip>:8889/cam
   cam:
-    # Stream is published by detect.py (picamera2 + TFLite object detection → ffmpeg → RTSP)
+    source: rpiCamera
+    rpiCameraWidth: 640
+    rpiCameraHeight: 480
+    rpiCameraFPS: 30
+    rpiCameraBitrate: 3000000
+    rpiCameraIDRPeriod: 30
+    rpiCameraCodec: hardwareH264
+    rpiCameraDenoise: "off"
+
+  # Person detection + dwell-time stream — published by detect.py.
+  # Available at: rtsp://<rpi-ip>:8554/cam_detect  /  webrtc: https://<rpi-ip>:8889/cam_detect
+  cam_detect:
     source: publisher
 
   # Settings under path "all_others" are applied to all paths that
