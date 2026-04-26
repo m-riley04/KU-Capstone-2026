@@ -8,6 +8,7 @@ that has its own functionality
 - menu 
 - category card
 - back button
+- camera feed modal
 - logout
 - remove preference
 - toast notification
@@ -265,6 +266,164 @@ that has its own functionality
     opacity: .2;
     bottom: 30px;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Camera feed modal                                                    */
+/* ------------------------------------------------------------------ */
+
+.camera-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 200;
+
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  background-color: var(--primary);
+  color: #f9e4bc;
+  font-size: 1.4rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.camera-btn:hover {
+  transform: scale(1.1);
+  background-color: #2c522f;
+}
+
+.camera-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100;
+  backdrop-filter: blur(4px);
+}
+
+.camera-modal-content {
+  background: #3a3129;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  padding: 1.25rem;
+  width: 90%;
+  max-width: 700px;
+  color: #f9e4bc;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.camera-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.camera-modal-title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.camera-close-btn {
+  background: none;
+  border: none;
+  color: #f9e4bc;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  line-height: 1;
+  transition: background-color 0.15s ease;
+}
+
+.camera-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.camera-stream-toggle {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.camera-ip-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.camera-ip-input {
+  flex: 1;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid rgba(249, 228, 188, 0.35);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f9e4bc;
+  font-size: 0.9rem;
+  font-family: monospace;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.camera-ip-input::placeholder {
+  color: rgba(249, 228, 188, 0.4);
+}
+
+.camera-ip-input:focus {
+  border-color: rgba(249, 228, 188, 0.7);
+}
+
+.camera-ip-apply-btn {
+  padding: 0.45rem 1rem;
+  border: 1px solid rgba(249, 228, 188, 0.35);
+  border-radius: 8px;
+  background: #2c522f;
+  color: #f9e4bc;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.camera-ip-apply-btn:hover {
+  background-color: #3a6b3e;
+}
+
+.camera-toggle-btn {
+  flex: 1;
+  padding: 0.45rem 0;
+  border: 1px solid rgba(249, 228, 188, 0.35);
+  border-radius: 8px;
+  background: transparent;
+  color: #f9e4bc;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.camera-toggle-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.camera-toggle-btn.active {
+  background-color: #2c522f;
+  border-color: #2c522f;
+}
+
+.camera-iframe {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: none;
+  border-radius: 8px;
+  background: #000;
 }
 
 .profile-badge {
