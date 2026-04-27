@@ -20,6 +20,7 @@ import SummaryModal from './components/SummaryModal';
 import CategorySlider from './components/CategorySlider';
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import SettingModel from './components/SettingsModel';
+import CameraFeed from './components/CameraFeed';
 
 function App() {
 // useStates to keep track of categories being displayed on the screen
@@ -39,6 +40,7 @@ function App() {
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   // state to hold if the user settings modal is open
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   // state to hold the current user info
   const [user, setUser] = useState<{id: string | number; username: string; deviceIds: string[] } | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -264,6 +266,18 @@ function App() {
         />
       )}
       <ToastNotification toast={toast}/>
+    <button
+        className="camera-btn"
+        onClick={() => setIsCameraOpen(true)}
+        aria-label="Open camera feed"
+        title="Camera feed"
+      >
+        📷
+      </button>
+
+      {isCameraOpen && (
+        <CameraFeed onClose={() => setIsCameraOpen(false)} />
+      )}
     </div>)
 
   return (
@@ -273,6 +287,7 @@ function App() {
       <Route path="/home" element={isLoggedIn ? header : <Navigate to="/login" replace />} />
       <Route path="/" element={isLoggedIn ? header : <Navigate to="/login" replace />} />
     </Routes>
+      
     )}
 
 

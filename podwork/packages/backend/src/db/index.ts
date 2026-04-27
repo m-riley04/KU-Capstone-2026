@@ -12,6 +12,7 @@ export const enum connectionType {
 export const createDbConnect = async (connection: connectionType) => {
     if (connection === connectionType.TEST) {
         const dbDir = path.join(__dirname, "..", "..", "data");
+        fs.mkdirSync(dbDir, { recursive: true });
         console.log("Hi from part 1")
         const db = await open({
             filename: dbDir + '/podwork_test.db',
@@ -24,6 +25,7 @@ export const createDbConnect = async (connection: connectionType) => {
     } 
     else if (connection === connectionType.DEV) {
         const dbDir = path.join(__dirname, "..", "..", "data");
+        fs.mkdirSync(dbDir, { recursive: true });
         return open({
             filename: path.join(dbDir, 'podwork_dev.db'),
             driver: sqlite3.Database,
