@@ -18,6 +18,7 @@ import ToastNotification from './components/ToastNotification';
 import ProfileBadge from './components/ProfileBadge';
 import SummaryModal from './components/SummaryModal';
 import CategorySlider from './components/CategorySlider';
+import CameraFeed from './components/CameraFeed';
 
 function App() {
 // useStates to keep track of categories being displayed on the screen
@@ -34,6 +35,7 @@ function App() {
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   // state to hold if the user selected preference summary 
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   // state to hold the current user info
   const [user, setUser] = useState<{id: string | number; username: string} | null>(null);
 
@@ -211,6 +213,19 @@ function App() {
        )}
 
       <ToastNotification toast={toast}/>
+
+      <button
+        className="camera-btn"
+        onClick={() => setIsCameraOpen(true)}
+        aria-label="Open camera feed"
+        title="Camera feed"
+      >
+        📷
+      </button>
+
+      {isCameraOpen && (
+        <CameraFeed onClose={() => setIsCameraOpen(false)} />
+      )}
     </div>
     )}
 
