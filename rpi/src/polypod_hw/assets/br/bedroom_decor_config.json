@@ -1,0 +1,36 @@
+{
+  "bedroom": {
+    "tileset_width": 12,
+    "tileset_height": 9,
+    "tile_size": 16,
+    "decoration_zones": [
+      {
+        "id": "wall_left_upper",
+        "tile_x": 1,
+        "tile_y": 0,
+        "tile_width": 1,
+        "tile_height": 2,
+        "allowed_types": ["team_jersey"],
+        "max_accumulated": 3
+      },
+      {
+        "id": "wall_center",
+        "tile_x": 6,
+        "tile_y": 0,
+        "tile_width": 1,
+        "tile_height": 2,
+        "allowed_types": ["team_jersey"],
+        "max_accumulated": 3
+      },
+      {
+        "id": "wall_right_upper",
+        "tile_x": 7,
+        "tile_y": 0,
+        "tile_width": 1,
+        "tile_height": 2,
+        "allowed_types": ["team_jersey"],
+        "max_accumulated": 3
+      }
+    ]
+  }
+}
