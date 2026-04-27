@@ -2,25 +2,25 @@
 
 This is the University of Kansas (KU) 2026 senior capstone project named "polypod".
 
-<div style="text-align:center">
+<p align="center">
     <img src="media/isopod_neutral.png" >
-</div>
+</p>
 
 ## Overview
 
-<div style="text-align:center">
+<p align="center">
     <img src="media/suprise2.png" >
-</div>
+</p>
 
-<div style="text-align:center">
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/VdR-hWILIr8?si=wEzlY750n1OBMxcS" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-</div>
+<p align="center">
+    [![Polypod Overview and Demo Video](https://img.youtube.com/vi/VdR-hWILIr8/0.jpg)](https://www.youtube.com/watch?v=VdR-hWILIr8)
+</p>
 
 ## Website
 
-<div style="text-align:center">
+<p align="center">
     <img src="media/suprise.png" >
-</div>
+</p>
 
 The frontend can be found at [polypod.net](https://polypod.net/).
 
