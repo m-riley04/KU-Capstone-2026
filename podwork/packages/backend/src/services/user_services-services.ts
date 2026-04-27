@@ -1,18 +1,27 @@
 import bcrypt from 'bcrypt';
 import { User, UserInterests } from '../models/user';
-import { addUserToDatabase, deleteUserFromDatabase, getUserForAuth, getUserWithID, updateUserInDatabase } from '../repositories/user_queries';
+import {
+    addUserToDatabase,
+    deleteUserFromDatabase,
+    getUserForAuth,
+    getUserWithID,
+    updateUserDeviceIdInDatabase,
+    updateUserInDatabase,
+    updateUserLocationInDatabase
+} from '../repositories/user_queries';
 import dotenv from 'dotenv';
 import { deleteAllUserInterestsFromDatabase, addUserInterestToDatabase, getUserInterestsFromDatabase, getInterestsByName } from '../repositories/interests_queries';
 import { getLatestEventByInterestId } from '../repositories/event_quaries';
 import { addNotificationsToDatabase } from '../repositories/notifications_quaries';
 import { databaseNotification } from '../models/notifications';
 
+
 dotenv.config();
 const SALT_ROUNDS = process.env.SALT_ROUNDS ? parseInt(process.env.SALT_ROUNDS) : 10;
 
 export const getUserService = async (username: string, password: string) => {
     const database_user = await getUserForAuth(1, username);
-    if (!database_user) {
+    if (!database_user) { 
         console.log(`User "${username}" not found in database.`);
         return null;
     }
@@ -30,13 +39,84 @@ export const getUserService = async (username: string, password: string) => {
     }
 }
 
+const normalizeDeviceId = (value?: string | null): string => {
+    return (value ?? '').trim();
+}
+
+const resolveStarterNotificationType = (fromSource: string, headline: string): string => {
+    const normalizedSource = fromSource.toLowerCase().trim();
+    const normalizedHeadline = headline.toLowerCase().trim();
+    const looksLikeWeatherSource = normalizedSource === 'weatherapi' || normalizedSource.startsWith('weather_');
+    const isWeatherUpdateHeadline = normalizedHeadline.startsWith('weather update:');
+    const isAlertHeadline = normalizedHeadline.includes('alert');
+
+    if (looksLikeWeatherSource && isWeatherUpdateHeadline && !isAlertHeadline) {
+        return 'weather';
+    }
+
+    return 'base';
+}
+
+export const linkDeviceToUserService = async (userId: number, deviceId: string): Promise<void> => {
+    const normalizedDeviceId = normalizeDeviceId(deviceId);
+    if (!normalizedDeviceId) {
+        return;
+    }
+    await updateUserDeviceIdInDatabase(1, userId, normalizedDeviceId);
+}
+
+export const getUserAndLinkDeviceService = async (
+    username: string,
+    password: string,
+    deviceId?: string | null
+) => {
+    const user = await getUserService(username, password);
+    if (!user) {
+        return null;
+    }
+    if (deviceId) {
+        await linkDeviceToUserService(user.id, deviceId);
+    }
+
+    return user;
+}
+
 //should never add user with interests
-export const addUserService = async (username: string, email: string | null, password: string) => {
+export const addUserService = async (
+    username: string,
+    email: string | null,
+    password: string,
+    deviceId?: string | null
+) => {
+    const normalizedDeviceId = normalizeDeviceId(deviceId);
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-    const newUser = await addUserToDatabase(1, username, email, hashedPassword);
+    const newUser = await addUserToDatabase(1, username, email, hashedPassword, normalizedDeviceId || null);
     if (!newUser) {
         throw new Error('Failed to create user');
     }
+    //Hannah this is the code you are looking for
+    if (normalizedDeviceId) {
+        console.log(`Linking new user "${username}" with device ID "${normalizedDeviceId}"`);
+        console.log('New user created with ID:', newUser.id);
+        const welcomeNotification: databaseNotification = {
+            user_id: newUser.id,
+            notifType: 'welcome',
+            from_source: 'podwork',
+            notification_data: {
+                timestamp: new Date(),
+                from_source: 'podwork',
+                media: '',
+                headline: `Welcome, ${username}!`,
+                info: 'your pod is now linked. keep the website open to configure and customize your polypod!',
+                seemore: '',
+            },
+            is_read: false,
+            created_at: new Date(),
+        };
+
+        await addNotificationsToDatabase(1, [welcomeNotification]);
+    }
+
     return newUser;
 }
 
@@ -48,7 +128,7 @@ export const updateUserService = async (userId: number, updatedUserData: Partial
     if (updatedUserData?.password) {
         updatedUserData.password = await bcrypt.hash(updatedUserData.password, SALT_ROUNDS);
     }
-    if (updatedUserData?.username, updatedUserData?.email, updatedUserData?.password) {
+    if (updatedUserData?.username, updatedUserData?.email, updatedUserData?.password, updatedUserData?.deviceid) {
         await updateUserInDatabase(1, userId, updatedUserData);
     } 
     if (updatedUserData?.interests) {
@@ -66,7 +146,7 @@ export const updateUserService = async (userId: number, updatedUserData: Partial
             if (latestEvent) {
                 starterNotifications.push({
                     user_id: userId,
-                    notifType: 'base',
+                    notifType: resolveStarterNotificationType(latestEvent.from_source, latestEvent.headline),
                     from_source: latestEvent.from_source,
                     notification_data: latestEvent,
                     is_read: false,
@@ -74,11 +154,30 @@ export const updateUserService = async (userId: number, updatedUserData: Partial
                 });
             }
         }
-
         if (starterNotifications.length > 0) {
             await addNotificationsToDatabase(1, starterNotifications);
         }
         
+    }
+    if (updatedUserData?.deviceid) {
+        const normalizedDeviceId = updatedUserData.deviceid.split(',').map(id => id.trim())
+        updateUserDeviceIdInDatabase(1, userId, normalizedDeviceId[normalizedDeviceId.length - 1]);
+        const welcomeNotification: databaseNotification = {
+            user_id: existingUser.id,
+            notifType: 'welcome',
+            from_source: 'podwork',
+            notification_data: {
+                timestamp: new Date(),
+                from_source: 'podwork',
+                media: '',
+                headline: `Welcome, ${existingUser.username}!`,
+                info: 'your pod is now linked. keep the website open to configure and customize your polypod!',
+                seemore: '',
+            },
+            is_read: false,
+            created_at: new Date(),
+        };
+        await addNotificationsToDatabase(1, [welcomeNotification]);
     }
     const updatedUser: User = await getUserWithID(1, userId) as User;
     updatedUser.interests = await getUserInterestsFromDatabase(1, userId);
@@ -88,4 +187,9 @@ export const updateUserService = async (userId: number, updatedUserData: Partial
 export const deleteUserService = async (userId: number) => {
     const user = await deleteUserFromDatabase(1, userId);
     return user;
+}
+
+export const updateUserLocationService = async (userId: number, zipCode: string): Promise<boolean> => {
+    const location = await updateUserLocationInDatabase(1, userId, zipCode);
+    return location;
 }

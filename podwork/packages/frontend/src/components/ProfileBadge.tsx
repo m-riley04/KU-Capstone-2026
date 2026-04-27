@@ -4,22 +4,30 @@
 interface ProfileBadgeProps {
   user: { id: string | number; username: string } | null;
   onLogout: () => void; // when user clicks sign out button
+  onOpenSetting: () => void;
 }
 
-function ProfileBadge({ user, onLogout }: ProfileBadgeProps) {
+function ProfileBadge({ user, onLogout, onOpenSetting }: ProfileBadgeProps) {
   // don't render until user data is available
   if (!user) return null;
 
   return (
     <div className="profile-badge">
       {/* shows first letter of username */}
-      <div className="avatar">
-        {user.username?.charAt(0).toUpperCase() || "?"}
-      </div>
-      <div className="user-info">
-        <span className="username">{user.username || "Unknown"}</span>
-        <span className="user-id">ID: #{user.id}</span>
-      </div>
+      <button
+        type="button"
+        className="profile-info-button"
+        onClick={() => onOpenSetting()}
+        aria-label="Show user info"
+      >
+        <div className="avatar">
+          {user.username?.charAt(0).toUpperCase() || "?"}
+        </div>
+        <div className="user-info">
+          <span className="username">{user.username || "Unknown"}</span>
+          <span className="user-id">ID: #{user.id}</span>
+        </div>
+      </button>
 
       {/* logout button that calls onLogout */}
       <button

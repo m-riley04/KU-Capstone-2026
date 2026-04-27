@@ -28,17 +28,37 @@ export const getUserWithID = async (connection: connectionType, userId: number):
     return user ?? null;
 };
 
-export const addUserToDatabase = async (connection: connectionType, username: string, email: string | null, password: string): Promise<User| null> => {
+export const getUserWithDeviceId = async (connection: connectionType, deviceId: string): Promise<User | null> => {
+    const db = await createDbConnect(connection);
+    if (!db) {
+        throw new Error('Failed to connect to database');
+    }
+    const user = await db.get(
+        `SELECT * FROM users WHERE deviceid = ?`,
+        deviceId
+    );
+    await db.close();
+    return user ?? null;
+};
+
+export const addUserToDatabase = async (
+    connection: connectionType,
+    username: string,
+    email: string | null,
+    password: string,
+    deviceid?: string | null
+): Promise<User| null> => {
     const db = await createDbConnect(connection);
     if (!db) {
         throw new Error('Failed to connect to database');
     }
     try {
         const result = await db.run(
-            `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`,
+            `INSERT INTO users (username, email, password, deviceid) VALUES (?, ?, ?, ?)`,
             username,
             email,
-            password
+            password,
+            deviceid ?? null
         );
         const newUserId = result.lastID;
         const newUser = await db.get(`SELECT * FROM users WHERE id = ?`, newUserId);
@@ -52,6 +72,25 @@ export const addUserToDatabase = async (connection: connectionType, username: st
         await db.close();
         throw error;
     }
+};
+
+export const updateUserDeviceIdInDatabase = async (
+    connection: connectionType,
+    userId: number,
+    deviceId: string
+): Promise<void> => {
+    const db = await createDbConnect(connection);
+    if (!db) {
+        throw new Error('Failed to connect to database');
+    }
+
+    await db.run(
+        `UPDATE users SET deviceid = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+        deviceId,
+        userId
+    );
+
+    await db.close();
 };
 
 export const updateUserInDatabase = async (connection: connectionType, userId: number, updatedUserData: Partial<User>): Promise<User | null> => {
@@ -72,6 +111,10 @@ export const updateUserInDatabase = async (connection: connectionType, userId: n
     if (updatedUserData.password) {
         fieldsToUpdate.push('password = ?');
         values.push(updatedUserData.password);
+    }
+    if (updatedUserData.deviceid) {
+        fieldsToUpdate.push('deviceid = ?');
+        values.push(updatedUserData.deviceid);
     }
     if (fieldsToUpdate.length === 0) {
         await db.close();
@@ -98,4 +141,21 @@ export const deleteUserFromDatabase = async (connection: connectionType, userId:
     await db.run(`DELETE FROM users WHERE id = ?`, userId);
     await db.close();
     return userToDelete;
+};
+
+export const updateUserLocationInDatabase = async (connection: connectionType, userId: number, zipCode: string): Promise<boolean> => {
+    const db = await createDbConnect(connection); 
+
+    if (!db) {
+        throw new Error('Failed to connect to database');
+    }
+
+    const result = await db.run(
+        `UPDATE users SET zip_code = ? WHERE id = ?`,
+        [zipCode, userId]
+    );
+
+    await db.close()
+    
+    return (result.changes ?? 0) > 0; 
 };

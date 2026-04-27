@@ -6,24 +6,31 @@ This file contains calls to the server that are needed for the frontend
 - Sign up 
 - Save selected preferences
 */
-const SERVER = 'http://localhost:3000';
+const SERVER = 'https://www.polypod.net:3000';
 
-export const registerUser = async (payload: any) => {
+export const registerUser = async (payload: any, deviceId?: string) => {
+    const requestBody = deviceId ? { ...payload, deviceId } : payload;
     const response = await fetch(`${SERVER}/user/add`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(payload),
+        body: JSON.stringify(requestBody),
     });
     return response;
 };
 
-export const loginUser = async (username: string, password: string) => {
+export const loginUser = async (username: string, password: string, deviceId?: string) => {
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-password': password,
+    };
+
+    if (deviceId) {
+        headers['x-device-id'] = deviceId;
+    }
+
     const response = await fetch(`${SERVER}/user/${username}`, {
         method: 'GET',
-        headers: { 
-            'Content-Type': 'application/json',
-            'x-password': password
-        },
+        headers,
     });
     return response;
 };
@@ -44,6 +51,24 @@ export const savePreferencesToDatabase = async (userId: string, selectedIds: str
     return response;
 };
 
+
+export const handleSaveDeviceIds = async (userId: string, deviceids: string[]) => {
+    console.log('Saving device IDs to server:', deviceids);
+    const payload = {
+        updated_user: {
+            deviceid: deviceids
+        }
+    };
+
+    const response = await fetch(`${SERVER}/user/${userId}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload),
+    });
+
+    return response;
+};
+
 export const getAvailableInterests = async () => {
     const response = await fetch(`${SERVER}/interests`); 
 
@@ -52,4 +77,23 @@ export const getAvailableInterests = async () => {
     }
 
     return response.json();
+};
+
+export const saveUserLocation = async (userId: number, zipCode: string) => {
+    try {
+        const response = await fetch(`${SERVER}/user/${userId}/location`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ zip_code: zipCode })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Error saving user location:", error);
+        throw error;
+    }
 };

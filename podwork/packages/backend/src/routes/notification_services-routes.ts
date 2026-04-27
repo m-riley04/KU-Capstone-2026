@@ -4,7 +4,7 @@ import { getNotificationRequest } from '../controllers/notification_services-con
 
 
 enum path {
-    getNotifications  = '/:userId',
+    getNotifications  = '/:deviceOrUserId',
 }
 
 const notification_services = express.Router()

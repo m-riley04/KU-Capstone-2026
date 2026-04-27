@@ -1,6 +1,7 @@
 
 export interface User {
     id: number;
+    deviceid?: string | null;
     username: string;
     email: string | null;
     password: string;

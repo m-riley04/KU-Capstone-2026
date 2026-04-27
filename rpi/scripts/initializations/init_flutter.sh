@@ -4,7 +4,7 @@
 # NOTE: based on instructions from flutter docs
 
 # Install dependencies
-sudo apt-get install -y curl git unzip xz-utils zip libglu1-mesa cmake ninja-build clang libgtk-3-dev mesa-utils
+sudo apt-get install -y curl git unzip xz-utils zip libglu1-mesa cmake ninja-build clang libgtk-3-dev mesa-utils libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 
 # get flutter sdk for linux arm64 from repo (no official downloads/releases for linux arm64)
 mkdir -p ~/develop

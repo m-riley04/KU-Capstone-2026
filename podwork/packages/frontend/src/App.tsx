@@ -13,11 +13,13 @@ import './styles/base.css';
 import './styles/layout.css';
 import './styles/components.css';
 import LoginPage from './LoginPage';
-import { getAvailableInterests, savePreferencesToDatabase } from './services/api';
+import { getAvailableInterests, handleSaveDeviceIds, savePreferencesToDatabase } from './services/api';
 import ToastNotification from './components/ToastNotification';
 import ProfileBadge from './components/ProfileBadge';
 import SummaryModal from './components/SummaryModal';
 import CategorySlider from './components/CategorySlider';
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import SettingModel from './components/SettingsModel';
 import CameraFeed from './components/CameraFeed';
 
 function App() {
@@ -31,28 +33,36 @@ function App() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   // keep track of what is actually sent to database
   const [savedIds, setSavedIds] = useState<string[]>([])
+  const [savedDeviceIds, setSavedDeviceIds] = useState<string[]>([])
   // state for toast notification
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   // state to hold if the user selected preference summary 
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+  // state to hold if the user settings modal is open
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   // state to hold the current user info
-  const [user, setUser] = useState<{id: string | number; username: string} | null>(null);
-
+  const [user, setUser] = useState<{id: string | number; username: string; deviceIds: string[] } | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     // check if token exists so a logged in user can stay logged in
     return localStorage.getItem('polypod_userId') !== null;
   });
+  const [zipCode, setZipCode] = useState<string>(() => {
+    return localStorage.getItem('polypod_zip') || "";
+  });
+  const navigate = useNavigate();
 
   useEffect(() => {
     // grab the data from localStorage when the page loads
     const storedUser = localStorage.getItem('polypod_userId');
     const storedName = localStorage.getItem('polypod_username');
+    const deviceIds = JSON.parse(localStorage.getItem('polypod_deviceIds') || '[]');
 
     if (storedUser) {
       setUser({
         id: storedUser,
         username: storedName || "User",
+        deviceIds: deviceIds,
       });
     }
   }, [isLoggedIn]);
@@ -109,9 +119,23 @@ function App() {
     }
   }, [activeCategory, selectedIds, savedIds]);
 
+  useEffect(() => {
+    if (savedDeviceIds.length > 0) {
+      localStorage.getItem('polypod_userId');
+    }}, [savedDeviceIds])
+
   // toggle item on/off
   const toggleSelection = useCallback((id: string) => {
     setSelectedIds(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(itemId => itemId !== id);
+      } 
+      return [...prev, id];
+    });
+  }, []);
+
+  const toggleDeviceIds = useCallback((id: string) => {
+    setSavedDeviceIds(prev => {
       if (prev.includes(id)) {
         return prev.filter(itemId => itemId !== id);
       } 
@@ -176,20 +200,39 @@ function App() {
     }
   }
 
-  // show login page if not logged in
-  if (!isLoggedIn) {
-    return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
+  const onAddDevice = (deviceId: string) => {
+    const deviceIds = savedDeviceIds ? [...savedDeviceIds, deviceId] : [deviceId];
+    const userId = localStorage.getItem('polypod_userId');
+    if (deviceIds && userId) {
+      toggleDeviceIds(deviceId);
+      handleSaveDeviceIds(userId, deviceIds);
+    } else {
+      localStorage.setItem('polypod_deviceIds', JSON.stringify([deviceId]));
+    }
+  };
+  // const handleSaveDeviceIds = async () => {
+  //   const deviceIds = localStorage.getItem('polypod_deviceIds');
+  //   if (!deviceIds) {
+  //     return;
+  //   }
+  //   try {
+
+  //   }
+
+
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+    navigate("/home");
   }
 
-  return (
-    <div className='app-container'>
+  const header = (<div className='app-container'>
 
       <header className='hero'>
         <h1>Podwork</h1>
       </header>
 
       
-      <ProfileBadge user={user} onLogout={handleLogout} />
+      <ProfileBadge user={user} onLogout={handleLogout} onOpenSetting={() => setIsSettingsOpen(true)} />
 
       <CategorySlider
         dataSource={dataSource}
@@ -202,6 +245,9 @@ function App() {
         onSummaryOpen={() => setIsSummaryOpen(true)}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        zipCode={zipCode}
+        setZipCode={setZipCode}
+        userId={user?.id ? Number(user.id) : Number(localStorage.getItem('polypod_userId') || 0)}
       />
       
       {isSummaryOpen && (
@@ -210,11 +256,17 @@ function App() {
           onToggle={toggleSelection}
           onClose={() => setIsSummaryOpen(false)}
         />
-       )}
-
+      )}
+      {isSettingsOpen && (
+        <SettingModel
+          selectedDeviceIds={savedDeviceIds || []}
+          onToggle={toggleDeviceIds}
+          onClose={() => setIsSettingsOpen(false)}
+          onAdd={onAddDevice}
+        />
+      )}
       <ToastNotification toast={toast}/>
-
-      <button
+    <button
         className="camera-btn"
         onClick={() => setIsCameraOpen(true)}
         aria-label="Open camera feed"
@@ -226,7 +278,16 @@ function App() {
       {isCameraOpen && (
         <CameraFeed onClose={() => setIsCameraOpen(false)} />
       )}
-    </div>
+    </div>)
+
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage mode="login" onLogin={handleLogin} />} />
+      <Route path="/create-account" element={<LoginPage mode="signup" onLogin={handleLogin} />} />
+      <Route path="/home" element={isLoggedIn ? header : <Navigate to="/login" replace />} />
+      <Route path="/" element={isLoggedIn ? header : <Navigate to="/login" replace />} />
+    </Routes>
+      
     )}
 
 

@@ -1,14 +1,18 @@
 import { Request, Response } from 'express';
-import { format } from 'node:path';
 import { getNotificationsService } from '../services/notification_services-services';
 
 export const getNotificationRequest = async (req: Request, res: Response) => {
-    if (!req.params.userId || Array.isArray(req.params.userId)) {
-        return res.status(400).json({ error: 'Valid User ID is required' });
+    if (!req.params.deviceOrUserId || Array.isArray(req.params.deviceOrUserId)) {
+        return res.status(400).json({ error: 'Valid device ID is required' });
     }
-    const userId = parseInt(req.params.userId);
+    const deviceOrUserId = req.params.deviceOrUserId.trim();
+
+    if (!deviceOrUserId) {
+        return res.status(400).json({ error: 'Valid device ID is required' });
+    }
+
     try {
-        const notifications = await getNotificationsService(userId);
+        const notifications = await getNotificationsService(deviceOrUserId);
         if (!notifications) {
             return res.status(204).json({ message: 'No notifications found' });
         }

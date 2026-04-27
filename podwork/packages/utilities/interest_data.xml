@@ -68,8 +68,75 @@
     <item><id>Tennessee Titans</id></item>
     <item><id>Washington Commanders</id></item>
   </category>
-
-  <category name="Big 12 CBB">
+  <category name="NHL">
+    <item><id>Anaheim Ducks</id></item>
+    <item><id>Boston Bruins</id></item>
+    <item><id>Buffalo Sabres</id></item>
+    <item><id>Calgary Flames</id></item>
+    <item><id>Carolina Hurricanes</id></item>
+    <item><id>Chicago Blackhawks</id></item>
+    <item><id>Colorado Avalanche</id></item>
+    <item><id>Columbus Blue Jackets</id></item>
+    <item><id>Dallas Stars</id></item>
+    <item><id>Detroit Red Wings</id></item>
+    <item><id>Edmonton Oilers</id></item>
+    <item><id>Florida Panthers</id></item>
+    <item><id>Los Angeles Kings</id></item>
+    <item><id>Minnesota Wild</id></item>
+    <item><id>Montreal Canadiens</id></item>
+    <item><id>Nashville Predators</id></item>
+    <item><id>New Jersey Devils</id></item>
+    <item><id>New York Islanders</id></item>
+    <item><id>New York Rangers</id></item>
+    <item><id>Ottawa Senators</id></item>
+    <item><id>Philadelphia Flyers</id></item>
+    <item><id>Pittsburgh Penguins</id></item>
+    <item><id>San Jose Sharks</id></item>
+    <item><id>Seattle Kraken</id></item>
+    <item><id>St. Louis Blues</id></item>
+    <item><id>Tampa Bay Lightning</id></item>
+    <item><id>Toronto Maple Leafs</id></item>
+    <item><id>Utah Hockey Club</id></item>
+    <item><id>Vancouver Canucks</id></item>
+    <item><id>Vegas Golden Knights</id></item>
+    <item><id>Washington Capitals</id></item>
+    <item><id>Winnipeg Jets</id></item>
+  </category>
+  <category name="MLB">
+    <item><id>MLB Scoreboard</id></item>
+    <item><id>Arizona Diamondbacks</id></item>
+    <item><id>Atlanta Braves</id></item>
+    <item><id>Baltimore Orioles</id></item>
+    <item><id>Boston Red Sox</id></item>
+    <item><id>Chicago Cubs</id></item>
+    <item><id>Chicago White Sox</id></item>
+    <item><id>Cincinnati Reds</id></item>
+    <item><id>Cleveland Guardians</id></item>
+    <item><id>Colorado Rockies</id></item>
+    <item><id>Detroit Tigers</id></item>
+    <item><id>Houston Astros</id></item>
+    <item><id>Kansas City Royals</id></item>
+    <item><id>Los Angeles Angels</id></item>
+    <item><id>Los Angeles Dodgers</id></item>
+    <item><id>Miami Marlins</id></item>
+    <item><id>Milwaukee Brewers</id></item>
+    <item><id>Minnesota Twins</id></item>
+    <item><id>New York Mets</id></item>
+    <item><id>New York Yankees</id></item>
+    <item><id>Oakland Athletics</id></item>
+    <item><id>Philadelphia Phillies</id></item>
+    <item><id>Pittsburgh Pirates</id></item>
+    <item><id>San Diego Padres</id></item>
+    <item><id>San Francisco Giants</id></item>
+    <item><id>Seattle Mariners</id></item>
+    <item><id>St. Louis Cardinals</id></item>
+    <item><id>Tampa Bay Rays</id></item>
+    <item><id>Texas Rangers</id></item>
+    <item><id>Toronto Blue Jays</id></item>
+    <item><id>Washington Nationals</id></item>
+  </category>
+  <category name="Men's College Basketball">
+    <item><id>Men's College Basketball Scoreboard</id></item>
     <item><id>Arizona Wildcats</id></item>
     <item><id>Arizona State Sun Devils</id></item>
     <item><id>Baylor Bears</id></item>
@@ -193,9 +260,12 @@
     <item><id>Vodafone (VOD)</id></item>
     <item><id>Walmart (WMT)</id></item>
   </category>
+  <category name = "Weather">
+    <item><id>Weather Alerts</id></item>
+  </category>
   <category name = "Other">
     <item><id>apod</id></item>
-    <item><id>espn_mens_college_basketball_scoreboard</id></item>
   </category>
+
 
 </interestData>

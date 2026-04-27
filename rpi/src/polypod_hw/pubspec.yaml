@@ -40,6 +40,12 @@ dependencies:
   screen_retriever: ^0.2.0
   lottie: ^3.3.1
   just_audio: ^0.9.34
+  http: ^1.2.2
+  shared_preferences: ^2.3.2
+  qr: ^3.0.2
+  weather_animation: ^1.2.0
+  flutter_gstreamer_player: ^0.0.3
+  audioplayers: ^6.6.0
 
 dev_dependencies:
   flutter_test:

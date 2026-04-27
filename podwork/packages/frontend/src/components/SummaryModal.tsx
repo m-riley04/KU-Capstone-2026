@@ -3,7 +3,7 @@
 
 interface SummaryModalProps {
   selectedIds: string[]; // currently selected preference names
-  onToggle: (id: string) => void; // removes a prefernce when trash icon clicked
+  onToggle: (id: string, category: string | null) => void; // removes a prefernce when trash icon clicked
   onClose: () => void; // close modal 
 }
 
@@ -25,7 +25,7 @@ function SummaryModal({ selectedIds, onToggle, onClose }: SummaryModalProps) {
                 {/* trash icon for removing preferences */}
                 <button
                   className='remove-preference'
-                  onClick={() => onToggle(name)}
+                  onClick={() => onToggle(name, null)}
                   aria-label={`Remove ${name}`}
                   title="Remove preference"
                 >

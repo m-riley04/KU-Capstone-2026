@@ -1,11 +1,53 @@
+import { createDbConnect } from "../db";
 import { databaseNotification, eventData, polypodNotification } from "../models/notifications";
 import { getEventsFromInterests } from "../repositories/event_quaries";
 import { getInterestIDFromName, getUserIdWithInterestFromDatabase } from "../repositories/interests_queries";
 import { addNotificationsToDatabase, getNotificationsFromDatabase } from "../repositories/notifications_quaries";
 import notification_services from "../routes/notification_services-routes";
+import { getUserWithDeviceId } from "../repositories/user_queries";
 
-export const getNotificationsService = async (userId: number): Promise<polypodNotification[] | null> => {
+const isPersistentWeatherUpdate = (fromSource: string, headline: string): boolean => {
+    const normalizedSource = fromSource.toLowerCase().trim();
+    const normalizedHeadline = headline.toLowerCase().trim();
+    const looksLikeWeatherSource = normalizedSource === 'weatherapi' || normalizedSource.startsWith('weather_');
+    const isWeatherUpdateHeadline = normalizedHeadline.startsWith('weather update:');
+    const isAlertHeadline = normalizedHeadline.includes('alert');
+    return looksLikeWeatherSource && isWeatherUpdateHeadline && !isAlertHeadline;
+}
+
+const resolveNotificationType = (fromSource: string, headline: string, existingType?: string): string => {
+    if ((existingType ?? '').toLowerCase().trim() === 'welcome') {
+        return 'welcome';
+    }
+
+    if (isPersistentWeatherUpdate(fromSource, headline)) {
+        return 'weather';
+    }
+
+    return (existingType ?? 'base').toLowerCase().trim() || 'base';
+}
+
+const resolveUserIdForNotificationRecipient = async (recipientId: string): Promise<number | null> => {
+    const user = await getUserWithDeviceId(1, recipientId);
+    if (user) {
+        return user.id;
+    }
+
+    const numericUserId = Number.parseInt(recipientId, 10);
+    if (Number.isNaN(numericUserId) || numericUserId <= 0) {
+        return null;
+    }
+
+    return numericUserId;
+}
+
+export const getNotificationsService = async (deviceOrUserId: string): Promise<polypodNotification[] | null> => {
     try {
+        const userId = await resolveUserIdForNotificationRecipient(deviceOrUserId);
+        if (!userId) {
+            return null;
+        }
+
         const notifications = await getNotificationsFromDatabase(1, userId);
         if (!notifications || notifications.length === 0) {
             return null; 
@@ -14,10 +56,15 @@ export const getNotificationsService = async (userId: number): Promise<polypodNo
         // that it's ready to send to devices without needing to do any additional formatting
         let formattedNotifications : polypodNotification[] = [];
         notifications.forEach(notification => {
+            const data = JSON.parse(notification.notification_data);
             const formattedNotification  : polypodNotification =  {
-                notifType: notification.notifType,
+                notifType: resolveNotificationType(
+                    String(notification.from_source ?? ''),
+                    String(data?.headline ?? ''),
+                    String(notification.notifType ?? 'base'),
+                ),
                 from_source: notification.from_source,
-                data: JSON.parse(notification.notification_data),
+                data,
             }
             formattedNotifications.push(formattedNotification);
         });
@@ -47,7 +94,7 @@ export const generateNotifications = async (interestName: string) : Promise<void
             }
             const notification: databaseNotification = {
                 user_id: user.id,
-                notifType: 'base',
+                notifType: resolveNotificationType(firstEvent.from_source, firstEvent.headline, 'base'),
                 from_source: firstEvent.from_source, //TODO: This is a bit hacky, but for now we can just use the title of the event as the from_source. We can always add more fields to the databaseNotification model later if we want to include more information about the event in the notification.
                 notification_data: firstEvent,
                 is_read: false,
@@ -61,4 +108,57 @@ export const generateNotifications = async (interestName: string) : Promise<void
         console.error('Error generating notifications:', error);
         throw error;
     }
+}
+
+export const generateTargetedWeatherNotifications = async (connection: any, zipCode: string, weatherEvent: eventData): Promise<void> => {
+    const db = await createDbConnect(connection);
+
+    if (!db) {
+        throw new Error('Failed to connect to database');
+    }
+    
+    // find only the users who checked the weather box and live in this zip code
+    const usersInZip = await db.all(
+        `SELECT users.id 
+         FROM users 
+         JOIN user_interests ON users.id = user_interests.user_id 
+         JOIN interests ON user_interests.interest_id = interests.id
+         WHERE interests.name = 'Weather Alerts' 
+         AND users.zip_code = ?`,
+        [zipCode]
+    );
+    if (!usersInZip || usersInZip.length === 0) {
+        console.log(`No users found for weather in ${zipCode}`);
+        return;
+    }
+    
+    const notifications: databaseNotification[] = [];
+    if (weatherEvent.headline.includes('WEATHER ALERT')) {
+        for (const user of usersInZip) {
+            notifications.push({
+                user_id: user.id,
+                notifType: 'base',
+                from_source: weatherEvent.from_source, 
+                notification_data: weatherEvent,
+                is_read: false,
+                created_at: new Date(),
+            });
+        }
+    } else {
+        for (const user of usersInZip) {
+            notifications.push({
+                user_id: user.id,
+                notifType: 'weather',
+                from_source: weatherEvent.from_source, 
+                notification_data: weatherEvent,
+                is_read: false,
+                created_at: new Date(),
+            });
+        }
+    }
+
+    await addNotificationsToDatabase(connection, notifications);
+    console.log(`Successfully sent weather alerts to users in ${zipCode}!`);
+
+    await db.close();
 }
