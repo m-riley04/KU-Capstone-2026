@@ -1,12 +1,8 @@
 # rpi
 
-This directory contains all source code for the Raspberry Pi's boot.
+This directory contains all source code for the Raspberry Pi's setup and boot.
 
-## Setup (automatic)
-
-COMING SOON...
-
-## Setup (manual)
+## Setup
 
 To set up the Raspberry Pi from scratch, the following must be done:
 
@@ -18,20 +14,24 @@ The Raspberry Pi's miniSD card must be formatted using the [Raspberry Pi Imager]
 2. Launch Raspberry Pi Imager.
 3. Select the "Raspberry Pi 5".
 4. Click "Next".
-5. Select the "Other general-purpose OS" option from the list.
-6. Scroll to the bottom and select "DietPi".
-7. Select the 64-bit DietPi option.
-8. Click "Next".
-9. Select the miniSD that you wish to format and put the OS on.
-10. Click "Write".
-11. Click "I understand, please erase and write" on the warning popup.
-12. Wait for the device to begin formatting.
+5. Select the "Raspberry Pi OS (Other)" option from the list.
+6. Scroll to near the bottom and select "Raspberry Pi OS (Legacy, 64 bit)" that is "Bookworm".
+7. Click "Next".
+8. Select the miniSD that you wish to format and put the OS on.
+9. Click "Write".
+10. Click "I understand, please erase and write" on the warning popup.
+11. Wait for the device to begin formatting.
     - If a popup appears that says "You must format this disk", click "Format"
     - After you do this, a few warnings may appear. You can ignore these and close/accept them.
-13. Wait for formatting to complete.
-14. Click "Finish".
+12. Wait for formatting to complete.
+13. Click "Finish".
 
+### Pi Setup
 
+1. Assemble the Raspberry Pi 5 and components according to the documentation/architecture/pinouts.
+2. Pull the repo into `~/dev/`
+3. Run the initialization script [`init.sh`](scripts/init.sh)
+4. Restart the pi
 
 ## Supplamental Reading
 
