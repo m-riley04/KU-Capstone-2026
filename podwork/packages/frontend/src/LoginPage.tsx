@@ -63,7 +63,7 @@ export default function LoginPage({ onLogin, mode }: LoginProps) {
                 setError('Username already taken or invalid.');
             }
         }else{
-            console.log('attempting login with', username, password);
+            console.log('attempting login');
             const response = await loginUser(username, password, deviceId || undefined);
             
             if (response.ok) {
