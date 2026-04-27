@@ -14,7 +14,12 @@ This is the University of Kansas (KU) 2026 senior capstone project named "polypo
 
 Our overview and demo video can be found below! Click on the video to learn more!
 
-[![Polypod Overview and Demo Video](https://img.youtube.com/vi/VdR-hWILIr8/0.jpg)](https://www.youtube.com/watch?v=VdR-hWILIr8)
+
+<p align="center">
+    <a href="https://www.youtube.com/watch?v=VdR-hWILIr8" target="_blank">
+        <img src="https://img.youtube.com/vi/VdR-hWILIr8/0.jpg" alt="Polypod Overview and Demo Video"/>
+    </a>
+</p>
 
 ## Website
 
