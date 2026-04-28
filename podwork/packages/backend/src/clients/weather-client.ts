@@ -1,8 +1,7 @@
 import { connectionType, createDbConnect } from "../db";
 import { eventData } from "../models/notifications";
 
-const WEATHER_ALERT_EVERY_OTHER_PULL =
-    (process.env.WEATHER_ALERT_EVERY_OTHER_PULL ?? 'false').toLowerCase() === 'true';
+const WEATHER_ALERT_EVERY_OTHER_PULL = true
 
 const severeAlertPullCountByLocation = new Map<string, number>();
 
