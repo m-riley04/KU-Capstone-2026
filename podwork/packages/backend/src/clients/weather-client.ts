@@ -1,6 +1,21 @@
 import { connectionType, createDbConnect } from "../db";
 import { eventData } from "../models/notifications";
 
+const WEATHER_ALERT_EVERY_OTHER_PULL =
+    (process.env.WEATHER_ALERT_EVERY_OTHER_PULL ?? 'false').toLowerCase() === 'true';
+
+const severeAlertPullCountByLocation = new Map<string, number>();
+
+const shouldSendPersistentWeatherOnThisPull = (location: string): boolean => {
+    if (!WEATHER_ALERT_EVERY_OTHER_PULL) {
+        return false;
+    }
+
+    const nextCount = (severeAlertPullCountByLocation.get(location) ?? 0) + 1;
+    severeAlertPullCountByLocation.set(location, nextCount);
+    return nextCount % 2 === 0;
+};
+
 export const fetchWeatherData = async (location: string): Promise<eventData> => {
     const apiKey = '9433fb5ac42940daa95211856260804'; 
     // &alerts=yes includes severe weather warnings
@@ -32,20 +47,25 @@ export const fetchWeatherData = async (location: string): Promise<eventData> => 
         let info = `${temp}°F, ${condition}.`;
 
         if (hasSevereAlert) {
-            // grab the headline of the first active alert
-            const alertHeadline = alerts[0].headline; 
-            headline = `🚨 WEATHER ALERT: ${locationName}`;
-            info = `${alertHeadline}`;
+            const shouldSendPersistent = shouldSendPersistentWeatherOnThisPull(location);
+
+            if (!shouldSendPersistent) {
+                const alertHeadline = alerts[0].headline;
+                headline = `🚨 WEATHER ALERT: ${locationName}`;
+                info = `${alertHeadline}`;
+            }
 
             return {
-            timestamp: new Date(),
-            media: `https:${data.current.condition.icon}`, 
-            headline: headline,
-            info: info,
-            from_source: 'WeatherAPI',
-            seemore: `https://weather.com/weather/today/l/${location}`
+                timestamp: new Date(),
+                media: `https:${data.current.condition.icon}`,
+                headline: headline,
+                info: info,
+                from_source: 'WeatherAPI',
+                seemore: `https://weather.com/weather/today/l/${location}`
+            }
         }
-        }
+
+        severeAlertPullCountByLocation.delete(location);
 
         return {
             timestamp: new Date(),
