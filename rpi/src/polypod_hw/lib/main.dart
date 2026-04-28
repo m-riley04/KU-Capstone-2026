@@ -398,6 +398,9 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
             _childReadyCompleter!.complete();
           }
           return null;
+        case 'polypod/requestStateSync':
+          await _notifyBottomAppChanged();
+          return null;
       }
       return null;
     });
@@ -655,11 +658,6 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
     // the window on the correct output (SPI-1).
     await DisplayManager.setWindowTitle('Polypod_Bottom_Screen');
 
-    // Signal the parent window that our title is set and we are ready to be
-    // shown.  The parent waits for this before calling show() so the
-    // compositor sees the correct title on first map.
-    await _mainWindowController?.invokeMethod('polypod/childReady');
-
     await _bottomWindowController?.setMethodHandler((method, arguments) async {
       switch (method) {
         case 'polypod/appChanged':
@@ -678,6 +676,13 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
       }
       return null;
     });
+
+    // Signal the parent window after our handler is installed so the initial
+    // state message cannot race ahead and be dropped.
+    await _mainWindowController?.invokeMethod('polypod/childReady');
+    // Ask for a state refresh in case setup/home state changed before this
+    // window finished initializing.
+    await _mainWindowController?.invokeMethod('polypod/requestStateSync');
 
     // Fullscreen this window on the configured display.
     if (widget.runtimeConfig.fullscreen) {

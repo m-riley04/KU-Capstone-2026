@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'base_app.dart';
 import '../controllers/led_controller.dart';
 import '../controllers/polypod_maintenance_controller.dart';
@@ -41,6 +42,7 @@ class _IdleAppState extends State<IdleApp> with TickerProviderStateMixin {
   late Animation<double> _mouthOpenAmount;
   bool _decorationsReady = false;
   String? _lastNotificationId;
+  final Map<String, String> _lastSuccessfulDecorationAssetBySlot = {};
 
   @override
   void initState() {
@@ -230,20 +232,18 @@ class _IdleAppState extends State<IdleApp> with TickerProviderStateMixin {
       height: zone.pixelHeight * scaleY,
       child: Opacity(
         opacity: 0.9, // Slight transparency for layering effect
-        child: Image.asset(
-          decoration.assetPath,
-          fit: BoxFit.contain,
-          filterQuality: FilterQuality.none,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: Colors.grey.shade800,
-              child: const Center(
-                child: Text(
-                  '?',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            );
+        child: _DecorationAssetImage(
+          slotKey: '${decoration.zoneId}:${decoration.stackOrder}',
+          preferredAssetPath: decoration.assetPath,
+          fallbackAssetPath:
+              _lastSuccessfulDecorationAssetBySlot['${decoration.zoneId}:${decoration.stackOrder}'],
+          onAssetResolved: (resolvedPath) {
+            final current =
+                _lastSuccessfulDecorationAssetBySlot['${decoration.zoneId}:${decoration.stackOrder}'];
+            if (current == resolvedPath || !mounted) return;
+            setState(() {
+              _lastSuccessfulDecorationAssetBySlot['${decoration.zoneId}:${decoration.stackOrder}'] = resolvedPath;
+            });
           },
         ),
       ),
@@ -287,6 +287,100 @@ class _IdleAppState extends State<IdleApp> with TickerProviderStateMixin {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DecorationAssetImage extends StatefulWidget {
+  const _DecorationAssetImage({
+    required this.slotKey,
+    required this.preferredAssetPath,
+    required this.fallbackAssetPath,
+    required this.onAssetResolved,
+  });
+
+  final String slotKey;
+  final String preferredAssetPath;
+  final String? fallbackAssetPath;
+  final ValueChanged<String> onAssetResolved;
+
+  @override
+  State<_DecorationAssetImage> createState() => _DecorationAssetImageState();
+}
+
+class _DecorationAssetImageState extends State<_DecorationAssetImage> {
+  static final Map<String, bool> _assetExistsCache = {};
+
+  String? _resolvedAssetPath;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveAssetPath();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DecorationAssetImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.preferredAssetPath != widget.preferredAssetPath ||
+        oldWidget.fallbackAssetPath != widget.fallbackAssetPath ||
+        oldWidget.slotKey != widget.slotKey) {
+      _resolveAssetPath();
+    }
+  }
+
+  Future<void> _resolveAssetPath() async {
+    final candidates = <String>[
+      widget.preferredAssetPath,
+      if (widget.fallbackAssetPath != null) widget.fallbackAssetPath!,
+    ];
+
+    final seen = <String>{};
+    for (final path in candidates) {
+      if (!seen.add(path)) continue;
+      final exists = await _assetExists(path);
+      if (exists) {
+        if (!mounted) return;
+        setState(() {
+          _resolvedAssetPath = path;
+        });
+        widget.onAssetResolved(path);
+        return;
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _resolvedAssetPath = null;
+    });
+  }
+
+  Future<bool> _assetExists(String path) async {
+    final cached = _assetExistsCache[path];
+    if (cached != null) return cached;
+
+    try {
+      await rootBundle.load(path);
+      _assetExistsCache[path] = true;
+      return true;
+    } catch (_) {
+      _assetExistsCache[path] = false;
+      return false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final resolved = _resolvedAssetPath;
+    if (resolved == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Image.asset(
+      resolved,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.none,
+      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
     );
   }
 }
