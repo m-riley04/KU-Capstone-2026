@@ -211,6 +211,7 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
   late BaseApp _currentApp;
   bool _isSetupLocked = false;
   bool _showSettingsResetConfirmation = false;
+  bool _showIdleBedroom = false;
   String _currentAppKey = 'Home';
 
   late final Map<String, BaseApp> _apps;
@@ -238,7 +239,12 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     _polypodController = PolypodAnimationController();
     _maintenanceController = PolypodMaintenanceController();
     _apps = {
-      'Home': IdleApp(maintenanceController: _maintenanceController),
+      'Home': IdleApp(
+        maintenanceController: _maintenanceController,
+        notificationController: _notificationController,
+        showBedroom: _showIdleBedroom,
+        onBedroomToggleRequested: _toggleIdleBedroom,
+      ),
       'Timer': ClockApp(controller: _timerController),
       'Weather': const WeatherApp(),
       'Media': const MediaApp(),
@@ -253,7 +259,12 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
         onResetToSetup: _resetToSetupFromSettings,
       ),
     };
-    _currentApp = IdleApp(maintenanceController: _maintenanceController);
+    _currentApp = IdleApp(
+      maintenanceController: _maintenanceController,
+      notificationController: _notificationController,
+      showBedroom: _showIdleBedroom,
+      onBedroomToggleRequested: _toggleIdleBedroom,
+    );
     _showSetupIfNeeded();
 
     _initWindowing();
@@ -284,7 +295,12 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
 
     setState(() {
       _isSetupLocked = false;
-      _currentApp = IdleApp(maintenanceController: _maintenanceController);
+      _currentApp = IdleApp(
+        maintenanceController: _maintenanceController,
+        notificationController: _notificationController,
+        showBedroom: _showIdleBedroom,
+        onBedroomToggleRequested: _toggleIdleBedroom,
+      );
       _currentAppKey = 'Home';
     });
 
@@ -381,6 +397,9 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
               !_childReadyCompleter!.isCompleted) {
             _childReadyCompleter!.complete();
           }
+          return null;
+        case 'polypod/requestStateSync':
+          await _notifyBottomAppChanged();
           return null;
       }
       return null;
@@ -487,8 +506,27 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
 
     setState(() {
       _showSettingsResetConfirmation = false;
-      _currentApp = IdleApp(maintenanceController: _maintenanceController);
+      _showIdleBedroom = false;
+      _currentApp = IdleApp(
+        maintenanceController: _maintenanceController,
+        notificationController: _notificationController,
+        showBedroom: _showIdleBedroom,
+        onBedroomToggleRequested: _toggleIdleBedroom,
+      );
       _currentAppKey = 'Home';
+    });
+    _notifyBottomAppChanged();
+  }
+
+  void _toggleIdleBedroom() {
+    setState(() {
+      _showIdleBedroom = !_showIdleBedroom;
+      _currentApp = IdleApp(
+        maintenanceController: _maintenanceController,
+        notificationController: _notificationController,
+        showBedroom: _showIdleBedroom,
+        onBedroomToggleRequested: _toggleIdleBedroom,
+      );
     });
     _notifyBottomAppChanged();
   }
@@ -499,11 +537,29 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     }
 
     _idleController.resetIdleTimer();
-    setState(() {
-      _showSettingsResetConfirmation = false;
-      _currentApp = IdleApp(maintenanceController: _maintenanceController);
-      _currentAppKey = 'Home';
-    });
+
+    // If already on IdleApp, toggle bedroom; otherwise, go to IdleApp with bedroom closed
+    final isOnIdle = _currentApp is IdleApp;
+    if (isOnIdle && !_showIdleBedroom) {
+      // Already on idle with mouth showing, toggle to bedroom
+      _toggleIdleBedroom();
+    } else if (!isOnIdle) {
+      // Not on idle, go to idle with mouth showing
+      setState(() {
+        _showSettingsResetConfirmation = false;
+        _showIdleBedroom = false;
+        _currentApp = IdleApp(
+          maintenanceController: _maintenanceController,
+          notificationController: _notificationController,
+          showBedroom: _showIdleBedroom,
+          onBedroomToggleRequested: _toggleIdleBedroom,
+        );
+        _currentAppKey = 'Home';
+      });
+    } else {
+      // Already on idle with bedroom, close it (toggle back)
+      _toggleIdleBedroom();
+    }
     _notifyBottomAppChanged();
   }
 
@@ -515,10 +571,16 @@ class _TopOnlyWindowState extends State<TopOnlyWindow> {
     _idleController.resetIdleTimer();
     setState(() {
       _showSettingsResetConfirmation = false;
+      _showIdleBedroom = false;
       _currentAppKey = appName;
       _currentApp =
           _apps[appName] ??
-          IdleApp(maintenanceController: _maintenanceController);
+          IdleApp(
+            maintenanceController: _maintenanceController,
+            notificationController: _notificationController,
+            showBedroom: _showIdleBedroom,
+            onBedroomToggleRequested: _toggleIdleBedroom,
+          );
     });
     _notifyBottomAppChanged();
   }
@@ -596,11 +658,6 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
     // the window on the correct output (SPI-1).
     await DisplayManager.setWindowTitle('Polypod_Bottom_Screen');
 
-    // Signal the parent window that our title is set and we are ready to be
-    // shown.  The parent waits for this before calling show() so the
-    // compositor sees the correct title on first map.
-    await _mainWindowController?.invokeMethod('polypod/childReady');
-
     await _bottomWindowController?.setMethodHandler((method, arguments) async {
       switch (method) {
         case 'polypod/appChanged':
@@ -619,6 +676,13 @@ class _BottomControlWindowState extends State<BottomControlWindow> {
       }
       return null;
     });
+
+    // Signal the parent window after our handler is installed so the initial
+    // state message cannot race ahead and be dropped.
+    await _mainWindowController?.invokeMethod('polypod/childReady');
+    // Ask for a state refresh in case setup/home state changed before this
+    // window finished initializing.
+    await _mainWindowController?.invokeMethod('polypod/requestStateSync');
 
     // Fullscreen this window on the configured display.
     if (widget.runtimeConfig.fullscreen) {
@@ -762,6 +826,7 @@ class _DualScreenHomeState extends State<DualScreenHome> {
   late PolypodMaintenanceController _maintenanceController;
   late BaseApp _currentApp;
   bool _isSetupLocked = false;
+  bool _showIdleBedroom = false;
 
   late final Map<String, BaseApp> _apps;
 
@@ -778,7 +843,12 @@ class _DualScreenHomeState extends State<DualScreenHome> {
     _polypodController = PolypodAnimationController();
     _maintenanceController = PolypodMaintenanceController();
     _apps = {
-      'Home': IdleApp(maintenanceController: _maintenanceController),
+      'Home': IdleApp(
+        maintenanceController: _maintenanceController,
+        notificationController: _notificationController,
+        showBedroom: _showIdleBedroom,
+        onBedroomToggleRequested: _toggleIdleBedroom,
+      ),
       'Timer': ClockApp(controller: _timerController),
       'Weather': const WeatherApp(),
       'Media': const MediaApp(),
@@ -791,7 +861,12 @@ class _DualScreenHomeState extends State<DualScreenHome> {
       'Settings': _buildSettingsApp(showBottomConfirmation: false),
     };
 
-    _currentApp = IdleApp(maintenanceController: _maintenanceController);
+    _currentApp = IdleApp(
+      maintenanceController: _maintenanceController,
+      notificationController: _notificationController,
+      showBedroom: _showIdleBedroom,
+      onBedroomToggleRequested: _toggleIdleBedroom,
+    );
     _showSetupIfNeeded();
 
     // Fullscreen on the primary display in single-window mode.
@@ -820,7 +895,12 @@ class _DualScreenHomeState extends State<DualScreenHome> {
 
     setState(() {
       _isSetupLocked = false;
-      _currentApp = IdleApp(maintenanceController: _maintenanceController);
+      _currentApp = IdleApp(
+        maintenanceController: _maintenanceController,
+        notificationController: _notificationController,
+        showBedroom: _showIdleBedroom,
+        onBedroomToggleRequested: _toggleIdleBedroom,
+      );
     });
   }
 
@@ -886,7 +966,25 @@ class _DualScreenHomeState extends State<DualScreenHome> {
     }
 
     setState(() {
-      _currentApp = IdleApp(maintenanceController: _maintenanceController);
+      _showIdleBedroom = false;
+      _currentApp = IdleApp(
+        maintenanceController: _maintenanceController,
+        notificationController: _notificationController,
+        showBedroom: _showIdleBedroom,
+        onBedroomToggleRequested: _toggleIdleBedroom,
+      );
+    });
+  }
+
+  void _toggleIdleBedroom() {
+    setState(() {
+      _showIdleBedroom = !_showIdleBedroom;
+      _currentApp = IdleApp(
+        maintenanceController: _maintenanceController,
+        notificationController: _notificationController,
+        showBedroom: _showIdleBedroom,
+        onBedroomToggleRequested: _toggleIdleBedroom,
+      );
     });
   }
 
@@ -896,9 +994,27 @@ class _DualScreenHomeState extends State<DualScreenHome> {
     }
 
     _idleController.resetIdleTimer();
-    setState(() {
-      _currentApp = IdleApp(maintenanceController: _maintenanceController);
-    });
+
+    // If already on IdleApp, toggle bedroom; otherwise, go to IdleApp with bedroom closed
+    final isOnIdle = _currentApp is IdleApp;
+    if (isOnIdle && !_showIdleBedroom) {
+      // Already on idle with mouth showing, toggle to bedroom
+      _toggleIdleBedroom();
+    } else if (!isOnIdle) {
+      // Not on idle, go to idle with mouth showing
+      setState(() {
+        _showIdleBedroom = false;
+        _currentApp = IdleApp(
+          maintenanceController: _maintenanceController,
+          notificationController: _notificationController,
+          showBedroom: _showIdleBedroom,
+          onBedroomToggleRequested: _toggleIdleBedroom,
+        );
+      });
+    } else {
+      // Already on idle with bedroom, close it (toggle back)
+      _toggleIdleBedroom();
+    }
   }
 
   void _openApp(String appName) {
@@ -908,12 +1024,18 @@ class _DualScreenHomeState extends State<DualScreenHome> {
 
     _idleController.resetIdleTimer();
     setState(() {
+      _showIdleBedroom = false;
       if (appName == 'Settings') {
         _currentApp = _buildSettingsApp(showBottomConfirmation: false);
       } else {
         _currentApp =
             _apps[appName] ??
-            IdleApp(maintenanceController: _maintenanceController);
+            IdleApp(
+              maintenanceController: _maintenanceController,
+              notificationController: _notificationController,
+              showBedroom: _showIdleBedroom,
+              onBedroomToggleRequested: _toggleIdleBedroom,
+            );
       }
     });
   }
