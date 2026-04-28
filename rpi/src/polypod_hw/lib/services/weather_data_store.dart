@@ -34,10 +34,24 @@ class WeatherDataStore extends ChangeNotifier {
   static final WeatherDataStore instance = WeatherDataStore._();
 
   WeatherSnapshot _snapshot = WeatherSnapshot.initial();
+  String? _lastAlertSignature;
 
   WeatherSnapshot get snapshot => _snapshot;
 
   void updateFromNotification(NotificationData notification) {
+    // Build a signature of the incoming alert so we only update when
+    // the meaningful information changes (headline, info, media).
+    final signature = notification.info;
+
+    // If we've already seen this exact alert, skip notifying to avoid
+    // spamming the UI with repeated identical alerts. This still allows
+    // the first receipt to update the store.
+    if (_lastAlertSignature != null && _lastAlertSignature == signature) {
+      return;
+    }
+
+    _lastAlertSignature = signature;
+
     final parsed = _parseWeatherInfo(notification.info);
     final location = _parseLocation(notification.headline);
     final updatedAt = DateTime.tryParse(notification.timestamp);
